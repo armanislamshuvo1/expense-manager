@@ -27,7 +27,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
 
 export default function More() {
   const { user, setUser } = useAuth();
-  const { theme, toggleTheme, resetToSystem, isDefault } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
 
@@ -172,25 +172,7 @@ export default function More() {
     setModalOpen(false);
   };
 
-  const cycleTheme = () => {
-    if (isDefault) {
-      toggleTheme();
-    } else {
-      const stored = localStorage.getItem('theme');
-      if (stored === 'dark') {
-        localStorage.setItem('theme', 'light');
-        toggleTheme();
-      } else {
-        resetToSystem();
-      }
-    }
-  };
-
-  const getThemeLabel = () => {
-    const stored = localStorage.getItem('theme');
-    if (!stored) return 'System';
-    return stored.charAt(0).toUpperCase() + stored.slice(1);
-  };
+  const themeLabel = theme.charAt(0).toUpperCase() + theme.slice(1);
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content pb-28 font-sans">
@@ -484,7 +466,7 @@ export default function More() {
           <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Other</h2>
           <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
             <div 
-              onClick={cycleTheme}
+              onClick={toggleTheme}
               className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
@@ -492,7 +474,7 @@ export default function More() {
                 Theme
               </span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-error">{getThemeLabel()}</span>
+                <span className="text-xs font-bold text-error">{themeLabel}</span>
                 <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </div>
