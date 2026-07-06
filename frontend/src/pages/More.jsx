@@ -184,6 +184,30 @@ export default function More() {
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-6">
+        {/* Profile Card */}
+        <div
+          onClick={() => navigate('/profile')}
+          className="bg-[#25252d] rounded-2xl border border-gray-800 p-4 shadow-lg cursor-pointer hover:bg-[#2e2e38] transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-[#f05454]/20 border border-[#f05454]/40 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-bold text-[#f05454]">
+                {(user?.name || '?').charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-sm truncate">{user?.name}</h2>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className={`badge badge-xs ${user?.provider === 'google' ? 'badge-primary' : 'badge-ghost'} text-[10px]`}>
+              {user?.provider === 'google' ? 'Google' : 'Password'}
+            </span>
+          </div>
+        </div>
+
         {success && <div className="alert alert-success text-xs p-2 text-white bg-green-600 border-none rounded-xl">{success}</div>}
 
         {/* Currency Quick Update Form */}

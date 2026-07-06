@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Account = require('../models/Account');
@@ -50,6 +51,7 @@ exports.register = async (req, res, next) => {
       name,
       email,
       passwordHash,
+      provider: 'custom',
       baseCurrency: baseCurrency || 'USD'
     });
 
@@ -70,10 +72,12 @@ exports.register = async (req, res, next) => {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
+          provider: newUser.provider,
           baseCurrency: newUser.baseCurrency,
           preferredCurrencies: newUser.preferredCurrencies,
           theme: newUser.theme,
-          settings: newUser.settings
+          settings: newUser.settings,
+          createdAt: newUser.createdAt
         }
       }
     });
@@ -118,10 +122,12 @@ exports.login = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          provider: user.provider,
           baseCurrency: user.baseCurrency,
           preferredCurrencies: user.preferredCurrencies,
           theme: user.theme,
-          settings: user.settings
+          settings: user.settings,
+          createdAt: user.createdAt
         }
       }
     });
@@ -159,45 +165,64 @@ exports.updateSettings = async (req, res, next) => {
 
     await user.save();
 
-    res.status(200).json({
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        baseCurrency: user.baseCurrency,
-        preferredCurrencies: user.preferredCurrencies,
-        theme: user.theme,
-        settings: user.settings
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
+      res.status(200).json({
+        success: true,
+        data: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          provider: user.provider,
+          baseCurrency: user.baseCurrency,
+          preferredCurrencies: user.preferredCurrencies,
+          theme: user.theme,
+          settings: user.settings,
+          createdAt: user.createdAt
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
 };
 
 exports.googleLogin = async (req, res, next) => {
   try {
-    const { email, name, googleId } = req.body;
-    if (!email || !googleId) {
-      return res.status(400).json({ success: false, message: 'Missing email or Google ID.' });
+    let email;
+    let name;
+
+    const { token: googleToken, email: bodyEmail, name: bodyName } = req.body;
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (googleToken && clientId) {
+      const client = new OAuth2Client(clientId);
+      const ticket = await client.verifyIdToken({
+        idToken: googleToken,
+        audience: clientId,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+    } else {
+      // Fallback/mock behavior when not configured or testing
+      email = bodyEmail;
+      name = bodyName;
+    }
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Missing email / invalid credential.' });
     }
 
     let user = await User.findOne({ email });
     if (!user) {
-      // Create user if not registered
-      const salt = await bcrypt.genSalt(10);
-      const randomPassword = Math.random().toString(36).slice(-8);
-      const passwordHash = await bcrypt.hash(randomPassword, salt);
-
       user = await User.create({
         name: name || 'Google User',
         email,
-        passwordHash
+        provider: 'google'
       });
-
       await prePopulateDefaults(user._id, user.baseCurrency);
+    } else if (name && user.name !== name) {
+      user.name = name;
+      await user.save();
     }
 
     const token = jwt.sign(
@@ -215,10 +240,12 @@ exports.googleLogin = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          provider: user.provider,
           baseCurrency: user.baseCurrency,
           preferredCurrencies: user.preferredCurrencies,
           theme: user.theme,
-          settings: user.settings
+          settings: user.settings,
+          createdAt: user.createdAt
         }
       }
     });

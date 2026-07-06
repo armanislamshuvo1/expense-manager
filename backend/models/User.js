@@ -9,8 +9,12 @@ const userSchema = new mongoose.Schema({
     lowercase: true 
   },
   passwordHash: { 
-    type: String, 
-    required: true 
+    type: String 
+  },
+  provider: {
+    type: String,
+    enum: ['google', 'custom'],
+    default: 'custom'
   },
   name: { 
     type: String, 

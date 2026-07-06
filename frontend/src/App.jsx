@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
 import More from './pages/More';
+import Profile from './pages/Profile';
 import AdminConsole from './pages/AdminConsole';
 import IncomeCategoriesSetting from './pages/IncomeCategoriesSetting';
 import ExpenseCategoriesSetting from './pages/ExpenseCategoriesSetting';
@@ -44,6 +45,12 @@ function App() {
             <Route path="/more" element={
               <ProtectedRoute>
                 <More />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosPublic } from '../hooks/useApi';
@@ -40,6 +40,66 @@ export default function Login() {
     }
   };
 
+  const isGoogleConfigured = import.meta.env.VITE_GOOGLE_CLIENT_ID && 
+    import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'your-google-client-id.apps.googleusercontent.com' &&
+    import.meta.env.VITE_GOOGLE_CLIENT_ID !== '';
+
+  const initializeGoogleSignIn = () => {
+    try {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse,
+      });
+      const btnParent = document.getElementById('google-signin-btn');
+      if (btnParent) {
+        window.google.accounts.id.renderButton(btnParent, {
+          theme: 'outline',
+          size: 'large',
+          width: btnParent.clientWidth || 320,
+          text: 'signin_with',
+          shape: 'rectangular',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to initialize Google Sign-In:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isGoogleConfigured) {
+      if (window.google) {
+        initializeGoogleSignIn();
+      } else {
+        const interval = setInterval(() => {
+          if (window.google) {
+            initializeGoogleSignIn();
+            clearInterval(interval);
+          }
+        }, 500);
+        return () => clearInterval(interval);
+      }
+    }
+  }, [isGoogleConfigured]);
+
+  const handleGoogleCredentialResponse = async (response) => {
+    setLoading(true);
+    setError('');
+    try {
+      const apiResponse = await api.post('/api/auth/google-login', {
+        token: response.credential,
+      });
+      if (apiResponse.data.success) {
+        login(apiResponse.data.data.token, apiResponse.data.data.user);
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google Sign-In failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
@@ -47,8 +107,7 @@ export default function Login() {
       // Simulate Google Sign-In redirect / mock response
       const response = await api.post('/api/auth/google-login', {
         email: 'googleuser@mockauth.com',
-        name: 'Alex Mercer',
-        googleId: 'g_oauth_103948576'
+        name: 'Alex Mercer'
       });
       if (response.data.success) {
         login(response.data.data.token, response.data.data.user);
@@ -172,20 +231,26 @@ export default function Login() {
           <div className="divider text-xs text-base-content/40">Or Connect With</div>
           
           {/* Social Google Login Button */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="btn btn-outline btn-block flex items-center gap-2 border-base-300 font-semibold"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.488 0-6.315-2.827-6.315-6.315s2.827-6.315 6.315-6.315c1.583 0 3.024.587 4.14 1.547l3.153-3.153C18.99 1.94 15.828 1 12.24 1 5.866 1 .7 6.166.7 12.54s5.166 11.54 11.54 11.54c6.643 0 11.54-4.673 11.54-11.54 0-.783-.07-1.53-.2-2.255H12.24z"
-              />
-            </svg>
-            Google Identity Login
-          </button>
+          {isGoogleConfigured ? (
+            <div className="w-full flex justify-center mb-2">
+              <div id="google-signin-btn" className="w-full"></div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="btn btn-outline btn-block flex items-center gap-2 border-base-300 font-semibold"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#EA4335"
+                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.488 0-6.315-2.827-6.315-6.315s2.827-6.315 6.315-6.315c1.583 0 3.024.587 4.14 1.547l3.153-3.153C18.99 1.94 15.828 1 12.24 1 5.866 1 .7 6.166.7 12.54s5.166 11.54 11.54 11.54c6.643 0 11.54-4.673 11.54-11.54 0-.783-.07-1.53-.2-2.255H12.24z"
+                />
+              </svg>
+              Google Identity Login (Demo Mode)
+            </button>
+          )}
 
           <div className="divider text-xs text-base-content/40">New User?</div>
           <Link to="/register" className="btn btn-outline btn-block btn-sm">
