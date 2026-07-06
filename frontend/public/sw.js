@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expense-manager-cache-v1';
+const CACHE_NAME = 'nexawealth-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',

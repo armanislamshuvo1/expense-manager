@@ -24,7 +24,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Root Status check
 app.get('/', (req, res) => {
-  res.status(200).json({ success: true, message: 'Expense Manager API is running.' });
+  res.status(200).json({ success: true, message: 'NexaWealth API is running.' });
 });
 
 app.get('/api/health', (req, res) => {

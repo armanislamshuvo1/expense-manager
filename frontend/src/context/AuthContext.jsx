@@ -38,7 +38,7 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
           <Lock className="w-8 h-8 text-[#f05454]" />
         </div>
         <div className="text-center">
-          <h2 className="text-xl font-bold tracking-wide">Expense Manager</h2>
+          <h2 className="text-xl font-bold tracking-wide">NexaWealth</h2>
           <p className={`text-xs mt-2 transition-colors ${error ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
             {error ? 'Incorrect passcode. Try again.' : 'Enter your 4-digit passcode to unlock'}
           </p>

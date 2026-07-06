@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: expense-manager-backend
+    name: nexawealth-backend
     env: node
     plan: free
     rootDir: backend
