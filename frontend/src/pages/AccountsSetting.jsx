@@ -110,22 +110,22 @@ export default function AccountsSetting() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1e24] text-white font-sans pb-10">
+    <div className="min-h-screen bg-base-200 text-base-content font-sans pb-10">
       {/* Header */}
-      <div className="bg-[#15151a] p-4 flex items-center gap-4 border-b border-gray-800">
-        <button onClick={() => navigate('/more')} className="btn btn-ghost btn-circle text-gray-400 hover:text-white">
+      <div className="bg-base-300 p-4 flex items-center gap-4 border-b border-base-content/10">
+        <button onClick={() => navigate('/more')} className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
           <h1 className="text-lg font-bold">Accounts Setting</h1>
-          <p className="text-xs text-gray-500">Configure your payment accounts</p>
+          <p className="text-xs text-base-content/50">Configure your payment accounts</p>
         </div>
       </div>
 
       {/* Account List */}
       <div className="p-4 space-y-3 max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">My Accounts</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-base-content/50">My Accounts</span>
           <button
             onClick={() => {
               setEditingId(null);
@@ -135,23 +135,23 @@ export default function AccountsSetting() {
               setCurrency(user?.baseCurrency || 'MYR');
               document.getElementById('account_modal').showModal();
             }}
-            className="btn btn-xs bg-[#f05454] hover:bg-[#d94444] border-none text-white gap-1"
+            className="btn btn-xs bg-error hover:bg-error/80 border-none text-white gap-1"
           >
             <Plus className="w-3.5 h-3.5" /> Add New
           </button>
         </div>
 
         {accounts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 text-sm">
+          <div className="text-center py-12 text-base-content/50 text-sm">
             No accounts defined.
           </div>
         ) : (
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800">
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
             {accounts.map((acc) => (
-              <div key={acc._id} className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors">
+              <div key={acc._id} className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors">
                 <div>
                   <span className="font-semibold text-sm block">{acc.name}</span>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">{acc.type}</span>
+                  <span className="text-[10px] text-base-content/50 uppercase tracking-wider">{acc.type}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-bold">
@@ -159,13 +159,13 @@ export default function AccountsSetting() {
                   </span>
                   <button
                     onClick={() => handleEditClick(acc)}
-                    className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-white"
+                    className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-base-content"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteAccount(acc._id)}
-                    className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-red-500"
+                    className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-error"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -178,8 +178,8 @@ export default function AccountsSetting() {
 
       {/* Add/Edit Modal */}
       <dialog id="account_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-[#25252d] border border-gray-800 text-white">
-          <h3 className="font-bold text-lg mb-4 text-[#f05454]">
+        <div className="modal-box bg-base-300 border border-base-content/10 text-base-content">
+          <h3 className="font-bold text-lg mb-4 text-error">
             {editingId ? 'Edit Account' : 'Add New Account'}
           </h3>
 
@@ -188,13 +188,13 @@ export default function AccountsSetting() {
           <form onSubmit={handleSaveAccount} className="space-y-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-gray-400 font-semibold">Account Name</span>
+                <span className="label-text text-base-content/60 font-semibold">Account Name</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input input-bordered bg-[#1e1e24] border-gray-700 text-white"
+                className="input input-bordered bg-base-200 border-base-content/20 text-base-content"
                 placeholder="e.g. Cash Wallet, Bank of America"
                 required
               />
@@ -203,47 +203,47 @@ export default function AccountsSetting() {
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-gray-400 font-semibold">Account Type</span>
+                  <span className="label-text text-base-content/60 font-semibold">Account Type</span>
                 </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="select select-bordered bg-[#1e1e24] border-gray-700 text-white"
+                  className="select select-bordered bg-base-200 border-base-content/20 text-base-content"
                 >
-                  <option className="bg-[#1e1e24] text-white" value="CASH">Cash</option>
-                  <option className="bg-[#1e1e24] text-white" value="CARD">Credit / Debit Card</option>
-                  <option className="bg-[#1e1e24] text-white" value="SAVINGS">Savings Account</option>
-                  <option className="bg-[#1e1e24] text-white" value="INVESTMENT">Investment Account</option>
-                  <option className="bg-[#1e1e24] text-white" value="CRYPTO">Crypto Wallet</option>
+                  <option className="bg-base-200 text-base-content" value="CASH">Cash</option>
+                  <option className="bg-base-200 text-base-content" value="CARD">Credit / Debit Card</option>
+                  <option className="bg-base-200 text-base-content" value="SAVINGS">Savings Account</option>
+                  <option className="bg-base-200 text-base-content" value="INVESTMENT">Investment Account</option>
+                  <option className="bg-base-200 text-base-content" value="CRYPTO">Crypto Wallet</option>
                 </select>
               </div>
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-gray-400 font-semibold">Currency</span>
+                  <span className="label-text text-base-content/60 font-semibold">Currency</span>
                 </label>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="select select-bordered bg-[#1e1e24] border-gray-700 text-white"
+                  className="select select-bordered bg-base-200 border-base-content/20 text-base-content"
                 >
-                  <option className="bg-[#1e1e24] text-white" value="MYR">MYR (RM)</option>
-                  <option className="bg-[#1e1e24] text-white" value="USD">USD ($)</option>
-                  <option className="bg-[#1e1e24] text-white" value="EUR">EUR (€)</option>
-                  <option className="bg-[#1e1e24] text-white" value="SGD">SGD (S$)</option>
+                  <option className="bg-base-200 text-base-content" value="MYR">MYR (RM)</option>
+                  <option className="bg-base-200 text-base-content" value="USD">USD ($)</option>
+                  <option className="bg-base-200 text-base-content" value="EUR">EUR (€)</option>
+                  <option className="bg-base-200 text-base-content" value="SGD">SGD (S$)</option>
                 </select>
               </div>
             </div>
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-gray-400 font-semibold">Balance</span>
+                <span className="label-text text-base-content/60 font-semibold">Balance</span>
               </label>
               <input
                 type="number"
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
-                className="input input-bordered bg-[#1e1e24] border-gray-700 text-white"
+                className="input input-bordered bg-base-200 border-base-content/20 text-base-content"
                 placeholder="0.00"
               />
             </div>
@@ -252,14 +252,14 @@ export default function AccountsSetting() {
               <button
                 type="button"
                 onClick={() => document.getElementById('account_modal').close()}
-                className="btn btn-ghost btn-sm text-gray-400 hover:text-white"
+                className="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="btn bg-[#f05454] hover:bg-[#d94444] border-none btn-sm text-white"
+                className="btn bg-error hover:bg-error/80 border-none btn-sm text-white"
               >
                 Save
               </button>

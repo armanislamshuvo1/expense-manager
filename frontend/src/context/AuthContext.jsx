@@ -32,14 +32,14 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#121216] z-[9999] flex flex-col items-center justify-between py-16 px-6 text-white font-sans">
+    <div className="fixed inset-0 bg-base-300 z-[9999] flex flex-col items-center justify-between py-16 px-6 text-base-content font-sans">
       <div className="flex flex-col items-center gap-4 mt-8">
-        <div className="bg-[#f05454]/10 p-4 rounded-full border border-[#f05454]/20 animate-pulse">
-          <Lock className="w-8 h-8 text-[#f05454]" />
+        <div className="bg-error/10 p-4 rounded-full border border-error/20 animate-pulse">
+          <Lock className="w-8 h-8 text-error" />
         </div>
         <div className="text-center">
           <h2 className="text-xl font-bold tracking-wide">NexaWealth</h2>
-          <p className={`text-xs mt-2 transition-colors ${error ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+          <p className={`text-xs mt-2 transition-colors ${error ? 'text-error font-semibold' : 'text-base-content/60'}`}>
             {error ? 'Incorrect passcode. Try again.' : 'Enter your 4-digit passcode to unlock'}
           </p>
         </div>
@@ -51,8 +51,8 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
               key={index}
               className={`w-3.5 h-3.5 rounded-full border transition-all duration-150 ${
                 index < code.length
-                  ? 'bg-[#f05454] border-[#f05454] scale-110 shadow-[0_0_8px_rgba(240,84,84,0.6)]'
-                  : 'border-gray-600 bg-transparent'
+                  ? 'bg-error border-error scale-110 shadow-[0_0_8px_rgba(240,84,84,0.6)]'
+                  : 'border-base-content/20 bg-transparent'
               }`}
             />
           ))}
@@ -66,27 +66,27 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
             <button
               key={num}
               onClick={() => handleKeyPress(String(num))}
-              className="aspect-square rounded-full bg-[#1e1e24] hover:bg-[#25252d] text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-gray-800"
+              className="aspect-square rounded-full bg-base-200 hover:bg-base-100 text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
             >
               {num}
             </button>
           ))}
           <button
             onClick={onLogout}
-            className="aspect-square rounded-full hover:bg-red-950/20 text-red-500 font-semibold text-xs transition-colors flex flex-col items-center justify-center gap-1 border border-transparent"
+            className="aspect-square rounded-full hover:bg-error/10 text-error font-semibold text-xs transition-colors flex flex-col items-center justify-center gap-1 border border-transparent"
           >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </button>
           <button
             onClick={() => handleKeyPress('0')}
-            className="aspect-square rounded-full bg-[#1e1e24] hover:bg-[#25252d] text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-gray-800"
+            className="aspect-square rounded-full bg-base-200 hover:bg-base-100 text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            className="aspect-square rounded-full hover:bg-[#25252d] text-gray-400 active:scale-95 transition-colors flex items-center justify-center border border-transparent"
+            className="aspect-square rounded-full hover:bg-base-100 text-base-content/60 active:scale-95 transition-colors flex items-center justify-center border border-transparent"
           >
             <Delete className="w-6 h-6" />
           </button>

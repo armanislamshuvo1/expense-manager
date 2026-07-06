@@ -147,7 +147,6 @@ export default function Transactions() {
         : await axiosSecure.post('/api/transactions', txData);
 
       if (response.data.success) {
-        // Reset states
         setAmount('');
         setAccountId('');
         setAccountName('Select Account');
@@ -351,11 +350,11 @@ export default function Transactions() {
 
       {/* Transaction Entry Modal (daisyUI Bottom Sheet layout) */}
       <dialog id="add_transaction_modal" className="modal modal-bottom sm:modal-middle">
-        <div className={`modal-box bg-[#25252d] border border-gray-800 p-0 relative overflow-hidden text-white rounded-2xl shadow-2xl transition-all duration-300 ${
+        <div className={`modal-box bg-base-300 border border-base-content/10 p-0 relative overflow-hidden text-base-content rounded-2xl shadow-2xl transition-all duration-300 ${
           showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[540px]' : 'min-h-[350px]'
         }`}>
           {/* Top Tabs */}
-          <div className="grid grid-cols-3 text-center border-b border-gray-800">
+          <div className="grid grid-cols-3 text-center border-b border-base-content/10">
             {['INCOME', 'EXPENSE', 'TRANSFER'].map((t) => (
               <button
                 key={t}
@@ -363,8 +362,8 @@ export default function Transactions() {
                 onClick={() => setType(t)}
                 className={`py-3 text-xs font-bold tracking-wider transition-colors ${
                   type === t 
-                    ? 'border-b-2 border-[#f05454] text-[#f05454] bg-[#1e1e24]/50' 
-                    : 'text-gray-400 hover:text-white'
+                    ? 'border-b-2 border-error text-error bg-base-200/50' 
+                    : 'text-base-content/60 hover:text-base-content'
                 }`}
               >
                 {t}
@@ -373,12 +372,12 @@ export default function Transactions() {
           </div>
 
           <div className="p-4 space-y-4">
-            {error && <div className="alert alert-error text-xs p-2 text-white bg-red-600 border-none rounded-xl">{error}</div>}
+            {error && <div className="alert alert-error text-xs p-2 text-white bg-error border-none rounded-xl">{error}</div>}
 
             {/* Amount Field (Triggers Keypad Drawer) */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-xs text-gray-400">Amount</span>
+                <span className="label-text text-xs text-base-content/60">Amount</span>
               </label>
               <div 
                 onClick={() => {
@@ -386,19 +385,19 @@ export default function Transactions() {
                   setShowAccountSheet(false);
                   setShowCategorySheet(false);
                 }}
-                className="input input-bordered bg-[#1e1e24] border-gray-700 hover:border-gray-600 flex items-center justify-between cursor-pointer h-12 rounded-xl transition-all"
+                className="input input-bordered bg-base-200 border-base-content/20 hover:border-base-content/40 flex items-center justify-between cursor-pointer h-12 rounded-xl transition-all"
               >
-                <span className="font-bold text-lg text-[#f05454]">
+                <span className="font-bold text-lg text-error">
                   {currency} {amount || '0.00'}
                 </span>
-                <span className="text-xs text-gray-500">Tap to Input</span>
+                <span className="text-xs text-base-content/50">Tap to Input</span>
               </div>
             </div>
 
             {/* Conversion Details (if current currency is different from user main baseCurrency) */}
             {currency !== user?.baseCurrency && (
-              <div className="bg-[#1e1e24] p-3 rounded-xl space-y-3 border border-gray-800">
-                <div className="flex justify-between items-center text-xs text-gray-300">
+              <div className="bg-base-200 p-3 rounded-xl space-y-3 border border-base-content/10">
+                <div className="flex justify-between items-center text-xs text-base-content/80">
                   <span>Target Base Conversion: {user?.baseCurrency}</span>
                   <input
                     type="checkbox"
@@ -410,14 +409,14 @@ export default function Transactions() {
                 {shouldConvert && (
                   <div className="form-control">
                     <label className="label py-0">
-                      <span className="label-text-alt text-gray-500">Manual Exchange Rate (1 {currency} = ? {user?.baseCurrency})</span>
+                      <span className="label-text-alt text-base-content/50">Manual Exchange Rate (1 {currency} = ? {user?.baseCurrency})</span>
                     </label>
                     <input
                       type="number"
                       step="0.0001"
                       value={exchangeRate}
                       onChange={(e) => setExchangeRate(e.target.value)}
-                      className="input input-xs input-bordered bg-[#25252d] border-gray-700 text-white w-full mt-1"
+                      className="input input-xs input-bordered bg-base-300 border-base-content/20 text-base-content w-full mt-1"
                     />
                   </div>
                 )}
@@ -434,9 +433,9 @@ export default function Transactions() {
                   setShowKeypad(false);
                   setShowCategorySheet(false);
                 }}
-                className="btn bg-[#1e1e24] hover:bg-[#2c2c35] text-white border border-gray-700 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
+                className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
               >
-                <CreditCard className="w-4 h-4 text-gray-400" />
+                <CreditCard className="w-4 h-4 text-base-content/60" />
                 <span className="truncate">{type === 'TRANSFER' ? `From: ${accountName}` : accountName}</span>
               </button>
 
@@ -449,9 +448,9 @@ export default function Transactions() {
                     setShowKeypad(false);
                     setShowCategorySheet(false);
                   }}
-                  className="btn bg-[#1e1e24] hover:bg-[#2c2c35] text-white border border-gray-700 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
+                  className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                 >
-                  <CreditCard className="w-4 h-4 text-gray-400" />
+                  <CreditCard className="w-4 h-4 text-base-content/60" />
                   <span className="truncate">{`To: ${toAccountName}`}</span>
                 </button>
               ) : (
@@ -462,9 +461,9 @@ export default function Transactions() {
                     setShowKeypad(false);
                     setShowAccountSheet(false);
                   }}
-                  className="btn bg-[#1e1e24] hover:bg-[#2c2c35] text-white border border-gray-700 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
+                  className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                 >
-                  <Tag className="w-4 h-4 text-gray-400" />
+                  <Tag className="w-4 h-4 text-base-content/60" />
                   <span className="truncate">{categoryName}</span>
                 </button>
               )}
@@ -477,13 +476,13 @@ export default function Transactions() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Add notes..."
-                className="input input-sm input-bordered bg-[#1e1e24] border-gray-700 text-white rounded-xl h-10 px-3 w-full"
+                className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
               />
             </div>
           </div>
 
           {/* Action Row */}
-          <div className="flex border-t border-gray-800">
+          <div className="flex border-t border-base-content/10">
             {editMode && (
               <button
                 type="button"
@@ -494,7 +493,7 @@ export default function Transactions() {
                   }
                 }}
                 disabled={loading}
-                className="btn btn-ghost text-error flex-1 rounded-none py-4 h-auto hover:bg-error hover:text-white font-bold border-r border-gray-800"
+                className="btn btn-ghost text-error flex-1 rounded-none py-4 h-auto hover:bg-error hover:text-white font-bold border-r border-base-content/10"
               >
                 Delete
               </button>
@@ -502,7 +501,7 @@ export default function Transactions() {
             <button
               type="button"
               onClick={() => document.getElementById('add_transaction_modal').close()}
-              className="btn btn-ghost flex-1 rounded-none py-4 h-auto text-gray-400 hover:text-white border-r border-gray-800"
+              className="btn btn-ghost flex-1 rounded-none py-4 h-auto text-base-content/60 hover:text-base-content border-r border-base-content/10"
             >
               Cancel
             </button>
@@ -510,7 +509,7 @@ export default function Transactions() {
               type="button"
               onClick={handleSaveTransaction}
               disabled={loading}
-              className="btn bg-[#f05454] hover:bg-[#d94444] border-none flex-1 rounded-none py-4 h-auto text-white font-bold"
+              className="btn bg-error hover:bg-error/80 border-none flex-1 rounded-none py-4 h-auto text-white font-bold"
             >
               {editMode ? 'Save Changes' : 'Save'}
             </button>
@@ -548,7 +547,6 @@ export default function Transactions() {
                 onClose={() => setShowAccountSheet(false)}
                 onAddAccount={() => {
                   document.getElementById('add_transaction_modal').close();
-                  // Redirect to accounts page
                 }}
               />
             </div>

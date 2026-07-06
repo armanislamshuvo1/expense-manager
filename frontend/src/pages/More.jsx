@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Check } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Check, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ToggleSwitch = ({ checked, onChange }) => (
@@ -13,7 +14,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
       onChange(!checked);
     }}
     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none ${
-      checked ? 'bg-[#f05454]' : 'bg-gray-700'
+      checked ? 'bg-error' : 'bg-base-content/20'
     }`}
   >
     <div
@@ -26,6 +27,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
 
 export default function More() {
   const { user, setUser } = useAuth();
+  const { theme, toggleTheme, resetToSystem, isDefault } = useTheme();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
 
@@ -61,7 +63,7 @@ export default function More() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalOptions, setModalOptions] = useState([]);
   const [modalValue, setModalValue] = useState('');
-  const [modalType, setModalType] = useState('select'); // 'select' | 'number'
+  const [modalType, setModalType] = useState('select');
 
   // Passcode setting modal states
   const [passcodeModalOpen, setPasscodeModalOpen] = useState(false);
@@ -170,16 +172,36 @@ export default function More() {
     setModalOpen(false);
   };
 
+  const cycleTheme = () => {
+    if (isDefault) {
+      toggleTheme();
+    } else {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark') {
+        localStorage.setItem('theme', 'light');
+        toggleTheme();
+      } else {
+        resetToSystem();
+      }
+    }
+  };
+
+  const getThemeLabel = () => {
+    const stored = localStorage.getItem('theme');
+    if (!stored) return 'System';
+    return stored.charAt(0).toUpperCase() + stored.slice(1);
+  };
+
   return (
-    <div className="min-h-screen bg-[#1e1e24] text-white pb-28 font-sans">
+    <div className="min-h-screen bg-base-200 text-base-content pb-28 font-sans">
       {/* Header */}
-      <div className="bg-[#15151a] p-4 flex items-center gap-4 border-b border-gray-800">
-        <button onClick={() => navigate('/dashboard')} className="btn btn-ghost btn-circle text-gray-400 hover:text-white">
+      <div className="bg-base-300 p-4 flex items-center gap-4 border-b border-base-content/10">
+        <button onClick={() => navigate('/dashboard')} className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
           <h1 className="text-lg font-bold">Configuration</h1>
-          <p className="text-xs text-gray-500">Settings and Customizations</p>
+          <p className="text-xs text-base-content/50">Settings and Customizations</p>
         </div>
       </div>
 
@@ -187,19 +209,19 @@ export default function More() {
         {/* Profile Card */}
         <div
           onClick={() => navigate('/profile')}
-          className="bg-[#25252d] rounded-2xl border border-gray-800 p-4 shadow-lg cursor-pointer hover:bg-[#2e2e38] transition-colors"
+          className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg cursor-pointer hover:bg-base-200 transition-colors"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#f05454]/20 border border-[#f05454]/40 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg font-bold text-[#f05454]">
+            <div className="w-12 h-12 rounded-full bg-error/20 border border-error/40 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-bold text-error">
                 {(user?.name || '?').charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-sm truncate">{user?.name}</h2>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <p className="text-xs text-base-content/50 truncate">{user?.email}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <ChevronRight className="w-4 h-4 text-base-content/50 flex-shrink-0" />
           </div>
           <div className="mt-2 flex items-center gap-2">
             <span className={`badge badge-xs ${user?.provider === 'google' ? 'badge-primary' : 'badge-ghost'} text-[10px]`}>
@@ -208,22 +230,22 @@ export default function More() {
           </div>
         </div>
 
-        {success && <div className="alert alert-success text-xs p-2 text-white bg-green-600 border-none rounded-xl">{success}</div>}
+        {success && <div className="alert alert-success text-xs p-2 text-white bg-success border-none rounded-xl">{success}</div>}
 
         {/* Currency Quick Update Form */}
-        <div className="bg-[#25252d] rounded-2xl border border-gray-800 p-4 shadow-lg">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[#f05454]" /> Quick Preference Form
+        <div className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3 flex items-center gap-2">
+            <Settings className="w-4 h-4 text-error" /> Quick Preference Form
           </h2>
           <form onSubmit={handleUpdate} className="space-y-3">
             <div className="form-control">
               <label className="label py-1">
-                <span className="label-text text-xs text-gray-400">Base Currency</span>
+                <span className="label-text text-xs text-base-content/50">Base Currency</span>
               </label>
               <select
                 value={baseCurrency}
                 onChange={(e) => setBaseCurrency(e.target.value)}
-                className="select select-bordered select-sm bg-[#1e1e24] border-gray-700 text-white w-full"
+                className="select select-bordered select-sm bg-base-200 border-base-content/20 text-base-content w-full"
               >
                 {ALL_CURRENCIES.map((curr) => (
                   <option key={curr.code} value={curr.code}>{curr.name}</option>
@@ -233,19 +255,19 @@ export default function More() {
 
             <div className="form-control">
               <label className="label py-1">
-                <span className="label-text text-xs text-gray-400">Keypad Currencies</span>
+                <span className="label-text text-xs text-base-content/50">Keypad Currencies</span>
               </label>
-              <div className="flex flex-wrap gap-2 mb-2 p-2 bg-[#1e1e24] border border-gray-700 rounded-lg min-h-[40px] items-center">
+              <div className="flex flex-wrap gap-2 mb-2 p-2 bg-base-200 border border-base-content/20 rounded-lg min-h-[40px] items-center">
                 {curList.length === 0 ? (
-                  <span className="text-[10px] text-gray-500">No preferred currencies. Add below.</span>
+                  <span className="text-[10px] text-base-content/50">No preferred currencies. Add below.</span>
                 ) : (
                   curList.map((curr) => (
-                    <div key={curr} className="flex items-center gap-1 bg-[#25252d] border border-gray-700 text-xs px-2.5 py-1 rounded-full text-gray-200">
+                    <div key={curr} className="flex items-center gap-1 bg-base-300 border border-base-content/20 text-xs px-2.5 py-1 rounded-full text-base-content/80">
                       <span>{curr}</span>
                       <button
                         type="button"
                         onClick={() => setCurList(curList.filter((c) => c !== curr))}
-                        className="text-gray-500 hover:text-red-500 font-bold ml-1 cursor-pointer"
+                        className="text-base-content/50 hover:text-error font-bold ml-1 cursor-pointer"
                       >
                         &times;
                       </button>
@@ -261,7 +283,7 @@ export default function More() {
                     setCurList([...curList, newCur]);
                   }
                 }}
-                className="select select-bordered select-sm bg-[#1e1e24] border-gray-700 text-white w-full text-xs"
+                className="select select-bordered select-sm bg-base-200 border-base-content/20 text-base-content w-full text-xs"
               >
                 <option value="">+ Add Preferred Currency...</option>
                 {ALL_CURRENCIES.filter(c => !curList.includes(c.code)).map((c) => (
@@ -270,7 +292,7 @@ export default function More() {
               </select>
             </div>
 
-            <button type="submit" disabled={loading} className="btn btn-sm bg-[#f05454] hover:bg-[#d94444] border-none text-white btn-block mt-2">
+            <button type="submit" disabled={loading} className="btn btn-sm bg-error hover:bg-error/80 border-none text-white btn-block mt-2">
               Save Preferences
             </button>
           </form>
@@ -278,53 +300,53 @@ export default function More() {
 
         {/* Category & Repeat Settings List */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-1">Category/Repeat</h2>
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Category/Repeat</h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
             <button
               onClick={() => navigate('/settings/income-categories')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
-              <span className="text-sm font-medium text-gray-200">Income Category Setting</span>
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-base-content/80">Income Category Setting</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
             </button>
 
             <button
               onClick={() => navigate('/settings/expense-categories')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
-              <span className="text-sm font-medium text-gray-200">Expenses Category Setting</span>
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-base-content/80">Expenses Category Setting</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
             </button>
 
             <div 
               onClick={() => updateSettingKey('subcategoryEnabled', !settings.subcategoryEnabled)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
-              <span className="text-sm font-medium text-gray-200">Subcategory</span>
+              <span className="text-sm font-medium text-base-content/80">Subcategory</span>
               <ToggleSwitch checked={!!settings.subcategoryEnabled} onChange={(val) => updateSettingKey('subcategoryEnabled', val)} />
             </div>
 
             <button
               onClick={() => openNumberModal('budgetLimit', 'Set Monthly Budget Limit', settings.budgetLimit)}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
-              <span className="text-sm font-medium text-gray-200">Budget Setting</span>
+              <span className="text-sm font-medium text-base-content/80">Budget Setting</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">
+                <span className="text-xs font-bold text-error">
                   {settings.budgetLimit > 0 ? `${baseCurrency} ${settings.budgetLimit}` : 'OFF'}
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('repeatDefault', 'Default Repeat Setting', ['None', 'Daily', 'Weekly', 'Monthly'], settings.repeatDefault || 'None')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
-              <span className="text-sm font-medium text-gray-200">Repeat Setting</span>
+              <span className="text-sm font-medium text-base-content/80">Repeat Setting</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.repeatDefault || 'None'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.repeatDefault || 'None'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
           </div>
@@ -332,74 +354,74 @@ export default function More() {
 
         {/* Accounts Setting List */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-1">Accounts</h2>
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Accounts</h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
             <button
               onClick={() => navigate('/settings/accounts')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
-              <span className="text-sm font-medium text-gray-200">Accounts Setting</span>
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-base-content/80">Accounts Setting</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
             </button>
           </div>
         </div>
 
         {/* Configuration List */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-1">Configuration</h2>
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800 text-sm text-gray-200">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Configuration</h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
             <div className="flex justify-between items-center p-4">
               <span>Main Currency Setting</span>
-              <span className="text-xs font-bold text-[#f05454]">{baseCurrency}</span>
+              <span className="text-xs font-bold text-error">{baseCurrency}</span>
             </div>
             
             <button
               onClick={() => openSelectModal('subCurrency', 'Sub Currency Setting', ALL_CURRENCIES.map(c => c.code), settings.subCurrency || 'USD')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Sub Currency Setting</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.subCurrency || 'USD'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.subCurrency || 'USD'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('startScreen', 'Start Screen Setting', ['Daily', 'Calendar'], settings.startScreen || 'Daily')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Start Screen (Daily/Calendar)</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.startScreen || 'Daily'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.startScreen || 'Daily'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('monthlyStartDate', 'Monthly Start Date', Array.from({ length: 31 }, (_, i) => String(i + 1)), String(settings.monthlyStartDate || 1))}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Monthly Start Date</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">Every {settings.monthlyStartDate || 1}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">Every {settings.monthlyStartDate || 1}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('weeklyStartDay', 'Weekly Start Day', ['Sunday', 'Monday', 'Saturday'], settings.weeklyStartDay || 'Sunday')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Weekly Start Day</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.weeklyStartDay || 'Sunday'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.weeklyStartDay || 'Sunday'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <div 
               onClick={() => updateSettingKey('carryOverEnabled', !settings.carryOverEnabled)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Carry-over Setting</span>
               <ToggleSwitch checked={settings.carryOverEnabled !== false} onChange={(val) => updateSettingKey('carryOverEnabled', val)} />
@@ -407,41 +429,41 @@ export default function More() {
 
             <button
               onClick={() => openSelectModal('swipeAction', 'Swipe Action Setting', ['To Change Date', 'To Change Month'], settings.swipeAction || 'To Change Date')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Swipe</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.swipeAction || 'To Change Date'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.swipeAction || 'To Change Date'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('colorSetting', 'Color Palette Setting', ['Set. A', 'Set. B'], settings.colorSetting || 'Set. A')}
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Income-Expenses Color Setting</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.colorSetting || 'Set. A'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.colorSetting || 'Set. A'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <button
               onClick={() => openSelectModal('timeInputSetting', 'Time Input Mode', ['Input Only, Desc.', 'Always Input'], settings.timeInputSetting || 'Input Only, Desc.')
               }
-              className="flex justify-between items-center w-full p-4 hover:bg-[#2e2e38] transition-colors text-left"
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span>Time Input</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-bold text-[#f05454]">{settings.timeInputSetting || 'Input Only, Desc.'}</span>
-                <ChevronRight className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-bold text-error">{settings.timeInputSetting || 'Input Only, Desc.'}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
               </div>
             </button>
 
             <div 
               onClick={() => updateSettingKey('showDescription', !settings.showDescription)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Show description</span>
               <ToggleSwitch checked={!!settings.showDescription} onChange={(val) => updateSettingKey('showDescription', val)} />
@@ -449,7 +471,7 @@ export default function More() {
 
             <div 
               onClick={() => updateSettingKey('autocomplete', !settings.autocomplete)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Autocomplete</span>
               <ToggleSwitch checked={settings.autocomplete !== false} onChange={(val) => updateSettingKey('autocomplete', val)} />
@@ -459,8 +481,22 @@ export default function More() {
 
         {/* Other settings list */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 px-1">Other</h2>
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800 text-sm text-gray-200">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Other</h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
+            <div 
+              onClick={cycleTheme}
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                Theme
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-bold text-error">{getThemeLabel()}</span>
+                <ChevronRight className="w-4 h-4 text-base-content/50" />
+              </div>
+            </div>
+
             <div 
               onClick={() => {
                 if (settings.passcodeEnabled) {
@@ -469,11 +505,11 @@ export default function More() {
                   openPasscodeModal();
                 }
               }}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Passcode</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#f05454]">
+                <span className="text-xs font-bold text-error">
                   {settings.passcodeEnabled ? 'ON' : 'OFF'}
                 </span>
                 <ToggleSwitch 
@@ -491,7 +527,7 @@ export default function More() {
 
             <div 
               onClick={() => updateSettingKey('alarmEnabled', !settings.alarmEnabled)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Alarm Setting</span>
               <ToggleSwitch checked={settings.alarmEnabled !== false} onChange={(val) => updateSettingKey('alarmEnabled', val)} />
@@ -499,7 +535,7 @@ export default function More() {
 
             <div 
               onClick={() => updateSettingKey('quickAddEnabled', !settings.quickAddEnabled)}
-              className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors cursor-pointer"
+              className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Quick add</span>
               <ToggleSwitch checked={!!settings.quickAddEnabled} onChange={(val) => updateSettingKey('quickAddEnabled', val)} />
@@ -509,14 +545,14 @@ export default function More() {
 
         {/* Admin Controls */}
         {user?.role === 'ADMIN' && (
-          <div className="bg-[#25252d] rounded-2xl p-4 shadow-lg border border-red-950 flex justify-between items-center">
+          <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-error/20 flex justify-between items-center">
             <div>
-              <h3 className="font-bold text-sm text-red-500 flex items-center gap-2">
+              <h3 className="font-bold text-sm text-error flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4" /> Admin Controls
               </h3>
-              <p className="text-[10px] text-gray-500">Manage locks & roles</p>
+              <p className="text-[10px] text-base-content/50">Manage locks & roles</p>
             </div>
-            <button onClick={() => navigate('/admin')} className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-none">
+            <button onClick={() => navigate('/admin')} className="btn btn-xs bg-error hover:bg-error/80 text-white border-none">
               Portal
             </button>
           </div>
@@ -526,8 +562,8 @@ export default function More() {
       {/* Dynamic Setting Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#25252d] border border-gray-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
-            <h3 className="text-md font-bold border-b border-gray-800 pb-2">{modalTitle}</h3>
+          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
+            <h3 className="text-md font-bold border-b border-base-content/10 pb-2">{modalTitle}</h3>
 
             {modalType === 'select' ? (
               <div className="max-h-60 overflow-y-auto space-y-1">
@@ -537,41 +573,41 @@ export default function More() {
                     onClick={() => setModalValue(opt)}
                     className={`w-full text-left py-2.5 px-3.5 rounded-xl transition-colors text-sm flex justify-between items-center ${
                       String(modalValue) === String(opt)
-                        ? 'bg-[#f05454]/10 text-[#f05454] border border-[#f05454]'
-                        : 'hover:bg-[#2e2e38] text-gray-300 border border-transparent'
+                        ? 'bg-error/10 text-error border border-error'
+                        : 'hover:bg-base-200 text-base-content/80 border border-transparent'
                     }`}
                   >
                     <span>{opt}</span>
-                    {String(modalValue) === String(opt) && <Check className="w-4 h-4 text-[#f05454]" />}
+                    {String(modalValue) === String(opt) && <Check className="w-4 h-4 text-error" />}
                   </button>
                 ))}
               </div>
             ) : (
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-xs text-gray-400">Limit Amount ({baseCurrency})</span>
+                  <span className="label-text text-xs text-base-content/50">Limit Amount ({baseCurrency})</span>
                 </label>
                 <input
                   type="number"
                   placeholder="0 (Disabled)"
                   value={modalValue}
                   onChange={(e) => setModalValue(e.target.value)}
-                  className="input input-bordered bg-[#1e1e24] border-gray-700 text-white w-full"
+                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content w-full"
                   autoFocus
                 />
               </div>
             )}
 
-            <div className="flex gap-2 justify-end pt-2 border-t border-gray-800">
+            <div className="flex gap-2 justify-end pt-2 border-t border-base-content/10">
               <button 
                 onClick={() => setModalOpen(false)}
-                className="btn btn-sm btn-ghost text-gray-400 hover:text-white"
+                className="btn btn-sm btn-ghost text-base-content/50 hover:text-base-content"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleModalSave}
-                className="btn btn-sm bg-[#f05454] hover:bg-[#d94444] text-white border-none"
+                className="btn btn-sm bg-error hover:bg-error/80 text-white border-none"
               >
                 Save
               </button>
@@ -583,11 +619,11 @@ export default function More() {
       {/* Passcode Configuration Modal */}
       {passcodeModalOpen && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#25252d] border border-gray-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
-            <h3 className="text-md font-bold border-b border-gray-800 pb-2">Set Lock Passcode</h3>
+          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
+            <h3 className="text-md font-bold border-b border-base-content/10 pb-2">Set Lock Passcode</h3>
 
             {passcodeError && (
-              <div className="alert alert-error text-xs p-2 text-white bg-red-600 border-none rounded-xl">
+              <div className="alert alert-error text-xs p-2 text-white bg-error border-none rounded-xl">
                 {passcodeError}
               </div>
             )}
@@ -595,7 +631,7 @@ export default function More() {
             <div className="space-y-3">
               <div className="form-control">
                 <label className="label py-1">
-                  <span className="label-text text-xs text-gray-400">New 4-Digit Passcode</span>
+                  <span className="label-text text-xs text-base-content/50">New 4-Digit Passcode</span>
                 </label>
                 <input
                   type="password"
@@ -603,14 +639,14 @@ export default function More() {
                   placeholder="••••"
                   value={newPasscode}
                   onChange={(e) => setNewPasscode(e.target.value.replace(/\D/g, ''))}
-                  className="input input-bordered bg-[#1e1e24] border-gray-700 text-white text-center text-lg tracking-widest w-full font-mono"
+                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content text-center text-lg tracking-widest w-full font-mono"
                   autoFocus
                 />
               </div>
 
               <div className="form-control">
                 <label className="label py-1">
-                  <span className="label-text text-xs text-gray-400">Confirm Passcode</span>
+                  <span className="label-text text-xs text-base-content/50">Confirm Passcode</span>
                 </label>
                 <input
                   type="password"
@@ -618,21 +654,21 @@ export default function More() {
                   placeholder="••••"
                   value={passcodeConfirm}
                   onChange={(e) => setPasscodeConfirm(e.target.value.replace(/\D/g, ''))}
-                  className="input input-bordered bg-[#1e1e24] border-gray-700 text-white text-center text-lg tracking-widest w-full font-mono"
+                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content text-center text-lg tracking-widest w-full font-mono"
                 />
               </div>
             </div>
 
-            <div className="flex gap-2 justify-end pt-2 border-t border-gray-800">
+            <div className="flex gap-2 justify-end pt-2 border-t border-base-content/10">
               <button 
                 onClick={() => setPasscodeModalOpen(false)}
-                className="btn btn-sm btn-ghost text-gray-400 hover:text-white"
+                className="btn btn-sm btn-ghost text-base-content/50 hover:text-base-content"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSavePasscode}
-                className="btn btn-sm bg-[#f05454] hover:bg-[#d94444] text-white border-none"
+                className="btn btn-sm bg-error hover:bg-error/80 text-white border-none"
               >
                 Save Passcode
               </button>

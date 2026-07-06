@@ -19,7 +19,6 @@ export default function IncomeCategoriesSetting() {
     try {
       const response = await axiosSecure.get('/api/categories');
       if (response.data.success) {
-        // Filter by INCOME type
         const incomeCats = response.data.data.filter((cat) => cat.type === 'INCOME');
         setCategories(incomeCats);
       }
@@ -109,22 +108,22 @@ export default function IncomeCategoriesSetting() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1e24] text-white font-sans pb-10">
+    <div className="min-h-screen bg-base-200 text-base-content font-sans pb-10">
       {/* Header */}
-      <div className="bg-[#15151a] p-4 flex items-center gap-4 border-b border-gray-800">
-        <button onClick={() => navigate('/more')} className="btn btn-ghost btn-circle text-gray-400 hover:text-white">
+      <div className="bg-base-300 p-4 flex items-center gap-4 border-b border-base-content/10">
+        <button onClick={() => navigate('/more')} className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
           <h1 className="text-lg font-bold">Income Category Setting</h1>
-          <p className="text-xs text-gray-500">Configure your income categories</p>
+          <p className="text-xs text-base-content/50">Configure your income categories</p>
         </div>
       </div>
 
       {/* Category List */}
       <div className="p-4 space-y-3 max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Income Categories</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-base-content/50">Income Categories</span>
           <button
             onClick={() => {
               setEditingId(null);
@@ -133,39 +132,39 @@ export default function IncomeCategoriesSetting() {
               setColor('#10b981');
               document.getElementById('category_modal').showModal();
             }}
-            className="btn btn-xs bg-[#f05454] hover:bg-[#d94444] border-none text-white gap-1"
+            className="btn btn-xs bg-error hover:bg-error/80 border-none text-white gap-1"
           >
             <Plus className="w-3.5 h-3.5" /> Add New
           </button>
         </div>
 
         {categories.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 text-sm">
+          <div className="text-center py-12 text-base-content/50 text-sm">
             No income categories defined.
           </div>
         ) : (
-          <div className="bg-[#25252d] rounded-2xl divide-y divide-gray-800 overflow-hidden shadow-lg border border-gray-800">
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
             {categories.map((cat) => (
-              <div key={cat._id} className="flex justify-between items-center p-4 hover:bg-[#2e2e38] transition-colors">
+              <div key={cat._id} className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl p-2 rounded-xl bg-[#1e1e24] border border-gray-800" style={{ borderColor: cat.color }}>
+                  <span className="text-2xl p-2 rounded-xl bg-base-200 border border-base-content/10" style={{ borderColor: cat.color }}>
                     {cat.emoji || '💰'}
                   </span>
                   <div>
                     <span className="font-semibold text-sm block">{cat.name}</span>
-                    <span className="text-[10px] text-gray-500" style={{ color: cat.color }}>{cat.color}</span>
+                    <span className="text-[10px] text-base-content/50" style={{ color: cat.color }}>{cat.color}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEditClick(cat)}
-                    className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-white"
+                    className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-base-content"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(cat._id)}
-                    className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-red-500"
+                    className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-error"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -178,8 +177,8 @@ export default function IncomeCategoriesSetting() {
 
       {/* Add/Edit Modal */}
       <dialog id="category_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-[#25252d] border border-gray-800 text-white">
-          <h3 className="font-bold text-lg mb-4 text-[#f05454]">
+        <div className="modal-box bg-base-300 border border-base-content/10 text-base-content">
+          <h3 className="font-bold text-lg mb-4 text-error">
             {editingId ? 'Edit Income Category' : 'Add Income Category'}
           </h3>
 
@@ -188,13 +187,13 @@ export default function IncomeCategoriesSetting() {
           <form onSubmit={handleSaveCategory} className="space-y-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-gray-400 font-semibold">Category Name</span>
+                <span className="label-text text-base-content/60 font-semibold">Category Name</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input input-bordered bg-[#1e1e24] border-gray-700 text-white"
+                className="input input-bordered bg-base-200 border-base-content/20 text-base-content"
                 placeholder="e.g. Freelancing, Investments"
                 required
               />
@@ -203,22 +202,22 @@ export default function IncomeCategoriesSetting() {
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-gray-400 font-semibold">Emoji / Icon</span>
+                  <span className="label-text text-base-content/60 font-semibold">Emoji / Icon</span>
                 </label>
                 <input
                   type="text"
                   value={emoji}
                   onChange={(e) => setEmoji(e.target.value)}
-                  className="input input-bordered bg-[#1e1e24] border-gray-700 text-white text-center text-xl"
+                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content text-center text-xl"
                   placeholder="💰"
                 />
               </div>
 
               <div className="form-control col-span-2">
                 <label className="label">
-                  <span className="label-text text-gray-400 font-semibold">Color Tag</span>
+                  <span className="label-text text-base-content/60 font-semibold">Color Tag</span>
                 </label>
-                <div className="grid grid-cols-6 gap-2 bg-[#1e1e24] p-3 rounded-xl border border-gray-700">
+                <div className="grid grid-cols-6 gap-2 bg-base-200 p-3 rounded-xl border border-base-content/20">
                   {[
                     '#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6',
                     '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#a8a29e'
@@ -245,14 +244,14 @@ export default function IncomeCategoriesSetting() {
               <button
                 type="button"
                 onClick={() => document.getElementById('category_modal').close()}
-                className="btn btn-ghost btn-sm text-gray-400 hover:text-white"
+                className="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="btn bg-[#f05454] hover:bg-[#d94444] border-none btn-sm text-white"
+                className="btn bg-error hover:bg-error/80 border-none btn-sm text-white"
               >
                 Save
               </button>
