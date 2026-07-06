@@ -23,6 +23,10 @@ app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Root Status check
+app.get('/', (req, res) => {
+  res.status(200).json({ success: true, message: 'Expense Manager API is running.' });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy.' });
 });
