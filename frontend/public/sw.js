@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexawealth-cache-v1';
+const CACHE_NAME = 'nexuswealth-cache-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

@@ -169,7 +169,7 @@ export default function Login() {
       <div className="card w-full max-w-sm bg-base-100 shadow-xl border border-base-200">
         <div className="card-body">
           <div className="text-center mb-6">
-            <h2 className="card-title justify-center text-3xl font-extrabold text-error">NexaWealth</h2>
+            <h2 className="card-title justify-center text-3xl font-extrabold text-error">NexusWealth</h2>
             <p className="text-xs text-base-content/60 mt-1 uppercase tracking-widest">Premium Wealth Manager</p>
           </div>
 

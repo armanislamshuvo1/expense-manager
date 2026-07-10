@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nexawealth-backend
+    name: nexuswealth-backend
     env: node
     plan: free
     rootDir: backend

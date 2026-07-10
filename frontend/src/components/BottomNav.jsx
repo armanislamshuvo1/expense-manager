@@ -17,7 +17,7 @@ export const BottomNav = () => {
     <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col shadow-2xl">
       {/* Global Compact Footer */}
       <div className="bg-base-300/95 backdrop-blur-md border-t border-base-content/5 py-1.5 px-4 text-center text-[10px] text-base-content/40 tracking-wider">
-        <span>© {new Date().getFullYear()} NexaWealth. Built by </span>
+        <span>© {new Date().getFullYear()} NexusWealth. Built by </span>
         <a 
           href="https://armanislam.me" 
           target="_blank" 
