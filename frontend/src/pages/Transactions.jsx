@@ -7,12 +7,10 @@ import { CategorySelector } from '../components/CategorySelector';
 import { AccountSelector } from '../components/AccountSelector';
 import { Calendar, Tag, CreditCard, FileText, Bookmark, CalendarRange, Plus } from 'lucide-react';
 import Swal from 'sweetalert2';
+import DateTimePickerModal from '../components/DateTimePickerModal';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function Transactions() {
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
-
   // Transaction form states
   const [type, setType] = useState('EXPENSE'); // INCOME, EXPENSE, TRANSFER
   const [amount, setAmount] = useState('');
@@ -28,6 +26,8 @@ export default function Transactions() {
   const [description, setDescription] = useState('');
   const [shouldConvert, setShouldConvert] = useState(true);
   const [exchangeRate, setExchangeRate] = useState('1.0');
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Modal display toggles
   const [showKeypad, setShowKeypad] = useState(false);
@@ -42,25 +42,64 @@ export default function Transactions() {
 
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchData = async () => {
-    try {
-      const [txRes, accRes, catRes] = await Promise.all([
-        axiosSecure.get('/api/transactions'),
-        axiosSecure.get('/api/accounts'),
-        axiosSecure.get('/api/categories'),
-      ]);
-      if (txRes.data.success) setTransactions(txRes.data.data);
-      if (accRes.data.success) setAccounts(accRes.data.data);
-      if (catRes.data.success) setCategories(catRes.data.data);
-    } catch (err) {
-      console.error(err);
+  // Queries using TanStack Query
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/transactions');
+      return res.data.success ? res.data.data : [];
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/accounts');
+      return res.data.success ? res.data.data : [];
+    }
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/categories');
+      return res.data.success ? res.data.data : [];
+    }
+  });
+
+  // Mutations using TanStack Query
+  const createMutation = useMutation({
+    mutationFn: (txData) => axiosSecure.post('/api/transactions', txData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, txData }) => axiosSecure.put(`/api/transactions/${id}`, txData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => axiosSecure.delete(`/api/transactions/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    }
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (catData) => axiosSecure.post('/api/categories', catData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    }
+  });
 
   const handleOpenAddModal = () => {
     setEditMode(false);
@@ -78,6 +117,7 @@ export default function Transactions() {
     setDescription('');
     setShouldConvert(true);
     setExchangeRate('1.0');
+    setDate(new Date());
     setError('');
     document.getElementById('add_transaction_modal').showModal();
   };
@@ -98,6 +138,7 @@ export default function Transactions() {
     setDescription(tx.description || '');
     setShouldConvert(tx.shouldConvert !== undefined ? tx.shouldConvert : true);
     setExchangeRate(tx.exchangeRate?.toString() || '1.0');
+    setDate(tx.date ? new Date(tx.date) : new Date());
     setError('');
     document.getElementById('add_transaction_modal').showModal();
   };
@@ -133,35 +174,29 @@ export default function Transactions() {
         shouldConvert,
         exchangeRate: Number(exchangeRate) || 1.0,
         note,
-        description
+        description,
+        date: date
       };
+
       if (editMode) {
-        const originalTx = transactions.find(t => t._id === editingId);
-        txData.date = originalTx ? originalTx.date : new Date();
+        await updateMutation.mutateAsync({ id: editingId, txData });
       } else {
-        txData.date = new Date();
+        await createMutation.mutateAsync(txData);
       }
 
-      const response = editMode
-        ? await axiosSecure.put(`/api/transactions/${editingId}`, txData)
-        : await axiosSecure.post('/api/transactions', txData);
-
-      if (response.data.success) {
-        setAmount('');
-        setAccountId('');
-        setAccountName('Select Account');
-        setToAccountId('');
-        setToAccountName('Select Account');
-        setCategoryId('');
-        setCategoryName('Select Category');
-        setNote('');
-        setDescription('');
-        setEditMode(false);
-        setEditingId('');
-        setShowKeypad(false);
-        fetchData();
-        document.getElementById('add_transaction_modal').close();
-      }
+      setAmount('');
+      setAccountId('');
+      setAccountName('Select Account');
+      setToAccountId('');
+      setToAccountName('Select Account');
+      setCategoryId('');
+      setCategoryName('Select Category');
+      setNote('');
+      setDescription('');
+      setEditMode(false);
+      setEditingId('');
+      setShowKeypad(false);
+      document.getElementById('add_transaction_modal').close();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save transaction.');
     } finally {
@@ -171,14 +206,11 @@ export default function Transactions() {
 
   const handleCreateCategory = async (catName, emoji) => {
     try {
-      const response = await axiosSecure.post('/api/categories', {
+      await createCategoryMutation.mutateAsync({
         name: catName,
         emoji: emoji || '',
         type: type === 'INCOME' ? 'INCOME' : 'EXPENSE'
       });
-      if (response.data.success) {
-        fetchData();
-      }
     } catch (err) {
       console.error(err);
     }
@@ -199,16 +231,39 @@ export default function Transactions() {
     });
     if (!result.isConfirmed) return false;
     try {
-      const response = await axiosSecure.delete(`/api/transactions/${id}`);
-      if (response.data.success) {
-        fetchData();
-        return true;
-      }
+      await deleteMutation.mutateAsync(id);
+      return true;
     } catch (err) {
       console.error(err);
     }
     return false;
   };
+
+  const formatDateKey = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
+  const groupedTransactions = transactions.reduce((groups, tx) => {
+    const dateKey = formatDateKey(tx.date);
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(tx);
+    return groups;
+  }, {});
+
+  const uniqueDates = [];
+  transactions.forEach(tx => {
+    const key = formatDateKey(tx.date);
+    if (!uniqueDates.includes(key)) {
+      uniqueDates.push(key);
+    }
+  });
 
   const totalIncome = transactions
     .filter(tx => tx.type === 'INCOME')
@@ -294,48 +349,67 @@ export default function Transactions() {
             No transactions logged this month.
           </div>
         ) : (
-          <div className="card bg-base-100 shadow-md">
-            <div className="card-body p-4">
-              <div className="divide-y divide-base-200">
-                {transactions.map((tx) => (
-                  <div key={tx._id} className="flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors">
-                    <div 
-                      onClick={() => handleOpenEditModal(tx)}
-                      className="flex-1 flex justify-between items-center cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">
-                          {tx.type === 'TRANSFER' ? '🔄' : (tx.categoryId?.emoji || '🏷️')}
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-sm">
-                            {tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized')}
-                          </span>
-                          <span className="text-[10px] opacity-50">
-                            {tx.type === 'TRANSFER' 
-                              ? `${tx.accountId?.name} ➔ ${tx.toAccountId?.name || '?'}` 
-                              : tx.accountId?.name
-                            }
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right mr-3">
-                        <div className={`font-bold text-sm ${
-                          tx.type === 'INCOME' ? 'text-primary' : tx.type === 'EXPENSE' ? 'text-error' : 'text-warning'
-                        }`}>
-                          {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '⇄'} {tx.currency} {tx.amount.toFixed(2)}
-                        </div>
-                        {tx.currency !== user?.baseCurrency && (
-                          <div className="text-[9px] opacity-50">
-                            Base: {user?.baseCurrency} {tx.convertedAmount.toFixed(2)}
-                          </div>
-                        )}
+          <div className="space-y-4">
+            {uniqueDates.map((dateKey) => {
+              const dayTransactions = groupedTransactions[dateKey];
+              return (
+                <div key={dateKey} className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[11px] font-bold tracking-wider text-base-content/50 uppercase">{dateKey}</span>
+                  </div>
+                  <div className="card bg-base-100 shadow-md">
+                    <div className="card-body p-2">
+                      <div className="divide-y divide-base-200">
+                        {dayTransactions.map((tx) => {
+                          const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                          return (
+                            <div key={tx._id} className="flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors">
+                              <div 
+                                onClick={() => handleOpenEditModal(tx)}
+                                className="flex-1 flex justify-between items-center cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">
+                                    {tx.type === 'TRANSFER' ? '🔄' : (tx.categoryId?.emoji || '🏷️')}
+                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-sm">
+                                      {tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized')}
+                                    </span>
+                                    <span className="text-[10px] opacity-50 flex items-center gap-1.5">
+                                      <span>{txTime}</span>
+                                      <span>•</span>
+                                      <span>
+                                        {tx.type === 'TRANSFER' 
+                                          ? `${tx.accountId?.name} ➔ ${tx.toAccountId?.name || '?'}` 
+                                          : tx.accountId?.name
+                                        }
+                                      </span>
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right mr-3">
+                                  <div className={`font-bold text-sm ${
+                                    tx.type === 'INCOME' ? 'text-primary' : tx.type === 'EXPENSE' ? 'text-error' : 'text-warning'
+                                  }`}>
+                                    {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '⇄'} {tx.currency} {tx.amount.toFixed(2)}
+                                  </div>
+                                  {tx.currency !== user?.baseCurrency && (
+                                    <div className="text-[9px] opacity-50">
+                                      Base: {user?.baseCurrency} {tx.convertedAmount.toFixed(2)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -469,6 +543,35 @@ export default function Transactions() {
               )}
             </div>
 
+            {/* Date & Time Picker */}
+            <div className="form-control">
+              <label className="label py-1">
+                <span className="label-text text-xs text-base-content/60 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" /> Date & Time
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDatePicker(true);
+                  setShowKeypad(false);
+                  setShowCategorySheet(false);
+                  setShowAccountSheet(false);
+                }}
+                className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full text-left flex items-center justify-between cursor-pointer font-semibold text-xs transition-all hover:bg-base-100"
+              >
+                <span>{(() => {
+                  const day = date.getDate();
+                  const month = date.getMonth() + 1;
+                  const year = String(date.getFullYear()).slice(-2);
+                  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                  const wday = weekdays[date.getDay()];
+                  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                  return `${month}/${day}/${year} (${wday}) ${timeStr}`;
+                })()}</span>
+              </button>
+            </div>
+
             {/* Optional Note */}
             <div className="form-control">
               <input
@@ -574,6 +677,12 @@ export default function Transactions() {
             </div>
           )}
         </div>
+        <DateTimePickerModal
+          isOpen={showDatePicker}
+          onClose={() => setShowDatePicker(false)}
+          value={date}
+          onChange={(val) => setDate(val)}
+        />
       </dialog>
 
       <BottomNav />

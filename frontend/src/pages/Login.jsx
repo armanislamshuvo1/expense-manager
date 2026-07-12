@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosPublic } from '../hooks/useApi';
-import { Lock, Mail, Key } from 'lucide-react';
+import { Lock, Mail, Key, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Forgot Password / Reset Password states
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -210,16 +214,23 @@ export default function Login() {
                   Forgot Password?
                 </button>
               </div>
-              <div className="input input-bordered flex items-center gap-2">
+              <div className="input input-bordered flex items-center gap-2 relative">
                 <Lock className="w-4 h-4 opacity-50" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="grow bg-transparent border-none outline-none focus:ring-0 text-base-content"
+                  className="grow bg-transparent border-none outline-none focus:ring-0 text-base-content pr-8"
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 hover:opacity-80 transition-opacity focus:outline-none flex items-center"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 opacity-50" /> : <Eye className="w-4 h-4 opacity-50" />}
+                </button>
               </div>
             </div>
 
@@ -315,16 +326,23 @@ export default function Login() {
                 <label className="label">
                   <span className="label-text font-semibold text-base-content">New Secure Password</span>
                 </label>
-                <div className="input input-bordered flex items-center gap-2">
+                <div className="input input-bordered flex items-center gap-2 relative">
                   <Key className="w-4 h-4 opacity-50" />
                   <input
-                    type="password"
+                    type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="grow bg-transparent border-none outline-none focus:ring-0 text-base-content"
+                    className="grow bg-transparent border-none outline-none focus:ring-0 text-base-content pr-8"
                     placeholder="••••••••"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 hover:opacity-80 transition-opacity focus:outline-none flex items-center"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4 opacity-50" /> : <Eye className="w-4 h-4 opacity-50" />}
+                  </button>
                 </div>
               </div>
 
