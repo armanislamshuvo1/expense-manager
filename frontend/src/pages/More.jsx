@@ -479,11 +479,11 @@ export default function More() {
             </button>
 
             <div 
-              onClick={() => updateSettingKey('showDescription', !settings.showDescription)}
+              onClick={() => updateSettingKey('showDescription', settings.showDescription === false)}
               className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Show description</span>
-              <ToggleSwitch checked={!!settings.showDescription} onChange={(val) => updateSettingKey('showDescription', val)} />
+              <ToggleSwitch checked={settings.showDescription !== false} onChange={(val) => updateSettingKey('showDescription', val)} />
             </div>
 
             <div 

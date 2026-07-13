@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
     swipeAction: { type: String, default: 'To Change Date' },
     colorSetting: { type: String, default: 'Set. A' },
     timeInputSetting: { type: String, default: 'Input Only, Desc.' },
-    showDescription: { type: Boolean, default: false },
+    showDescription: { type: Boolean, default: true },
     autocomplete: { type: Boolean, default: true },
     passcodeEnabled: { type: Boolean, default: false },
     passcodeValue: { type: String, default: '' },

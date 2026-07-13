@@ -809,10 +809,15 @@ export default function Transactions() {
 
             {/* Optional Note */}
             <div className="form-control">
+              <div className="flex justify-between items-center mb-1">
+                <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Note</label>
+                <span className="text-[10px] opacity-45 pr-1 font-semibold">{note.length}/20</span>
+              </div>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
+                maxLength={20}
                 placeholder="Add notes..."
                 className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
               />
@@ -832,6 +837,19 @@ export default function Transactions() {
                 </div>
               )}
             </div>
+
+            {/* Optional Description */}
+            {user?.settings?.showDescription !== false && (
+              <div className="form-control">
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add description..."
+                  className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
+                />
+              </div>
+            )}
           </div>
 
           {/* Action Row */}
