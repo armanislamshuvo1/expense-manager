@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
+import { useNavigate } from 'react-router-dom';
 import { 
   AreaChart, Area, 
   BarChart, Bar, 
@@ -24,6 +25,17 @@ export default function Dashboard() {
   const axiosSecure = useAxiosSecure();
   const { user, logout } = useAuth();
   const baseCurrency = user?.baseCurrency || 'MYR';
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.settings?.quickAddEnabled) {
+      const quickAddDone = sessionStorage.getItem('quickAddDone');
+      if (!quickAddDone) {
+        sessionStorage.setItem('quickAddDone', 'true');
+        navigate('/transactions', { state: { openAddModal: true } });
+      }
+    }
+  }, [user, navigate]);
 
   // Strict single-color accent (using Tailwind Red/Coral accent theme)
   const ACCENT_COLOR = '#ff5c5c'; 

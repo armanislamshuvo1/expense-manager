@@ -9,6 +9,9 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
   }, [value]);
 
   const handleKeyPress = (char) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
     if (char === 'C') {
       setExpression('');
       onChange('');
@@ -62,7 +65,10 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
           <button
             key={curr}
             type="button"
-            onClick={() => onCurrencyChange(curr)}
+            onClick={() => {
+              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+              onCurrencyChange(curr);
+            }}
             className={`btn btn-sm flex-1 font-semibold text-xs py-1 px-2 border rounded-xl transition-all ${
               activeCurrency === curr 
                 ? 'bg-error border-error text-white shadow-md shadow-error/20' 
@@ -108,7 +114,10 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
       {/* Done Button Row */}
       <button
         type="button"
-        onClick={onDone}
+        onClick={() => {
+          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+          onDone();
+        }}
         className="btn btn-error border-none btn-block mt-4 py-3 h-auto font-bold text-md flex gap-2 items-center justify-center rounded-xl shadow-lg shadow-error/20 transition-all active:scale-[0.98]"
       >
         <Check className="w-5 h-5" /> Done

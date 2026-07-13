@@ -12,6 +12,7 @@ export default function Accounts() {
   const [balance, setBalance] = useState('');
   const [currency, setCurrency] = useState('MYR');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
   
   const axiosSecure = useAxiosSecure();
@@ -25,6 +26,8 @@ export default function Accounts() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -126,37 +129,58 @@ export default function Accounts() {
 
       {/* Accounts List Grouped */}
       <div className="p-4 space-y-4">
-        {Object.keys(grouped).map((groupName) => {
-          if (grouped[groupName].length === 0) return null;
-          return (
-            <div key={groupName} className="card bg-base-100 shadow-md">
-              <div className="card-body p-4">
-                <h2 className="text-xs font-bold uppercase opacity-60 mb-2">{groupName}</h2>
-                <div className="divide-y divide-base-200">
-                  {grouped[groupName].map((acc) => (
-                    <div key={acc._id} className="flex justify-between items-center py-3">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">{acc.name}</span>
-                        <span className="text-[10px] opacity-50 uppercase">{acc.type}</span>
+        {fetching ? (
+          <>
+            {[1, 2].map((n) => (
+              <div key={n} className="card bg-base-100 shadow-md">
+                <div className="card-body p-4 space-y-3">
+                  <div className="h-4 w-20 skeleton-shimmer rounded"></div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center py-2">
+                      <div className="space-y-1">
+                        <div className="h-4 w-32 skeleton-shimmer rounded"></div>
+                        <div className="h-3 w-16 skeleton-shimmer rounded"></div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-sm">
-                          {acc.currency} {acc.balance.toFixed(2)}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteAccount(acc._id)}
-                          className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <div className="h-4 w-24 skeleton-shimmer rounded"></div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </>
+        ) : (
+          Object.keys(grouped).map((groupName) => {
+            if (grouped[groupName].length === 0) return null;
+            return (
+              <div key={groupName} className="card bg-base-100 shadow-md interactive-scale">
+                <div className="card-body p-4">
+                  <h2 className="text-xs font-bold uppercase opacity-60 mb-2">{groupName}</h2>
+                  <div className="divide-y divide-base-200">
+                    {grouped[groupName].map((acc) => (
+                      <div key={acc._id} className="flex justify-between items-center py-3">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-sm">{acc.name}</span>
+                          <span className="text-[10px] opacity-50 uppercase">{acc.type}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-sm">
+                            {acc.currency} {acc.balance.toFixed(2)}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteAccount(acc._id)}
+                            className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Floating Add Account Action Button */}

@@ -5,10 +5,11 @@ import { BottomNav } from '../components/BottomNav';
 import { CustomKeypad } from '../components/CustomKeypad';
 import { CategorySelector } from '../components/CategorySelector';
 import { AccountSelector } from '../components/AccountSelector';
-import { Calendar, Tag, CreditCard, FileText, Bookmark, CalendarRange, Plus, SlidersHorizontal, Search } from 'lucide-react';
+import { Calendar, Tag, CreditCard, FileText, Bookmark, CalendarRange, Plus, SlidersHorizontal, Search, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import DateTimePickerModal from '../components/DateTimePickerModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 
 export default function Transactions() {
   // Transaction form states
@@ -53,9 +54,26 @@ export default function Transactions() {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      handleOpenAddModal();
+      setShowKeypad(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const getNoteSuggestions = () => {
+    if (!categoryId) return [];
+    const suggestions = transactions
+      .filter((tx) => tx.categoryId?._id === categoryId && tx.note && tx.note.trim())
+      .map((tx) => tx.note.trim());
+    return [...new Set(suggestions)].slice(0, 5);
+  };
 
   // Queries using TanStack Query
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/transactions');
@@ -530,7 +548,29 @@ export default function Transactions() {
           </div>
         </div>
 
-        {transactions.length === 0 ? (
+        {isTransactionsLoading ? (
+          <div className="space-y-4">
+            {[1, 2].map((n) => (
+              <div key={n} className="space-y-2">
+                <div className="h-3 w-16 skeleton-shimmer rounded px-1"></div>
+                <div className="card bg-base-100 shadow-md">
+                  <div className="card-body p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 skeleton-shimmer rounded-full"></div>
+                        <div className="space-y-1.5">
+                          <div className="h-4 w-28 skeleton-shimmer rounded"></div>
+                          <div className="h-3 w-20 skeleton-shimmer rounded"></div>
+                        </div>
+                      </div>
+                      <div className="h-4 w-16 skeleton-shimmer rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
           <div className="text-center py-10 opacity-60 text-sm">
             No transactions logged this month.
           </div>
@@ -543,13 +583,13 @@ export default function Transactions() {
                   <div className="flex justify-between items-center px-1">
                     <span className="text-[11px] font-bold tracking-wider text-base-content/50 uppercase">{dateKey}</span>
                   </div>
-                  <div className="card bg-base-100 shadow-md">
+                  <div className="card bg-base-100 shadow-md interactive-scale">
                     <div className="card-body p-2">
                       <div className="divide-y divide-base-200">
                         {dayTransactions.map((tx) => {
                           const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                           return (
-                            <div key={tx._id} className="flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors">
+                            <div key={tx._id} className="group flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors">
                               <div 
                                 onClick={() => handleOpenEditModal(tx)}
                                 className="flex-1 flex justify-between items-center cursor-pointer"
@@ -587,6 +627,15 @@ export default function Transactions() {
                                   )}
                                 </div>
                               </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTransaction(tx._id);
+                                }}
+                                className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           );
                         })}
@@ -767,6 +816,21 @@ export default function Transactions() {
                 placeholder="Add notes..."
                 className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
               />
+              {user?.settings?.autocomplete !== false && getNoteSuggestions().length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <span className="text-[10px] text-base-content/40 self-center mr-1">Suggestions:</span>
+                  {getNoteSuggestions().map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => setNote(sug)}
+                      className="badge badge-error badge-outline text-[10px] py-1 px-2 hover:bg-error hover:text-white cursor-pointer transition-all duration-150 rounded-lg"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
