@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Check, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Check, Sun, Moon, Share2, Link, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ToggleSwitch = ({ checked, onChange }) => (
@@ -111,6 +111,41 @@ export default function More() {
       console.error("Failed to update setting:", err);
     }
   };
+
+  const handleToggleSharing = async () => {
+    setLoading(true);
+    setSuccess('');
+    try {
+      const response = await axiosSecure.post('/api/user/toggle-sharing');
+      if (response.data.success) {
+        setUser(response.data.data);
+        setSuccess(response.data.data.isSharingEnabled ? 'Sharing enabled successfully!' : 'Sharing disabled successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerateShareToken = async () => {
+    setLoading(true);
+    setSuccess('');
+    try {
+      const response = await axiosSecure.post('/api/user/regenerate-share-token');
+      if (response.data.success) {
+        setUser(response.data.data);
+        setSuccess('Share link regenerated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const openSelectModal = (key, title, options, currentVal) => {
     setModalKey(key);
@@ -522,6 +557,52 @@ export default function More() {
               <span>Quick add</span>
               <ToggleSwitch checked={!!settings.quickAddEnabled} onChange={(val) => updateSettingKey('quickAddEnabled', val)} />
             </div>
+          </div>
+        </div>
+
+        {/* Share Dashboard */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Share Stats & Logs</h2>
+          <div className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg space-y-3 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-base-content/80 flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-error" /> Enable Public Link
+              </span>
+              <ToggleSwitch checked={!!user?.isSharingEnabled} onChange={handleToggleSharing} />
+            </div>
+
+            {user?.isSharingEnabled && user?.shareToken && (
+              <div className="space-y-2 pt-2 border-t border-base-content/10">
+                <p className="text-xs text-base-content/50">
+                  Anyone with this link can view your cash flow, net worth, and transaction logs in read-only mode.
+                </p>
+                <div className="flex items-center gap-2 bg-base-200 border border-base-content/20 rounded-lg p-2 overflow-hidden">
+                  <Link className="w-4 h-4 text-base-content/40 flex-shrink-0" />
+                  <span className="text-xs text-base-content/70 select-all truncate flex-1 font-mono">
+                    {window.location.origin}/shared/{user.shareToken}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/shared/${user.shareToken}`);
+                      setSuccess('Copied share link to clipboard!');
+                      setTimeout(() => setSuccess(''), 3000);
+                    }}
+                    className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content cursor-pointer"
+                    title="Copy Link"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRegenerateShareToken}
+                  className="btn btn-xs btn-outline btn-error w-full mt-1 cursor-pointer"
+                >
+                  Regenerate Share Link
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

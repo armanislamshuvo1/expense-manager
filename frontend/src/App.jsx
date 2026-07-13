@@ -18,6 +18,7 @@ import AdminConsole from './pages/AdminConsole';
 import IncomeCategoriesSetting from './pages/IncomeCategoriesSetting';
 import ExpenseCategoriesSetting from './pages/ExpenseCategoriesSetting';
 import AccountsSetting from './pages/AccountsSetting';
+import SharedDashboard from './pages/SharedDashboard';
 
 function PwaSafeRoute({ element }) {
   if (isPwaMode()) {
@@ -37,6 +38,7 @@ function App() {
             <Route path="/how-it-works" element={<PwaSafeRoute element={<HowItWorks />} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/shared/:token" element={<SharedDashboard />} />
             
             <Route path="/dashboard" element={
               <ProtectedRoute>

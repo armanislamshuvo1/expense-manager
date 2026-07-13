@@ -49,3 +49,42 @@ exports.changePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+const crypto = require('crypto');
+
+exports.toggleSharing = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    user.isSharingEnabled = !user.isSharingEnabled;
+    if (user.isSharingEnabled && !user.shareToken) {
+      user.shareToken = crypto.randomBytes(16).toString('hex');
+    }
+
+    await user.save();
+    const { passwordHash, ...userData } = user.toObject();
+    res.status(200).json({ success: true, data: userData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.regenerateShareToken = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    user.shareToken = crypto.randomBytes(16).toString('hex');
+    await user.save();
+    const { passwordHash, ...userData } = user.toObject();
+    res.status(200).json({ success: true, data: userData });
+  } catch (error) {
+    next(error);
+  }
+};
+

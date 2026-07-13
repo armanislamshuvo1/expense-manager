@@ -61,7 +61,17 @@ const userSchema = new mongoose.Schema({
     passcodeValue: { type: String, default: '' },
     alarmEnabled: { type: Boolean, default: true },
     quickAddEnabled: { type: Boolean, default: false }
+  },
+  shareToken: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  isSharingEnabled: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
+

@@ -22,6 +22,8 @@ app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/share', require('./routes/shareRoutes'));
+
 
 // Root Status check
 app.get('/', (req, res) => {

@@ -5,7 +5,7 @@ import { BottomNav } from '../components/BottomNav';
 import { CustomKeypad } from '../components/CustomKeypad';
 import { CategorySelector } from '../components/CategorySelector';
 import { AccountSelector } from '../components/AccountSelector';
-import { Calendar, Tag, CreditCard, FileText, Bookmark, CalendarRange, Plus } from 'lucide-react';
+import { Calendar, Tag, CreditCard, FileText, Bookmark, CalendarRange, Plus, SlidersHorizontal, Search } from 'lucide-react';
 import Swal from 'sweetalert2';
 import DateTimePickerModal from '../components/DateTimePickerModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +39,16 @@ export default function Transactions() {
   // Edit Mode states
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState('');
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterAccount, setFilterAccount] = useState('ALL');
+  const [filterDateRange, setFilterDateRange] = useState('ALL');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -248,7 +258,57 @@ export default function Transactions() {
     return `${day}/${month}/${year}`;
   };
 
-  const groupedTransactions = transactions.reduce((groups, tx) => {
+  const filteredTransactions = transactions.filter(tx => {
+    // 1. Search notes/descriptions/category/account
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const noteMatch = tx.note && tx.note.toLowerCase().includes(q);
+      const descMatch = tx.description && tx.description.toLowerCase().includes(q);
+      const catMatch = tx.categoryId?.name && tx.categoryId.name.toLowerCase().includes(q);
+      const accMatch = tx.accountId?.name && tx.accountId.name.toLowerCase().includes(q);
+      if (!noteMatch && !descMatch && !catMatch && !accMatch) return false;
+    }
+
+    // 2. Type filter
+    if (filterType !== 'ALL' && tx.type !== filterType) return false;
+
+    // 3. Category filter
+    if (filterCategory !== 'ALL' && tx.categoryId?._id !== filterCategory) return false;
+
+    // 4. Account filter
+    if (filterAccount !== 'ALL' && tx.accountId?._id !== filterAccount && tx.toAccountId?._id !== filterAccount) return false;
+
+    // 5. Date Range filter
+    if (filterDateRange !== 'ALL') {
+      const txDate = new Date(tx.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (filterDateRange === 'TODAY') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (txDate < today || txDate >= tomorrow) return false;
+      } else if (filterDateRange === 'WEEK') {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        if (txDate < startOfWeek) return false;
+      } else if (filterDateRange === 'MONTH') {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        if (txDate < startOfMonth) return false;
+      } else if (filterDateRange === 'CUSTOM') {
+        if (customStartDate && txDate < new Date(customStartDate)) return false;
+        if (customEndDate) {
+          const endLimit = new Date(customEndDate);
+          endLimit.setHours(23, 59, 59, 999);
+          if (txDate > endLimit) return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  const groupedTransactions = filteredTransactions.reduce((groups, tx) => {
     const dateKey = formatDateKey(tx.date);
     if (!groups[dateKey]) {
       groups[dateKey] = [];
@@ -258,18 +318,18 @@ export default function Transactions() {
   }, {});
 
   const uniqueDates = [];
-  transactions.forEach(tx => {
+  filteredTransactions.forEach(tx => {
     const key = formatDateKey(tx.date);
     if (!uniqueDates.includes(key)) {
       uniqueDates.push(key);
     }
   });
 
-  const totalIncome = transactions
+  const totalIncome = filteredTransactions
     .filter(tx => tx.type === 'INCOME')
     .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = filteredTransactions
     .filter(tx => tx.type === 'EXPENSE')
     .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
 
@@ -312,13 +372,139 @@ export default function Transactions() {
         <h1 className="text-md font-bold">Jul 2026</h1>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn btn-xs ${showFilters ? 'btn-error text-white' : 'btn-outline'} flex items-center gap-1 cursor-pointer`}
+          >
+            <SlidersHorizontal className="w-3 h-3" /> Filters
+          </button>
+          <button
             onClick={handleInstallApp}
-            className="btn btn-xs btn-outline"
+            className="btn btn-xs btn-outline cursor-pointer"
           >
             Install App
           </button>
         </div>
       </div>
+
+      {/* Collapsible Filter Panel */}
+      {showFilters && (
+        <div className="p-4 bg-base-200/50 border-b border-base-content/10 space-y-3 animate-slideUp">
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-base-content/40 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search note, category, account..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input input-sm bg-base-100 border-base-content/15 pl-9 w-full text-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Filter by Type */}
+            <div className="flex flex-col gap-1">
+              <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Type</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="select select-sm select-bordered bg-base-100 border-base-content/15 text-xs w-full"
+              >
+                <option value="ALL">All Types</option>
+                <option value="INCOME">Income</option>
+                <option value="EXPENSE">Expense</option>
+                <option value="TRANSFER">Transfer</option>
+              </select>
+            </div>
+
+            {/* Filter by Date Range */}
+            <div className="flex flex-col gap-1">
+              <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Period</label>
+              <select
+                value={filterDateRange}
+                onChange={(e) => setFilterDateRange(e.target.value)}
+                className="select select-sm select-bordered bg-base-100 border-base-content/15 text-xs w-full"
+              >
+                <option value="ALL">All Time</option>
+                <option value="TODAY">Today</option>
+                <option value="WEEK">This Week</option>
+                <option value="MONTH">This Month</option>
+                <option value="CUSTOM">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Filter by Category */}
+            <div className="flex flex-col gap-1">
+              <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Category</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="select select-sm select-bordered bg-base-100 border-base-content/15 text-xs w-full"
+              >
+                <option value="ALL">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>{cat.emoji} {cat.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter by Account */}
+            <div className="flex flex-col gap-1">
+              <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Account</label>
+              <select
+                value={filterAccount}
+                onChange={(e) => setFilterAccount(e.target.value)}
+                className="select select-sm select-bordered bg-base-100 border-base-content/15 text-xs w-full"
+              >
+                <option value="ALL">All Accounts</option>
+                {accounts.map((acc) => (
+                  <option key={acc._id} value={acc._id}>{acc.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Custom Date Inputs */}
+          {filterDateRange === 'CUSTOM' && (
+            <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-base-content/5">
+              <div className="flex flex-col gap-1">
+                <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Start Date</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="input input-sm input-bordered bg-base-100 border-base-content/15 text-xs w-full"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">End Date</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="input input-sm input-bordered bg-base-100 border-base-content/15 text-xs w-full"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Clear Filters Button */}
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterType('ALL');
+              setFilterCategory('ALL');
+              setFilterAccount('ALL');
+              setFilterDateRange('ALL');
+              setCustomStartDate('');
+              setCustomEndDate('');
+            }}
+            className="btn btn-xs btn-ghost text-error/85 hover:text-error hover:bg-error/10 w-full rounded-lg mt-1 cursor-pointer"
+          >
+            Clear Active Filters
+          </button>
+        </div>
+      )}
 
       {/* Ledger list of Daily Transactions */}
       <div className="p-4 space-y-4">
