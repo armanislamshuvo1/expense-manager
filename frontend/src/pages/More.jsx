@@ -525,6 +525,22 @@ export default function More() {
           </div>
         </div>
 
+        {/* Guides & Support */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Guides & Help</h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+            <button
+              onClick={() => navigate('/how-it-works')}
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+            >
+              <span className="text-sm font-medium text-base-content/80 flex items-center gap-2">
+                How It Works Guide
+              </span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
+            </button>
+          </div>
+        </div>
+
         {/* Admin Controls */}
         {user?.role === 'ADMIN' && (
           <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-error/20 flex justify-between items-center">

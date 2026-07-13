@@ -36,6 +36,7 @@ export default function About() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
             <Link to="/" className="hover:text-[#66fcf1] transition-colors">Home</Link>
             <Link to="/about" className="text-[#66fcf1] hover:text-[#66fcf1]/80 transition-colors">About Us</Link>
+            <Link to="/how-it-works" className="hover:text-[#66fcf1] transition-colors">How It Works</Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -166,6 +167,11 @@ export default function About() {
               <TrendingUp className="w-4 h-4 text-[#0b0c10]" />
             </div>
             <span className="font-bold text-white text-xs">NexusWealth</span>
+          </div>
+          <div className="flex gap-6 text-xs text-[#c5c6c7]/60">
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+            <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
           </div>
           <p className="text-[10px] text-[#c5c6c7]/40">
             &copy; {new Date().getFullYear()} NexusWealth. All rights reserved.

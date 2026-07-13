@@ -74,6 +74,7 @@ export default function Landing() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
             <Link to="/" className={`transition-colors ${isDark ? 'text-[#66fcf1] hover:text-[#66fcf1]/80' : 'text-indigo-600 hover:text-indigo-700'}`}>Home</Link>
             <Link to="/about" className={`transition-colors ${isDark ? 'hover:text-[#66fcf1]' : 'text-slate-600 hover:text-indigo-600'}`}>About Us</Link>
+            <Link to="/how-it-works" className={`transition-colors ${isDark ? 'hover:text-[#66fcf1]' : 'text-slate-600 hover:text-indigo-600'}`}>How It Works</Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -337,6 +338,7 @@ export default function Landing() {
           <div className="flex gap-8 text-sm text-[#c5c6c7]/80">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+            <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
             <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
           </div>
 

@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { isPwaMode } from './utils/pwaUtils';
 import Landing from './pages/Landing';
 import About from './pages/About';
+import HowItWorks from './pages/HowItWorks';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -33,6 +34,7 @@ function App() {
           <Routes>
             <Route path="/" element={<PwaSafeRoute element={<Landing />} />} />
             <Route path="/about" element={<PwaSafeRoute element={<About />} />} />
+            <Route path="/how-it-works" element={<PwaSafeRoute element={<HowItWorks />} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
