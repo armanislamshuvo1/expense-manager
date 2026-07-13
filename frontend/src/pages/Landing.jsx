@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { 
   TrendingUp, 
   Shield, 
@@ -17,6 +18,7 @@ import {
 export default function Landing() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const isDark = theme === 'dark';
   
   // Interactive tool states
@@ -38,10 +40,10 @@ export default function Landing() {
         <Gift className="w-4 h-4 shrink-0 animate-bounce text-[#66fcf1]" />
         <span>Special Launch Offer: Premium features are 100% FREE for the first 100 users! (Only 14 slots left)</span>
         <button 
-          onClick={() => navigate('/register')}
+          onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
           className="ml-2 px-3 py-1 bg-white text-[#0b0c10] rounded-full text-[10px] sm:text-xs font-bold hover:bg-gray-100 transition-colors cursor-pointer"
         >
-          Claim Now
+          {isAuthenticated ? 'Dashboard' : 'Claim Now'}
         </button>
       </div>
 
@@ -89,22 +91,35 @@ export default function Landing() {
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button 
-              onClick={() => navigate('/login')} 
-              className={`px-5 py-2 text-sm font-semibold border rounded-full transition-all duration-300 cursor-pointer ${
-                isDark ? 'text-[#66fcf1] border-[#66fcf1]/30 hover:border-[#66fcf1] hover:bg-[#66fcf1]/5' : 'text-indigo-600 border-indigo-600/30 hover:border-indigo-600 hover:bg-indigo-50'
-              }`}
-            >
-              Sign In
-            </button>
-            <button 
-              onClick={() => navigate('/register')} 
-              className={`hidden sm:inline-flex px-5 py-2 text-sm font-semibold rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer ${
-                isDark ? 'text-[#0b0c10] bg-[#66fcf1] hover:bg-[#45a29e] shadow-[#66fcf1]/20' : 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10'
-              }`}
-            >
-              Get Started
-            </button>
+            {isAuthenticated ? (
+              <button 
+                onClick={() => navigate('/dashboard')} 
+                className={`px-5 py-2 text-sm font-semibold rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer ${
+                  isDark ? 'text-[#0b0c10] bg-[#66fcf1] hover:bg-[#45a29e] shadow-[#66fcf1]/20' : 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10'
+                }`}
+              >
+                Go to Dashboard
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={() => navigate('/login')} 
+                  className={`px-5 py-2 text-sm font-semibold border rounded-full transition-all duration-300 cursor-pointer ${
+                    isDark ? 'text-[#66fcf1] border-[#66fcf1]/30 hover:border-[#66fcf1] hover:bg-[#66fcf1]/5' : 'text-indigo-600 border-indigo-600/30 hover:border-indigo-600 hover:bg-indigo-50'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => navigate('/register')} 
+                  className={`hidden sm:inline-flex px-5 py-2 text-sm font-semibold rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer ${
+                    isDark ? 'text-[#0b0c10] bg-[#66fcf1] hover:bg-[#45a29e] shadow-[#66fcf1]/20' : 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10'
+                  }`}
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -130,12 +145,12 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
             <button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
               className={`px-8 py-4 font-bold rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 group cursor-pointer ${
                 isDark ? 'bg-gradient-to-r from-[#66fcf1] to-[#45a29e] text-[#0b0c10] shadow-[#66fcf1]/10 hover:shadow-[#66fcf1]/20 hover:scale-[1.02] active:scale-[0.98]' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/10 hover:shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98]'
               }`}
             >
-              Start Free Trial <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <Link 
               to="/about"
@@ -315,12 +330,12 @@ export default function Landing() {
             Join thousands of users who track, visualize, and optimize their budgets with NexusWealth. Completely free to start.
           </p>
           <button 
-            onClick={() => navigate('/register')}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
             className={`px-8 py-4 font-bold rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer ${
               isDark ? 'text-[#0b0c10] bg-[#66fcf1] hover:bg-[#45a29e] shadow-[#66fcf1]/20' : 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10'
             }`}
           >
-            Create Your Account
+            {isAuthenticated ? 'Go to Dashboard' : 'Create Your Account'}
           </button>
         </div>
       </section>
@@ -339,7 +354,9 @@ export default function Landing() {
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
             <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
+            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="hover:text-white transition-colors">
+              {isAuthenticated ? "Dashboard" : "Sign In"}
+            </Link>
           </div>
 
           <p className="text-xs text-[#c5c6c7]/40">

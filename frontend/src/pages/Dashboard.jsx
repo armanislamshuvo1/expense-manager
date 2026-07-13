@@ -3,6 +3,8 @@ import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
 import { useNavigate } from 'react-router-dom';
+import { isPwaMode } from '../utils/pwaUtils';
+import { useTheme } from '../context/ThemeContext';
 import { 
   AreaChart, Area, 
   BarChart, Bar, 
@@ -10,7 +12,8 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 import { 
-  TrendingUp, Calendar, CreditCard, ArrowUpRight, ArrowDownRight, Wallet, Activity
+  TrendingUp, Calendar, CreditCard, ArrowUpRight, ArrowDownRight, Wallet, Activity,
+  Sun, Moon
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -24,6 +27,8 @@ export default function Dashboard() {
   
   const axiosSecure = useAxiosSecure();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const baseCurrency = user?.baseCurrency || 'MYR';
   const navigate = useNavigate();
 
@@ -158,21 +163,29 @@ export default function Dashboard() {
   const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(0) : 0;
 
   return (
-    <div className="min-h-screen bg-[#070b13] text-[#e0e6f2] font-sans pb-24">
+    <div className={`min-h-screen font-sans pb-24 transition-colors duration-300 ${
+      isDark ? 'bg-[#070b13] text-[#e0e6f2]' : 'bg-[#f1f5f9] text-[#475569]'
+    }`}>
       {/* Container with Left Sidebar on Desktop */}
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 lg:p-6 gap-6">
         
         {/* SIDEBAR CONTAINER */}
         <aside className="w-full lg:w-72 flex flex-col gap-6">
           {/* Logo / Title Panel */}
-          <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-5 flex items-center justify-between shadow-xl">
-            <div className="flex items-center gap-3">
+          <div className={`backdrop-blur-xl border rounded-3xl p-5 flex items-center justify-between shadow-xl transition-all duration-300 ${
+            isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+          }`}>
+            <div 
+              onClick={() => !isPwaMode() && navigate('/')}
+              className={`flex items-center gap-3 ${!isPwaMode() ? 'cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all' : ''}`}
+              title={!isPwaMode() ? "Go to Landing Page" : undefined}
+            >
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-error to-error/60 flex items-center justify-center shadow-lg shadow-error/20">
                 <span className="text-xl font-black text-white">N</span>
               </div>
               <div>
-                <h1 className="font-extrabold text-sm tracking-wider text-white">NEXUS WEALTH</h1>
-                <p className="text-[10px] opacity-40 uppercase tracking-widest">Premium Tracker</p>
+                <h1 className={`font-extrabold text-sm tracking-wider transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>NEXUS WEALTH</h1>
+                <p className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>Premium Tracker</p>
               </div>
             </div>
             <button onClick={logout} className="btn btn-xs btn-ghost text-error/80 hover:text-error hover:bg-error/10 rounded-lg">
@@ -181,29 +194,35 @@ export default function Dashboard() {
           </div>
 
           {/* Connected Accounts Card */}
-          <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-5 shadow-xl">
+          <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl transition-all duration-300 ${
+            isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+          }`}>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-xs uppercase tracking-widest opacity-40 font-bold">Connected Accounts</h2>
-                <h3 className="text-xs font-semibold mt-0.5 text-white">Total Assets Summary</h3>
+                <h2 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Connected Accounts</h2>
+                <h3 className={`text-xs font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-700'}`}>Total Assets Summary</h3>
               </div>
               <Wallet className="w-4 h-4 text-error" />
             </div>
 
             <div className="space-y-3">
               {accounts.map(acc => (
-                <div key={acc._id} className="flex justify-between items-center p-3 rounded-2xl bg-[#1e293b]/40 border border-white/5 hover:bg-[#1e293b]/70 transition-all cursor-pointer">
+                <div key={acc._id} className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
+                  isDark 
+                    ? 'bg-[#1e293b]/40 border-white/5 hover:bg-[#1e293b]/70' 
+                    : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
+                }`}>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-error font-bold text-xs">
                       {acc.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white/90">{acc.name}</h4>
-                      <p className="text-[9px] opacity-40 uppercase">{acc.type}</p>
+                      <h4 className={`text-xs font-bold ${isDark ? 'text-white/90' : 'text-slate-800'}`}>{acc.name}</h4>
+                      <p className={`text-[9px] uppercase ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>{acc.type}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-black text-white">
+                    <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>
                       {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -219,10 +238,12 @@ export default function Dashboard() {
         {/* MAIN PANEL CONTENT */}
         <main className="flex-1 space-y-6">
           {/* Welcome & Net Worth Banner */}
-          <header className="bg-gradient-to-r from-[#0f172a]/80 to-[#1e293b]/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <header className={`backdrop-blur-xl border rounded-3xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-300 ${
+            isDark ? 'bg-gradient-to-r from-[#0f172a]/80 to-[#1e293b]/40 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+          }`}>
             <div>
-              <p className="text-xs opacity-50">Welcome back, {user?.name || 'User'}</p>
-              <h2 className="text-3xl font-black text-white tracking-tight mt-1">
+              <p className={`text-xs ${isDark ? 'opacity-50 text-white' : 'text-slate-400 font-medium'}`}>Welcome back, {user?.name || 'User'}</p>
+              <h2 className={`text-3xl font-black tracking-tight mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {baseCurrency} {(totalAssets).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </h2>
               <div className="flex items-center gap-1.5 text-xs text-error/80 mt-1.5 font-medium">
@@ -232,7 +253,9 @@ export default function Dashboard() {
             </div>
             
             {/* Period Filters */}
-            <div className="bg-[#1e293b]/50 border border-white/5 rounded-2xl p-1 flex gap-1 self-stretch md:self-auto justify-between">
+            <div className={`border rounded-2xl p-1 flex gap-1 self-stretch md:self-auto justify-between ${
+              isDark ? 'bg-[#1e293b]/50 border-white/5' : 'bg-slate-50 border-slate-200/80'
+            }`}>
               {['30 Days', '6 Months', '1 Year'].map((p) => (
                 <button
                   key={p}
@@ -240,7 +263,7 @@ export default function Dashboard() {
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     timeframe === p 
                       ? 'bg-error text-white shadow-md shadow-error/20' 
-                      : 'hover:bg-white/5 text-white/60 hover:text-white'
+                      : isDark ? 'hover:bg-white/5 text-white/60 hover:text-white' : 'hover:bg-slate-200/60 text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   {p}
@@ -252,10 +275,12 @@ export default function Dashboard() {
           {/* Grid of charts */}
           <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Net Worth Chart */}
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-5 shadow-xl flex flex-col h-80">
+            <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col h-80 transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+            }`}>
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-xs uppercase tracking-widest opacity-40 font-bold">Net Worth Tracker</h3>
+                  <h3 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Net Worth Tracker</h3>
                   <p className="text-[10px] text-error/90 mt-0.5 font-medium">Assets vs Estimated Liabilities ({timeframe})</p>
                 </div>
                 <Activity className="w-4 h-4 text-error" />
@@ -270,9 +295,9 @@ export default function Dashboard() {
                           <stop offset="95%" stopColor={ACCENT_COLOR} stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="name" stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', fontSize: '11px' }} />
+                      <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
+                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
                       <Area type="monotone" dataKey="Assets" stroke={ACCENT_COLOR} strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssets)" />
                       <Area type="monotone" dataKey="Liabilities" stroke={ACCENT_COLOR} strokeDasharray="4 4" strokeWidth={1.5} fillOpacity={0} />
                     </AreaChart>
@@ -284,10 +309,12 @@ export default function Dashboard() {
             </div>
 
             {/* Cash Flow Income vs Expense */}
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-5 shadow-xl flex flex-col h-80">
+            <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col h-80 transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+            }`}>
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-xs uppercase tracking-widest opacity-40 font-bold">Monthly Cash Flow</h3>
+                  <h3 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Monthly Cash Flow</h3>
                   <p className="text-[10px] text-error/90 mt-0.5 font-medium">Income vs Expenses ({timeframe})</p>
                 </div>
                 <Calendar className="w-4 h-4 text-error" />
@@ -296,9 +323,9 @@ export default function Dashboard() {
                 {cashFlowData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={cashFlowData}>
-                      <XAxis dataKey="name" stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', fontSize: '11px' }} />
+                      <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
+                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
                       {/* Income: Solid Accented color */}
                       <Bar dataKey="Income" fill={ACCENT_COLOR} fillOpacity={0.8} radius={[4, 4, 0, 0]} />
                       {/* Expenses: Lighter / transparent Accented color */}
@@ -312,10 +339,12 @@ export default function Dashboard() {
             </div>
 
             {/* Donut Chart Categories */}
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-5 shadow-xl flex flex-col h-80 xl:col-span-2">
+            <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col h-80 xl:col-span-2 transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+            }`}>
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h3 className="text-xs uppercase tracking-widest opacity-40 font-bold">Top Spending Categories</h3>
+                  <h3 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Top Spending Categories</h3>
                   <p className="text-[10px] text-error/90 mt-0.5 font-medium">Allocation of Expenses ({timeframe})</p>
                 </div>
               </div>
@@ -339,7 +368,7 @@ export default function Dashboard() {
                               <Cell key={`cell-${index}`} fill={ACCENT_SHADES[index % ACCENT_SHADES.length]} />
                             ))}
                           </Pie>
-                          <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', fontSize: '11px' }} />
+                          <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -353,9 +382,9 @@ export default function Dashboard() {
                               className="w-2.5 h-2.5 rounded-full" 
                               style={{ backgroundColor: ACCENT_SHADES[idx % ACCENT_SHADES.length] }} 
                             />
-                            <span className="font-semibold text-white/90">{item.name}</span>
+                            <span className={`font-semibold ${isDark ? 'text-white/90' : 'text-slate-700'}`}>{item.name}</span>
                           </div>
-                          <span className="font-mono text-white/60">
+                          <span className={`font-mono ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
                             {baseCurrency} {item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -371,27 +400,35 @@ export default function Dashboard() {
 
           {/* Quick Stats Summary Footer Row */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-4 shadow-md text-center">
-              <span className="text-[10px] opacity-40 uppercase tracking-wider block">Total Income</span>
-              <span className="text-sm font-black text-white mt-1 block">
+            <div className={`backdrop-blur-xl border rounded-3xl p-4 shadow-md text-center transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80'
+            }`}>
+              <span className={`text-[10px] uppercase tracking-wider block ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Total Income</span>
+              <span className={`text-sm font-black mt-1 block ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {baseCurrency} {totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-4 shadow-md text-center">
-              <span className="text-[10px] opacity-40 uppercase tracking-wider block">Total Outflow</span>
-              <span className="text-sm font-black text-white mt-1 block">
+            <div className={`backdrop-blur-xl border rounded-3xl p-4 shadow-md text-center transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80'
+            }`}>
+              <span className={`text-[10px] uppercase tracking-wider block ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Total Outflow</span>
+              <span className={`text-sm font-black mt-1 block ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {baseCurrency} {totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-4 shadow-md text-center">
-              <span className="text-[10px] opacity-40 uppercase tracking-wider block">Net Savings</span>
-              <span className={`text-sm font-black mt-1 block ${netSavings >= 0 ? 'text-error' : 'text-white/40'}`}>
+            <div className={`backdrop-blur-xl border rounded-3xl p-4 shadow-md text-center transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80'
+            }`}>
+              <span className={`text-[10px] uppercase tracking-wider block ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Net Savings</span>
+              <span className={`text-sm font-black mt-1 block ${netSavings >= 0 ? 'text-error' : isDark ? 'text-white/40' : 'text-slate-400'}`}>
                 {baseCurrency} {netSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
-            <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-4 shadow-md text-center">
-              <span className="text-[10px] opacity-40 uppercase tracking-wider block">Savings Rate</span>
-              <span className="text-sm font-black text-white mt-1 block">{savingsRate}%</span>
+            <div className={`backdrop-blur-xl border rounded-3xl p-4 shadow-md text-center transition-all duration-300 ${
+              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80'
+            }`}>
+              <span className={`text-[10px] uppercase tracking-wider block ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Savings Rate</span>
+              <span className={`text-sm font-black mt-1 block ${isDark ? 'text-white' : 'text-slate-800'}`}>{savingsRate}%</span>
             </div>
           </section>
         </main>
