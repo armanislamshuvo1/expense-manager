@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { isPwaMode } from './utils/pwaUtils';
+import Landing from './pages/Landing';
+import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -15,12 +18,21 @@ import IncomeCategoriesSetting from './pages/IncomeCategoriesSetting';
 import ExpenseCategoriesSetting from './pages/ExpenseCategoriesSetting';
 import AccountsSetting from './pages/AccountsSetting';
 
+function PwaSafeRoute({ element }) {
+  if (isPwaMode()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return element;
+}
+
 function App() {
   return (
     <Router>
       <AuthProvider>
         <ThemeProvider>
           <Routes>
+            <Route path="/" element={<PwaSafeRoute element={<Landing />} />} />
+            <Route path="/about" element={<PwaSafeRoute element={<About />} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
@@ -78,8 +90,8 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* Default fallback redirects to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Default fallback redirects to root landing page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ThemeProvider>
       </AuthProvider>
