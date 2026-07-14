@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +13,7 @@ export default function IncomeCategoriesSetting() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
 
@@ -50,6 +52,7 @@ export default function IncomeCategoriesSetting() {
           setName('');
           setEmoji('💰');
           setColor('#10b981');
+          queryClient.invalidateQueries({ queryKey: ['categories'] });
           fetchCategories();
           document.getElementById('category_modal').close();
         }
@@ -64,6 +67,7 @@ export default function IncomeCategoriesSetting() {
           setName('');
           setEmoji('💰');
           setColor('#10b981');
+          queryClient.invalidateQueries({ queryKey: ['categories'] });
           fetchCategories();
           document.getElementById('category_modal').close();
         }
@@ -100,6 +104,7 @@ export default function IncomeCategoriesSetting() {
     try {
       const response = await axiosSecure.delete(`/api/categories/${id}`);
       if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
         fetchCategories();
       }
     } catch (err) {

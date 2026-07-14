@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
@@ -17,8 +18,24 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
+  const axiosSecure = useAxiosSecure();
+
+  const { data: accounts = [], isLoading: isAccountsLoading } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/accounts');
+      return res.data.success ? res.data.data : [];
+    }
+  });
+
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/transactions');
+      return res.data.success ? res.data.data : [];
+    }
+  });
+
   const [totalAssets, setTotalAssets] = useState(0);
   const [netWorthData, setNetWorthData] = useState([]);
   const [cashFlowData, setCashFlowData] = useState([]);
@@ -30,7 +47,6 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
   const [selectedCategoryTransactions, setSelectedCategoryTransactions] = useState(null);
   
-  const axiosSecure = useAxiosSecure();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
@@ -59,32 +75,6 @@ export default function Dashboard() {
     '#3d52f2', // Indigo/Blue
     '#aa3df2', // Purple
   ];
-
-  const fetchStats = async () => {
-    try {
-      const [accRes, txRes] = await Promise.all([
-        axiosSecure.get('/api/accounts'),
-        axiosSecure.get('/api/transactions'),
-      ]);
-
-      if (accRes.data.success && txRes.data.success) {
-        const accountsList = accRes.data.data;
-        const transactionsList = txRes.data.data;
-
-        setAccounts(accountsList);
-        setTransactions(transactionsList);
-
-        // 1. Assets calculation
-        const assetsSum = accountsList.reduce((sum, acc) => sum + acc.balance, 0);
-        setTotalAssets(assetsSum);
-
-        // Generate metrics based on data and timeframe
-        processDashboardData(transactionsList, assetsSum, periodType, selectedDate, activeTab);
-      }
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-    }
-  };
 
   const processDashboardData = (txList, currentAssets, period, refDate, currentTab) => {
     let filteredTx = [...txList];
@@ -177,8 +167,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, [periodType, selectedDate, activeTab]);
+    const assetsSum = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+    setTotalAssets(assetsSum);
+    processDashboardData(transactions, assetsSum, periodType, selectedDate, activeTab);
+  }, [accounts, transactions, periodType, selectedDate, activeTab]);
 
   const formatPeriodLabel = () => {
     if (periodType === 'All') return 'All Time';

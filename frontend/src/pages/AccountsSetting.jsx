@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
@@ -15,6 +16,7 @@ export default function AccountsSetting() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +54,8 @@ export default function AccountsSetting() {
           setEditingId(null);
           setName('');
           setBalance('');
+          queryClient.invalidateQueries({ queryKey: ['accounts'] });
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
           fetchAccounts();
           document.getElementById('account_modal').close();
         }
@@ -65,6 +69,8 @@ export default function AccountsSetting() {
         if (response.data.success) {
           setName('');
           setBalance('');
+          queryClient.invalidateQueries({ queryKey: ['accounts'] });
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
           fetchAccounts();
           document.getElementById('account_modal').close();
         }
@@ -102,6 +108,8 @@ export default function AccountsSetting() {
     try {
       const response = await axiosSecure.delete(`/api/accounts/${id}`);
       if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
         fetchAccounts();
       }
     } catch (err) {

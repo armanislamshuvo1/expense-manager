@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
@@ -6,34 +7,24 @@ import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 export default function Accounts() {
-  const [accounts, setAccounts] = useState([]);
+  const queryClient = useQueryClient();
+  const axiosSecure = useAxiosSecure();
+  const { user } = useAuth();
+
   const [name, setName] = useState('');
   const [type, setType] = useState('CASH');
   const [balance, setBalance] = useState('');
   const [currency, setCurrency] = useState('MYR');
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
-  
-  const axiosSecure = useAxiosSecure();
-  const { user } = useAuth();
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await axiosSecure.get('/api/accounts');
-      if (response.data.success) {
-        setAccounts(response.data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFetching(false);
+  const { data: accounts = [], isLoading: fetching } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/accounts');
+      return res.data.success ? res.data.data : [];
     }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
+  });
 
   const handleAddAccount = async (e) => {
     e.preventDefault();
@@ -49,7 +40,8 @@ export default function Accounts() {
       if (response.data.success) {
         setName('');
         setBalance('');
-        fetchAccounts();
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
         document.getElementById('add_account_modal').close();
       }
     } catch (err) {
@@ -76,7 +68,8 @@ export default function Accounts() {
     try {
       const response = await axiosSecure.delete(`/api/accounts/${id}`);
       if (response.data.success) {
-        fetchAccounts();
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
       }
     } catch (err) {
       console.error(err);
