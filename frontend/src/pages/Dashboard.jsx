@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -6,131 +6,18 @@ import { BottomNav } from '../components/BottomNav';
 import { useNavigate } from 'react-router-dom';
 import { isPwaMode } from '../utils/pwaUtils';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  AreaChart, Area, 
-  BarChart, Bar, 
-  PieChart, Pie, Cell, 
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend 
-} from 'recharts';
-import { 
-  TrendingUp, Calendar, CreditCard, ArrowUpRight, ArrowDownRight, Wallet, Activity,
-  Sun, Moon
-} from 'lucide-react';
 
-const adjustY = (list) => {
-  if (list.length <= 1) return;
-  const minGap = 16; // vertical spacing gap in pixels
-  // Top to bottom
-  for (let i = 1; i < list.length; i++) {
-    if (list[i].y - list[i-1].y < minGap) {
-      list[i].y = list[i-1].y + minGap;
-    }
-  }
-  // Bottom to top
-  for (let i = list.length - 2; i >= 0; i--) {
-    if (list[i+1].y - list[i].y < minGap) {
-      list[i].y = list[i+1].y - minGap;
-    }
-  }
-};
-
-const LIGHT_TEXT_COLORS = [
-  '#e11d48', // Coral -> Darker Rose
-  '#ea580c', // Orange -> Darker Orange
-  '#b45309', // Yellow -> Amber/Gold
-  '#15803d', // Lime -> Dark Green
-  '#047857', // Teal -> Dark Emerald
-  '#0369a1', // Cyan -> Dark Sky Blue
-  '#1d4ed8', // Indigo -> Dark Blue
-  '#7e22ce', // Purple -> Dark Purple
-];
-
-const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) => {
-  const total = categoryData.reduce((sum, d) => sum + d.value, 0);
-  if (total === 0) return null;
-  
-  let currentAngle = 0;
-  
-  const items = categoryData.map((item, idx) => {
-    const percentage = item.value / total;
-    const angle = currentAngle + (percentage * 360) / 2;
-    currentAngle += percentage * 360;
-    
-    // Recharts uses 0 at 3 o'clock, counter-clockwise
-    const rad = angle * Math.PI / 180;
-    
-    // Position label outer point
-    const rLabel = 70 + 26;
-    const lx = cx + rLabel * Math.cos(rad);
-    const ly = cy - rLabel * Math.sin(rad);
-    
-    const xEdge = cx + 70 * Math.cos(rad);
-    const yEdge = cy - 70 * Math.sin(rad);
-    
-    return {
-      index: idx,
-      name: item.name,
-      emoji: item.emoji || '🏷️',
-      percent: percentage,
-      x: lx,
-      y: ly,
-      xEdge,
-      yEdge,
-      isLeft: lx < cx
-    };
-  });
-  
-  // Stagger left side
-  const leftItems = items.filter(item => item.isLeft).sort((a, b) => a.y - b.y);
-  adjustY(leftItems);
-  
-  // Stagger right side
-  const rightItems = items.filter(item => !item.isLeft).sort((a, b) => a.y - b.y);
-  adjustY(rightItems);
-  
-  // Find current item's adjusted position
-  const currentItem = [...leftItems, ...rightItems].find(item => item.index === index);
-  if (!currentItem) return null;
-  
-  const textAnchor = currentItem.isLeft ? 'end' : 'start';
-  
-  // Curved path: starting from edge of slice to the label position.
-  // Using quadratic Bezier curve to make it smooth, like in the screenshot
-  const pathData = `M ${currentItem.xEdge} ${currentItem.yEdge} Q ${(currentItem.xEdge + currentItem.x) / 2} ${currentItem.y} ${currentItem.x} ${currentItem.y}`;
-  
-  // Determine eye-catching text color
-  const textColor = isDark 
-    ? ACCENT_SHADES[index % ACCENT_SHADES.length]
-    : LIGHT_TEXT_COLORS[index % LIGHT_TEXT_COLORS.length];
-  
-  return (
-    <g>
-      <path
-        d={pathData}
-        fill="none"
-        stroke={ACCENT_SHADES[index % ACCENT_SHADES.length]}
-        strokeWidth="1"
-        opacity="0.8"
-      />
-      <text
-        x={currentItem.x + (currentItem.isLeft ? -4 : 4)}
-        y={currentItem.y + 3.5}
-        fill={textColor}
-        textAnchor={textAnchor}
-        fontSize="11"
-        fontWeight="800"
-        className="select-none"
-      >
-        {`${currentItem.emoji} ${currentItem.name} ${(currentItem.percent * 100).toFixed(1)}%`}
-      </text>
-    </g>
-  );
-};
+// Import modularized components
+import Sidebar from '../components/dashboard/Sidebar';
+import PeriodHeader from '../components/dashboard/PeriodHeader';
+import CategoryChart from '../components/dashboard/CategoryChart';
+import AdvancedCharts from '../components/dashboard/AdvancedCharts';
+import CategoryTransactionsModal from '../components/dashboard/CategoryTransactionsModal';
 
 export default function Dashboard() {
   const axiosSecure = useAxiosSecure();
 
-  const { data: accounts = [], isLoading: isAccountsLoading } = useQuery({
+  const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/accounts');
@@ -138,7 +25,7 @@ export default function Dashboard() {
     }
   });
 
-  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
+  const { data: transactions = [] } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/transactions');
@@ -146,7 +33,6 @@ export default function Dashboard() {
     }
   });
 
-  const [totalAssets, setTotalAssets] = useState(0);
   const [netWorthData, setNetWorthData] = useState([]);
   const [cashFlowData, setCashFlowData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
@@ -158,7 +44,7 @@ export default function Dashboard() {
   const [selectedCategoryTransactions, setSelectedCategoryTransactions] = useState(null);
   
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
   const baseCurrency = user?.baseCurrency || 'MYR';
   const navigate = useNavigate();
@@ -174,8 +60,7 @@ export default function Dashboard() {
   }, [user, navigate]);
 
   // Vibrant high contrast color palette
-  const ACCENT_COLOR = '#ff5c5c';
-  const ACCENT_SHADES = [
+  const ACCENT_SHADES = useMemo(() => [
     '#ff5c5c', // Coral/Red
     '#ffa043', // Orange
     '#ffe033', // Yellow
@@ -184,7 +69,7 @@ export default function Dashboard() {
     '#3dc2f2', // Cyan/Light Blue
     '#3d52f2', // Indigo/Blue
     '#aa3df2', // Purple
-  ];
+  ], []);
 
   const processDashboardData = (txList, currentAssets, period, refDate, currentTab) => {
     let filteredTx = [...txList];
@@ -278,7 +163,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const assetsSum = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-    setTotalAssets(assetsSum);
     processDashboardData(transactions, assetsSum, periodType, selectedDate, activeTab);
   }, [accounts, transactions, periodType, selectedDate, activeTab]);
 
@@ -347,9 +231,9 @@ export default function Dashboard() {
     });
   };
 
-  const totalForActiveTab = categoryData.reduce((sum, item) => sum + item.value, 0);
-  const totalIncome = cashFlowData.reduce((sum, item) => sum + item.Income, 0);
-  const totalExpense = cashFlowData.reduce((sum, item) => sum + item.Expenses, 0);
+  const totalForActiveTab = useMemo(() => categoryData.reduce((sum, item) => sum + item.value, 0), [categoryData]);
+  const totalIncome = useMemo(() => cashFlowData.reduce((sum, item) => sum + item.Income, 0), [cashFlowData]);
+  const totalExpense = useMemo(() => cashFlowData.reduce((sum, item) => sum + item.Expenses, 0), [cashFlowData]);
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
   const [showAdvancedCharts, setShowAdvancedCharts] = useState(false);
@@ -362,110 +246,25 @@ export default function Dashboard() {
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 lg:p-6 gap-6">
         
         {/* SIDEBAR CONTAINER */}
-        <aside className="w-full lg:w-72 flex flex-col gap-6">
-          {/* Logo / Title Panel */}
-          <div className={`backdrop-blur-xl border rounded-3xl p-5 flex items-center justify-between shadow-xl transition-all duration-300 ${
-            isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
-          }`}>
-            <div 
-              onClick={() => !isPwaMode() && navigate('/')}
-              className={`flex items-center gap-3 ${!isPwaMode() ? 'cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all' : ''}`}
-              title={!isPwaMode() ? "Go to Landing Page" : undefined}
-            >
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-error to-error/60 flex items-center justify-center shadow-lg shadow-error/20">
-                <span className="text-xl font-black text-white">N</span>
-              </div>
-              <div>
-                <h1 className={`font-extrabold text-sm tracking-wider transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>NEXUS WEALTH</h1>
-                <p className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>Premium Tracker</p>
-              </div>
-            </div>
-            <button onClick={logout} className="btn btn-xs btn-ghost text-error/80 hover:text-error hover:bg-error/10 rounded-lg">
-              Sign Out
-            </button>
-          </div>
-
-          {/* Connected Accounts Card */}
-          <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl transition-all duration-300 ${
-            isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
-          }`}>
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Connected Accounts</h2>
-                <h3 className={`text-xs font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-700'}`}>Total Assets Summary</h3>
-              </div>
-              <Wallet className="w-4 h-4 text-error" />
-            </div>
-
-            <div className="space-y-3">
-              {accounts.map(acc => (
-                <div key={acc._id} className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
-                  isDark 
-                    ? 'bg-[#1e293b]/40 border-white/5 hover:bg-[#1e293b]/70' 
-                    : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-error font-bold text-xs">
-                      {acc.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className={`text-xs font-bold ${isDark ? 'text-white/90' : 'text-slate-800'}`}>{acc.name}</h4>
-                      <p className={`text-[9px] uppercase ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>{acc.type}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                      {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {accounts.length === 0 && (
-                <div className="text-center py-4 text-xs opacity-40">No accounts connected.</div>
-              )}
-            </div>
-          </div>
-        </aside>
+        <Sidebar 
+          accounts={accounts} 
+          isDark={isDark} 
+          logout={logout} 
+          navigate={navigate} 
+          isPwaMode={isPwaMode} 
+        />
 
         {/* MAIN PANEL CONTENT */}
         <main className="flex-1 space-y-6">
           {/* Header Month / Time Selector Bar */}
-          <header className="flex justify-between items-center gap-4">
-            <div className={`border rounded-2xl p-1 flex gap-1 items-center ${
-              isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200 shadow-md'
-            }`}>
-              <button 
-                onClick={handlePrevPeriod}
-                disabled={periodType === 'All'}
-                className="btn btn-xs btn-circle btn-ghost text-base-content hover:bg-base-200/50"
-              >
-                &lt;
-              </button>
-              <span className={`text-xs font-bold px-2 text-center min-w-[90px] ${isDark ? 'text-white' : 'text-slate-700'}`}>
-                {formatPeriodLabel()}
-              </span>
-              <button 
-                onClick={handleNextPeriod}
-                disabled={periodType === 'All'}
-                className="btn btn-xs btn-circle btn-ghost text-base-content hover:bg-base-200/50"
-              >
-                &gt;
-              </button>
-            </div>
-            
-            <select
-              value={periodType}
-              onChange={(e) => setPeriodType(e.target.value)}
-              className={`select select-sm select-bordered rounded-2xl text-xs font-bold border-base-content/10 ${
-                isDark ? 'bg-[#0f172a]/60 text-white' : 'bg-white text-slate-700 shadow-sm'
-              }`}
-            >
-              <option value="Weekly">Weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Yearly">Yearly</option>
-              <option value="All">All Time</option>
-            </select>
-          </header>
+          <PeriodHeader 
+            periodType={periodType}
+            setPeriodType={setPeriodType}
+            formatPeriodLabel={formatPeriodLabel}
+            handlePrevPeriod={handlePrevPeriod}
+            handleNextPeriod={handleNextPeriod}
+            isDark={isDark}
+          />
 
           {/* Income vs Expenses Tab Indicator */}
           <div className="grid grid-cols-2 text-center relative border-b border-base-content/10">
@@ -497,156 +296,24 @@ export default function Dashboard() {
           </div>
 
           {/* Pie Chart categories list */}
-          <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col items-center justify-center transition-all duration-300 ${
-            isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
-          }`}>
-            <div className="w-full h-64 md:h-72">
-              {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={0}
-                      outerRadius={70}
-                      dataKey="value"
-                      labelLine={false}
-                      label={(props) => (
-                        <CustomPieLabel
-                          {...props}
-                          categoryData={categoryData}
-                          ACCENT_SHADES={ACCENT_SHADES}
-                          isDark={isDark}
-                        />
-                      )}
-                      onClick={(data) => handleCategoryClick(data.name)}
-                      className="cursor-pointer"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={ACCENT_SHADES[index % ACCENT_SHADES.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${baseCurrency} ${Number(value).toLocaleString()}`} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-xs opacity-40">No transactions recorded for this period.</div>
-              )}
-            </div>
-            
-            {/* Legend Breakdown List */}
-            <div className="w-full mt-6 space-y-2.5">
-              {categoryData.map((item, idx) => {
-                const percentage = totalForActiveTab > 0 ? ((item.value / totalForActiveTab) * 100).toFixed(0) : '0';
-                return (
-                  <div 
-                    key={item.name} 
-                    onClick={() => handleCategoryClick(item.name)}
-                    className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer active:scale-[0.99] ${
-                      isDark 
-                        ? 'bg-[#1e293b]/40 border-white/5 hover:bg-[#1e293b]/70' 
-                        : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span 
-                        className="px-2 py-1 text-[10px] font-extrabold rounded-lg text-white font-mono text-center min-w-[36px]" 
-                        style={{ backgroundColor: ACCENT_SHADES[idx % ACCENT_SHADES.length] }}
-                      >
-                        {percentage}%
-                      </span>
-                      <span className="text-xl">
-                        {item.emoji || '🏷️'}
-                      </span>
-                      <span className={`font-semibold text-sm ${isDark ? 'text-white/90' : 'text-slate-700'}`}>
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className={`font-mono text-sm font-bold ${isDark ? 'text-white/80' : 'text-slate-700'}`}>
-                      {baseCurrency} {item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <CategoryChart 
+            categoryData={categoryData}
+            totalForActiveTab={totalForActiveTab}
+            baseCurrency={baseCurrency}
+            isDark={isDark}
+            ACCENT_SHADES={ACCENT_SHADES}
+            handleCategoryClick={handleCategoryClick}
+          />
 
-          {/* Toggle for Net Worth & Cash Flow Charts */}
-          <div className="text-center">
-            <button 
-              onClick={() => setShowAdvancedCharts(!showAdvancedCharts)}
-              className="btn btn-xs btn-outline btn-ghost text-base-content/60 hover:text-base-content hover:bg-base-200"
-            >
-              {showAdvancedCharts ? 'Hide Advanced Metrics' : 'Show Advanced Metrics'}
-            </button>
-          </div>
-
-          {showAdvancedCharts && (
-            <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-fadeIn">
-              {/* Net Worth Chart */}
-              <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col h-80 transition-all duration-300 ${
-                isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
-              }`}>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Net Worth Tracker</h3>
-                    <p className="text-[10px] text-error/90 mt-0.5 font-medium">Assets vs Estimated Liabilities</p>
-                  </div>
-                  <Activity className="w-4 h-4 text-error" />
-                </div>
-                <div className="flex-1 min-h-0">
-                  {netWorthData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={netWorthData}>
-                        <defs>
-                          <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={ACCENT_COLOR} stopOpacity={0.25}/>
-                            <stop offset="95%" stopColor={ACCENT_COLOR} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                        <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
-                        <Area type="monotone" dataKey="Assets" stroke={ACCENT_COLOR} strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssets)" />
-                        <Area type="monotone" dataKey="Liabilities" stroke={ACCENT_COLOR} strokeDasharray="4 4" strokeWidth={1.5} fillOpacity={0} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-xs opacity-40">No statistics available.</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Cash Flow Income vs Expense */}
-              <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col h-80 transition-all duration-300 ${
-                isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
-              }`}>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Monthly Cash Flow</h3>
-                    <p className="text-[10px] text-error/90 mt-0.5 font-medium">Income vs Expenses</p>
-                  </div>
-                  <Calendar className="w-4 h-4 text-error" />
-                </div>
-                <div className="flex-1 min-h-0">
-                  {cashFlowData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={cashFlowData}>
-                        <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                        <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
-                        <Bar dataKey="Income" fill={ACCENT_COLOR} fillOpacity={0.8} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Expenses" fill={ACCENT_COLOR} fillOpacity={0.25} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-xs opacity-40">No statistics available.</div>
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
+          {/* Advanced Charts Section */}
+          <AdvancedCharts 
+            showAdvancedCharts={showAdvancedCharts}
+            setShowAdvancedCharts={setShowAdvancedCharts}
+            netWorthData={netWorthData}
+            cashFlowData={cashFlowData}
+            isDark={isDark}
+            baseCurrency={baseCurrency}
+          />
 
           {/* Quick Stats Summary Footer Row */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -685,49 +352,11 @@ export default function Dashboard() {
       </div>
 
       {/* Category Transactions List Modal */}
-      {selectedCategoryTransactions && (
-        <dialog
-          className="modal modal-open"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setSelectedCategoryTransactions(null);
-            }
-          }}
-        >
-          <div className="modal-box bg-base-300 border border-base-content/10 rounded-2xl max-w-lg p-5">
-            <h3 className="font-extrabold text-lg flex items-center justify-between pb-3 border-b border-base-content/10 mb-4">
-              <span>{selectedCategoryTransactions.categoryName} Transactions</span>
-              <button 
-                onClick={() => setSelectedCategoryTransactions(null)}
-                className="btn btn-sm btn-circle btn-ghost"
-              >
-                ✕
-              </button>
-            </h3>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-              {selectedCategoryTransactions.transactions.map((tx) => (
-                <div key={tx._id} className="p-3 bg-base-200 rounded-xl flex justify-between items-center border border-base-content/5">
-                  <div>
-                    <p className="font-bold text-sm text-base-content">{tx.note || 'No Note'}</p>
-                    <p className="text-[10px] opacity-50 font-medium mt-0.5">
-                      {new Date(tx.date).toLocaleDateString()} • {tx.accountId?.name}
-                    </p>
-                  </div>
-                  <span className={`font-mono text-sm font-black ${
-                    tx.type === 'INCOME' ? 'text-primary' : 'text-error'
-                  }`}>
-                    {tx.type === 'INCOME' ? '+' : '-'} {tx.currency} {tx.amount.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-              {selectedCategoryTransactions.transactions.length === 0 && (
-                <p className="text-center py-6 opacity-45 text-xs">No transactions in this period.</p>
-              )}
-            </div>
-          </div>
-        </dialog>
-      )}
+      <CategoryTransactionsModal 
+        selectedCategoryTransactions={selectedCategoryTransactions}
+        setSelectedCategoryTransactions={setSelectedCategoryTransactions}
+        baseCurrency={baseCurrency}
+      />
 
       <BottomNav />
     </div>
