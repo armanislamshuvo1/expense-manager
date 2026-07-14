@@ -129,7 +129,7 @@ export default function Transactions() {
     }
   });
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = (prefilledDate) => {
     setEditMode(false);
     setEditingId('');
     setType('EXPENSE');
@@ -145,7 +145,7 @@ export default function Transactions() {
     setDescription('');
     setShouldConvert(true);
     setExchangeRate('1.0');
-    setDate(new Date());
+    setDate(prefilledDate instanceof Date ? prefilledDate : new Date());
     setError('');
     document.getElementById('add_transaction_modal').showModal();
   };
@@ -276,6 +276,28 @@ export default function Transactions() {
     return `${day}/${month}/${year}`;
   };
 
+  const baseCurrency = user?.baseCurrency || 'MYR';
+
+  const getDayDate = (key) => {
+    const [day, month, year] = key.split('/');
+    return new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+
+  const formatDateHeader = (key) => {
+    const d = getDayDate(key);
+    const day = String(d.getDate()).padStart(2, '0');
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayOfWeek = weekdays[d.getDay()];
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return {
+      day,
+      dayOfWeek,
+      monthYear: `${month}.${year}`,
+      dateObj: d
+    };
+  };
+
   const filteredTransactions = transactions.filter(tx => {
     // 1. Search notes/descriptions/category/account
     if (searchQuery) {
@@ -387,7 +409,9 @@ export default function Transactions() {
     <div className="min-h-screen bg-base-300 pb-24 text-base-content font-sans">
       {/* Date / Month Header Row */}
       <div className="bg-base-200 p-4 flex justify-between items-center border-b border-base-200">
-        <h1 className="text-md font-bold">Jul 2026</h1>
+        <h1 className="text-md font-bold">
+          {new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+        </h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -578,11 +602,43 @@ export default function Transactions() {
           <div className="space-y-4">
             {uniqueDates.map((dateKey) => {
               const dayTransactions = groupedTransactions[dateKey];
+              const dayIncome = dayTransactions
+                .filter(tx => tx.type === 'INCOME')
+                .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
+              const dayExpense = dayTransactions
+                .filter(tx => tx.type === 'EXPENSE')
+                .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
+              const formattedHeader = formatDateHeader(dateKey);
+
               return (
                 <div key={dateKey} className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <span className="text-[11px] font-bold tracking-wider text-base-content/50 uppercase">{dateKey}</span>
+                  {/* Styled Clickable Date Bar */}
+                  <div 
+                    onClick={() => handleOpenAddModal(formattedHeader.dateObj)}
+                    className="flex justify-between items-center bg-base-200/90 hover:bg-base-200 cursor-pointer p-3 rounded-xl border border-base-content/10 transition-colors shadow-sm active:scale-[0.99]"
+                    title="Click to add transaction for this day"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black text-base-content leading-none">
+                        {formattedHeader.day}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wider ${
+                        formattedHeader.dayOfWeek === 'Sun' || formattedHeader.dayOfWeek === 'Sat'
+                          ? 'bg-error/10 text-error'
+                          : 'bg-base-300 text-base-content/60'
+                      }`}>
+                        {formattedHeader.dayOfWeek}
+                      </span>
+                      <span className="text-[10px] text-base-content/40 font-semibold font-mono">
+                        {formattedHeader.monthYear}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 text-xs font-bold font-mono">
+                      <span className="text-primary">{baseCurrency} {dayIncome.toFixed(2)}</span>
+                      <span className="text-error">{baseCurrency} {dayExpense.toFixed(2)}</span>
+                    </div>
                   </div>
+
                   <div className="card bg-base-100 shadow-md interactive-scale">
                     <div className="card-body p-2">
                       <div className="divide-y divide-base-200">
@@ -602,6 +658,11 @@ export default function Transactions() {
                                     <span className="font-semibold text-sm">
                                       {tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized')}
                                     </span>
+                                    {tx.note && (
+                                      <span className="text-xs text-base-content/80 font-medium py-0.5">
+                                        {tx.note}
+                                      </span>
+                                    )}
                                     <span className="text-[10px] opacity-50 flex items-center gap-1.5">
                                       <span>{txTime}</span>
                                       <span>•</span>
