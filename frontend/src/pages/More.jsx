@@ -3,8 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Check, Sun, Moon, Share2, Link, Copy } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Sun, Moon, Share2, Link, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// Import modularized components
+import PreferencesModal from '../components/more/PreferencesModal';
+import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -145,7 +149,6 @@ export default function More() {
       setLoading(false);
     }
   };
-
 
   const openSelectModal = (key, title, options, currentVal) => {
     setModalKey(key);
@@ -437,7 +440,7 @@ export default function More() {
             </button>
 
             <div 
-              onClick={() => updateSettingKey('carryOverEnabled', !settings.carryOverEnabled)}
+              onClick={() => updateSettingKey('carryOverEnabled', settings.carryOverEnabled !== false)}
               className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
             >
               <span>Carry-over Setting</span>
@@ -638,123 +641,30 @@ export default function More() {
         )}
       </div>
 
-      {/* Dynamic Setting Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
-            <h3 className="text-md font-bold border-b border-base-content/10 pb-2">{modalTitle}</h3>
+      {/* Preferences Selection & Number Input Dialog Component */}
+      <PreferencesModal
+        modalOpen={modalOpen}
+        setModalOpen={setModalOpen}
+        modalTitle={modalTitle}
+        modalType={modalType}
+        modalOptions={modalOptions}
+        modalValue={modalValue}
+        setModalValue={setModalValue}
+        onSave={handleModalSave}
+        baseCurrency={baseCurrency}
+      />
 
-            {modalType === 'select' ? (
-              <div className="max-h-60 overflow-y-auto space-y-1">
-                {modalOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setModalValue(opt)}
-                    className={`w-full text-left py-2.5 px-3.5 rounded-xl transition-colors text-sm flex justify-between items-center ${
-                      String(modalValue) === String(opt)
-                        ? 'bg-error/10 text-error border border-error'
-                        : 'hover:bg-base-200 text-base-content/80 border border-transparent'
-                    }`}
-                  >
-                    <span>{opt}</span>
-                    {String(modalValue) === String(opt) && <Check className="w-4 h-4 text-error" />}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-xs text-base-content/50">Limit Amount ({baseCurrency})</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="0 (Disabled)"
-                  value={modalValue}
-                  onChange={(e) => setModalValue(e.target.value)}
-                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content w-full"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            <div className="flex gap-2 justify-end pt-2 border-t border-base-content/10">
-              <button 
-                onClick={() => setModalOpen(false)}
-                className="btn btn-sm btn-ghost text-base-content/50 hover:text-base-content"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleModalSave}
-                className="btn btn-sm bg-error hover:bg-error/80 text-white border-none"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Passcode Configuration Modal */}
-      {passcodeModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
-            <h3 className="text-md font-bold border-b border-base-content/10 pb-2">Set Lock Passcode</h3>
-
-            {passcodeError && (
-              <div className="alert alert-error text-xs p-2 text-white bg-error border-none rounded-xl">
-                {passcodeError}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div className="form-control">
-                <label className="label py-1">
-                  <span className="label-text text-xs text-base-content/50">New 4-Digit Passcode</span>
-                </label>
-                <input
-                  type="password"
-                  maxLength={4}
-                  placeholder="••••"
-                  value={newPasscode}
-                  onChange={(e) => setNewPasscode(e.target.value.replace(/\D/g, ''))}
-                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content text-center text-lg tracking-widest w-full font-mono"
-                  autoFocus
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label py-1">
-                  <span className="label-text text-xs text-base-content/50">Confirm Passcode</span>
-                </label>
-                <input
-                  type="password"
-                  maxLength={4}
-                  placeholder="••••"
-                  value={passcodeConfirm}
-                  onChange={(e) => setPasscodeConfirm(e.target.value.replace(/\D/g, ''))}
-                  className="input input-bordered bg-base-200 border-base-content/20 text-base-content text-center text-lg tracking-widest w-full font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end pt-2 border-t border-base-content/10">
-              <button 
-                onClick={() => setPasscodeModalOpen(false)}
-                className="btn btn-sm btn-ghost text-base-content/50 hover:text-base-content"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSavePasscode}
-                className="btn btn-sm bg-error hover:bg-error/80 text-white border-none"
-              >
-                Save Passcode
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Security passcode Modal Component */}
+      <PasscodeSettingsModal
+        passcodeModalOpen={passcodeModalOpen}
+        setPasscodeModalOpen={setPasscodeModalOpen}
+        newPasscode={newPasscode}
+        setNewPasscode={setNewPasscode}
+        passcodeConfirm={passcodeConfirm}
+        setPasscodeConfirm={setPasscodeConfirm}
+        passcodeError={passcodeError}
+        handleSavePasscode={handleSavePasscode}
+      />
 
       <BottomNav />
     </div>
