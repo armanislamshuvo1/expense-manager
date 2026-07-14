@@ -59,9 +59,8 @@ export default function Transactions() {
   }, [location.state]);
 
   const getNoteSuggestions = () => {
-    if (!categoryId) return [];
     const suggestions = transactions
-      .filter((tx) => tx.categoryId?._id === categoryId && tx.note && tx.note.trim())
+      .filter((tx) => tx.note && tx.note.trim())
       .map((tx) => tx.note.trim());
     return [...new Set(suggestions)].slice(0, 5);
   };

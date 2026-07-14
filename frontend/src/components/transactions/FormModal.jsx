@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, Tag, Calendar, Plus } from 'lucide-react';
+import { CreditCard, Tag, Calendar, Plus, Calculator } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
 import { CategorySelector } from '../CategorySelector';
@@ -131,23 +131,62 @@ export default function FormModal({
           <div className="p-4 space-y-4">
             {error && <div className="alert alert-error text-xs p-2 text-white bg-error border-none rounded-xl">{error}</div>}
 
-            {/* Amount Field (Triggers Keypad Drawer) */}
+            {/* Amount Field (Custom numeric input with calculator popup option) */}
             <div className="form-control">
-              <label className="label">
+              <label className="label py-1">
                 <span className="label-text text-xs text-base-content/60">Amount</span>
               </label>
-              <div 
-                onClick={() => {
-                  setShowKeypad(true);
-                  setShowAccountSheet(false);
-                  setShowCategorySheet(false);
-                }}
-                className="input input-bordered bg-base-200 border-base-content/20 hover:border-base-content/40 flex items-center justify-between cursor-pointer h-12 rounded-xl transition-all"
-              >
-                <span className="font-bold text-lg text-error">
-                  {currency} {amount || '0.00'}
-                </span>
-                <span className="text-xs text-base-content/50">Tap to Input</span>
+              <div className="flex gap-2">
+                {/* Currency selector */}
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="select select-bordered bg-base-200 border-base-content/20 text-base-content text-xs font-bold rounded-xl h-12 w-[75px] px-2 text-center"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    paddingRight: '0.5rem',
+                    textAlignLast: 'center'
+                  }}
+                >
+                  {(() => {
+                    const currenciesToShow = (user?.preferredCurrencies && user.preferredCurrencies.length > 0)
+                      ? user.preferredCurrencies
+                      : ['MYR', 'USD'];
+                    const displayCurrencies = [...new Set([...currenciesToShow, currency])].filter(Boolean);
+                    return displayCurrencies.map((curr) => (
+                      <option key={curr} value={curr}>
+                        {curr === 'MYR' ? 'RM' : curr === 'USD' ? 'US$' : curr}
+                      </option>
+                    ));
+                  })()}
+                </select>
+
+                {/* Numeric input with inline Calculator shortcut */}
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="input input-bordered bg-base-200 border-base-content/20 hover:border-base-content/40 text-base-content font-bold text-lg h-12 w-full pr-12 rounded-xl transition-all"
+                  />
+                  <button
+                    type="button"
+                    title="Open Calculator"
+                    onClick={() => {
+                      setShowKeypad(true);
+                      setShowAccountSheet(false);
+                      setShowCategorySheet(false);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost btn-sm text-base-content/60 hover:text-error"
+                  >
+                    <Calculator className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -259,13 +298,13 @@ export default function FormModal({
             <div className="form-control">
               <div className="flex justify-between items-center mb-1">
                 <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Note</label>
-                <span className="text-[10px] opacity-45 pr-1 font-semibold">{note.length}/20</span>
+                <span className="text-[10px] opacity-45 pr-1 font-semibold">{note.length}/30</span>
               </div>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                maxLength={20}
+                maxLength={30}
                 placeholder="Add notes..."
                 className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
               />
