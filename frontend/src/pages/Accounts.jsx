@@ -185,7 +185,15 @@ export default function Accounts() {
       </button>
 
       {/* Add Account Modal */}
-      <dialog id="add_account_modal" className="modal modal-bottom sm:modal-middle">
+      <dialog
+        id="add_account_modal"
+        className="modal modal-bottom sm:modal-middle"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            e.currentTarget.close();
+          }
+        }}
+      >
         <div className="modal-box bg-base-100 border border-base-200">
           <h3 className="font-bold text-lg mb-4 text-error">Add New Account</h3>
           

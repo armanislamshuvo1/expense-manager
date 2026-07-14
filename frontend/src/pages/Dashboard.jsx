@@ -686,7 +686,14 @@ export default function Dashboard() {
 
       {/* Category Transactions List Modal */}
       {selectedCategoryTransactions && (
-        <dialog className="modal modal-open">
+        <dialog
+          className="modal modal-open"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedCategoryTransactions(null);
+            }
+          }}
+        >
           <div className="modal-box bg-base-300 border border-base-content/10 rounded-2xl max-w-lg p-5">
             <h3 className="font-extrabold text-lg flex items-center justify-between pb-3 border-b border-base-content/10 mb-4">
               <span>{selectedCategoryTransactions.categoryName} Transactions</span>

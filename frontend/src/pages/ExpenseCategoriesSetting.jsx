@@ -181,7 +181,15 @@ export default function ExpenseCategoriesSetting() {
       </div>
 
       {/* Add/Edit Modal */}
-      <dialog id="category_modal" className="modal modal-bottom sm:modal-middle">
+      <dialog
+        id="category_modal"
+        className="modal modal-bottom sm:modal-middle"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            e.currentTarget.close();
+          }
+        }}
+      >
         <div className="modal-box bg-base-300 border border-base-content/10 text-base-content">
           <h3 className="font-bold text-lg mb-4 text-error">
             {editingId ? 'Edit Expense Category' : 'Add Expense Category'}

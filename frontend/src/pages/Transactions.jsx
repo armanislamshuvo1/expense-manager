@@ -719,7 +719,15 @@ export default function Transactions() {
       </button>
 
       {/* Transaction Entry Modal (daisyUI Bottom Sheet layout) */}
-      <dialog id="add_transaction_modal" className="modal modal-bottom sm:modal-middle">
+      <dialog
+        id="add_transaction_modal"
+        className="modal modal-bottom sm:modal-middle"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            e.currentTarget.close();
+          }
+        }}
+      >
         <div className={`modal-box bg-base-300 border border-base-content/10 p-0 relative overflow-hidden text-base-content rounded-2xl shadow-2xl transition-all duration-300 ${
           showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[480px] sm:min-h-[540px]' : 'min-h-[350px]'
         }`}>

@@ -271,7 +271,15 @@ export default function Login() {
       </div>
 
       {/* Forgot Password Reset Modal */}
-      <dialog id="reset_password_modal" className="modal modal-bottom sm:modal-middle">
+      <dialog
+        id="reset_password_modal"
+        className="modal modal-bottom sm:modal-middle"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            e.currentTarget.close();
+          }
+        }}
+      >
         <div className="modal-box bg-base-100 border border-base-200 text-base-content">
           <h3 className="font-bold text-lg mb-4 text-error">Recover Account Credentials</h3>
 

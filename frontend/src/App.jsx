@@ -19,6 +19,7 @@ import IncomeCategoriesSetting from './pages/IncomeCategoriesSetting';
 import ExpenseCategoriesSetting from './pages/ExpenseCategoriesSetting';
 import AccountsSetting from './pages/AccountsSetting';
 import SharedDashboard from './pages/SharedDashboard';
+import ScrollToTop from './components/ScrollToTop';
 
 function PwaSafeRoute({ element }) {
   if (isPwaMode()) {
@@ -30,6 +31,7 @@ function PwaSafeRoute({ element }) {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <ThemeProvider>
           <Routes>
