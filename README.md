@@ -91,5 +91,46 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
 
 ---
 
+## ⚙️ Core Database Seeding & Workflows
+
+To facilitate smooth user onboarding, the backend includes an automated checking and seeding workflow in [seedExisting.js](file:///g:/project/expense%20manager/backend/seedExisting.js):
+- **Default Accounts:** Instantly provisions three customizable accounts (`Cash`, `Bank Account`, `Card`) for every registered user.
+- **Dynamic Categories:** Auto-generates structured categories populated with distinctive emojis (e.g., Salary 💰, Shopping 🛍️, Travel ✈️) for localized income and expense sorting.
+
+---
+
+## ⚡ API Endpoints Quick Reference
+
+| Endpoint Prefix | Description | Key Controller Operations |
+|---|---|---|
+| `/api/auth` | User Security | Local signup/login, Google authentication integration |
+| `/api/accounts` | Balance Ledger | Create, update, view, and delete payment channels |
+| `/api/categories` | Custom Budget Items | Manage custom income/expense category types, colors, and emojis |
+| `/api/transactions` | Core Bookkeeping | Advanced query filters, date-time selection, custom numeric inputs |
+| `/api/share` | Collaborative Views | Generates cryptographically secure links for sharing real-time dashboards |
+
+---
+
+## 🌐 Deployment Configuration
+
+### Backend Deployment (Render)
+NexusWealth is designed for zero-config deployment on Render. The configuration is specified in the root [render.yaml](file:///g:/project/expense%20manager/render.yaml):
+- **Service Name:** `nexuswealth-backend`
+- **Build Command:** `npm install`
+- **Start Command:** `node index.js`
+- **Environment Variables:** `PORT`, `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`
+
+### Frontend Deployment (Vercel)
+The React client is fully compatible with Vercel routing structures. The [vercel.json](file:///g:/project/expense%20manager/frontend/vercel.json) at the frontend root enables seamless SPA history routing:
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+---
+
 ## 🔒 License
 This project is licensed under the ISC License.
