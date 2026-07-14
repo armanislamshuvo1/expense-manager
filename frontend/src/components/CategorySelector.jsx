@@ -35,8 +35,8 @@ export const CategorySelector = ({ categories = [], selectedCategoryId, onSelect
                 onClick={() => onSelect(cat)}
                 className={`flex items-center gap-3 p-3 rounded-xl border text-sm font-semibold transition-all duration-200 ${
                   isSelected 
-                    ? 'bg-neutral border-error text-error scale-95 shadow-md' 
-                    : 'bg-base-200 border-base-300 hover:bg-neutral hover:border-base-content/20'
+                    ? 'bg-error/10 border-error text-error scale-95 shadow-sm' 
+                    : 'bg-base-200 border-base-300 hover:bg-base-300 hover:border-base-content/10'
                 }`}
               >
                 <span className="text-xl">{cat.emoji || '🏷️'}</span>

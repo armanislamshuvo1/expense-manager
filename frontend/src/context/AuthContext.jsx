@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { publicApi } from '../utils/apiConfig';
 import { Lock, Delete, LogOut } from 'lucide-react';
 
@@ -32,64 +33,66 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-base-300 z-[9999] flex flex-col items-center justify-between py-16 px-6 text-base-content font-sans">
-      <div className="flex flex-col items-center gap-4 mt-8">
-        <div className="bg-error/10 p-4 rounded-full border border-error/20 animate-pulse">
-          <Lock className="w-8 h-8 text-error" />
-        </div>
-        <div className="text-center">
-          <h2 className="text-xl font-bold tracking-wide">NexusWealth</h2>
-          <p className={`text-xs mt-2 transition-colors ${error ? 'text-error font-semibold' : 'text-base-content/60'}`}>
-            {error ? 'Incorrect passcode. Try again.' : 'Enter your 4-digit passcode to unlock'}
-          </p>
+    <div className="fixed inset-0 bg-base-300/80 backdrop-blur-md z-[9999] flex items-center justify-center sm:p-4 text-base-content font-sans">
+      <div className="w-full h-full sm:h-auto sm:max-w-md bg-base-300 sm:bg-base-200 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-base-content/10 flex flex-col items-center justify-between py-16 px-6 sm:py-12 sm:px-8 min-h-screen sm:min-h-[580px]">
+        <div className="flex flex-col items-center gap-4 mt-8">
+          <div className="bg-error/10 p-4 rounded-full border border-error/20 animate-pulse">
+            <Lock className="w-8 h-8 text-error" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-bold tracking-wide">NexusWealth</h2>
+            <p className={`text-xs mt-2 transition-colors ${error ? 'text-error font-semibold' : 'text-base-content/60'}`}>
+              {error ? 'Incorrect passcode. Try again.' : 'Enter your 4-digit passcode to unlock'}
+            </p>
+          </div>
+
+          {/* Passcode dots */}
+          <div className="flex gap-6 mt-8">
+            {[0, 1, 2, 3].map((index) => (
+              <div
+                key={index}
+                className={`w-3.5 h-3.5 rounded-full border transition-all duration-150 ${
+                  index < code.length
+                    ? 'bg-error border-error scale-110 shadow-[0_0_8px_rgba(240,84,84,0.6)]'
+                    : 'border-base-content/20 bg-transparent'
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Passcode dots */}
-        <div className="flex gap-6 mt-8">
-          {[0, 1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className={`w-3.5 h-3.5 rounded-full border transition-all duration-150 ${
-                index < code.length
-                  ? 'bg-error border-error scale-110 shadow-[0_0_8px_rgba(240,84,84,0.6)]'
-                  : 'border-base-content/20 bg-transparent'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Keypad */}
-      <div className="w-full max-w-xs space-y-4">
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+        {/* Keypad */}
+        <div className="w-full max-w-xs space-y-4 mb-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+              <button
+                key={num}
+                onClick={() => handleKeyPress(String(num))}
+                className="aspect-square rounded-full bg-base-200 hover:bg-base-100 active:bg-base-300 text-2xl font-bold transition-all active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
+              >
+                {num}
+              </button>
+            ))}
             <button
-              key={num}
-              onClick={() => handleKeyPress(String(num))}
-              className="aspect-square rounded-full bg-base-200 hover:bg-base-100 text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
+              onClick={onLogout}
+              className="aspect-square rounded-full hover:bg-error/10 text-error font-semibold text-xs transition-colors flex flex-col items-center justify-center gap-1 border border-transparent"
             >
-              {num}
+              <LogOut className="w-5 h-5" />
+              <span>Logout</span>
             </button>
-          ))}
-          <button
-            onClick={onLogout}
-            className="aspect-square rounded-full hover:bg-error/10 text-error font-semibold text-xs transition-colors flex flex-col items-center justify-center gap-1 border border-transparent"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
-          <button
-            onClick={() => handleKeyPress('0')}
-            className="aspect-square rounded-full bg-base-200 hover:bg-base-100 text-2xl font-bold transition-colors active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
-          >
-            0
-          </button>
-          <button
-            onClick={handleDelete}
-            className="aspect-square rounded-full hover:bg-base-100 text-base-content/60 active:scale-95 transition-colors flex items-center justify-center border border-transparent"
-          >
-            <Delete className="w-6 h-6" />
-          </button>
+            <button
+              onClick={() => handleKeyPress('0')}
+              className="aspect-square rounded-full bg-base-200 hover:bg-base-100 active:bg-base-300 text-2xl font-bold transition-all active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
+            >
+              0
+            </button>
+            <button
+              onClick={handleDelete}
+              className="aspect-square rounded-full hover:bg-base-100 active:bg-base-200 text-base-content/60 active:scale-95 transition-colors flex items-center justify-center border border-transparent"
+            >
+              <Delete className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -102,6 +105,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     const fetchMe = async () => {
@@ -146,10 +150,13 @@ export const AuthProvider = ({ children }) => {
     setIsUnlocked(false);
   };
 
+  const publicPaths = ['/', '/about', '/how-it-works', '/login', '/register'];
+  const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname.startsWith('/shared/');
+
   return (
     <AuthContext.Provider value={{ token, user, isAuthenticated, loading, login, logout, setUser, isUnlocked, setIsUnlocked }}>
       {children}
-      {isAuthenticated && user?.settings?.passcodeEnabled && !isUnlocked && (
+      {isAuthenticated && user?.settings?.passcodeEnabled && !isUnlocked && !isPublicRoute && (
         <PasscodeLockScreen
           passcodeValue={user.settings.passcodeValue}
           onUnlock={() => setIsUnlocked(true)}

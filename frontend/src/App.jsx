@@ -21,6 +21,8 @@ import AccountsSetting from './pages/AccountsSetting';
 import SharedDashboard from './pages/SharedDashboard';
 import ScrollToTop from './components/ScrollToTop';
 
+import PublicLayout from './components/PublicLayout';
+
 function PwaSafeRoute({ element }) {
   if (isPwaMode()) {
     return <Navigate to="/dashboard" replace />;
@@ -35,11 +37,15 @@ function App() {
       <AuthProvider>
         <ThemeProvider>
           <Routes>
-            <Route path="/" element={<PwaSafeRoute element={<Landing />} />} />
-            <Route path="/about" element={<PwaSafeRoute element={<About />} />} />
-            <Route path="/how-it-works" element={<PwaSafeRoute element={<HowItWorks />} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* Public Layout Routes (Includes Global Promo Banner & Navbar) */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<PwaSafeRoute element={<Landing />} />} />
+              <Route path="/about" element={<PwaSafeRoute element={<About />} />} />
+              <Route path="/how-it-works" element={<PwaSafeRoute element={<HowItWorks />} />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+            </Route>
+
             <Route path="/shared/:token" element={<SharedDashboard />} />
             
             <Route path="/dashboard" element={
