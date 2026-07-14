@@ -70,9 +70,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <div className={`min-h-screen font-sans overflow-x-hidden transition-colors duration-300 ${
-      isDark ? 'bg-[#0b0c10] text-[#c5c6c7] selection:bg-[#66fcf1] selection:text-[#0b0c10]' : 'bg-[#f8fafc] text-[#334155] selection:bg-indigo-500 selection:text-white'
-    }`}>
+    <>
       
       {/* Background Animated Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -83,60 +81,6 @@ export default function HowItWorks() {
           isDark ? 'bg-[#66fcf1]' : 'bg-teal-200/20'
         }`}></div>
       </div>
-
-      {/* Header */}
-      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${
-        isDark ? 'border-[#1f2833]/40 bg-[#0b0c10]/70' : 'border-gray-200 bg-white/80 shadow-sm'
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#66fcf1] to-[#45a29e] flex items-center justify-center shadow-lg shadow-[#66fcf1]/20 group-hover:rotate-12 transition-transform duration-300">
-              <TrendingUp className="w-6 h-6 text-[#0b0c10]" />
-            </div>
-            <span className={`text-xl font-bold tracking-wider transition-colors ${
-              isDark ? 'text-white hover:text-[#66fcf1]' : 'text-[#0f172a] hover:text-indigo-600'
-            }`}>
-              NexusWealth
-            </span>
-          </Link>
-          
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
-            <Link to="/" className={`transition-colors ${isDark ? 'text-[#c5c6c7] hover:text-[#66fcf1]' : 'text-slate-600 hover:text-indigo-600'}`}>Home</Link>
-            <Link to="/about" className={`transition-colors ${isDark ? 'text-[#c5c6c7] hover:text-[#66fcf1]' : 'text-slate-600 hover:text-indigo-600'}`}>About Us</Link>
-            <Link to="/how-it-works" className={`transition-colors ${isDark ? 'text-[#66fcf1] hover:text-[#66fcf1]/80' : 'text-indigo-600 hover:text-indigo-700'}`}>How It Works</Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            {/* Theme Toggle Button */}
-            <button 
-              onClick={toggleTheme}
-              className={`p-2 rounded-full border transition-all cursor-pointer ${
-                isDark ? 'border-[#1f2833] hover:bg-[#1f2833]/50 text-yellow-400' : 'border-gray-300 hover:bg-gray-100 text-indigo-600'
-              }`}
-              aria-label="Toggle Theme"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            <button 
-              onClick={() => navigate('/login')} 
-              className={`px-5 py-2 text-sm font-semibold border rounded-full transition-all duration-300 cursor-pointer ${
-                isDark ? 'text-[#66fcf1] border-[#66fcf1]/30 hover:border-[#66fcf1] hover:bg-[#66fcf1]/5' : 'text-indigo-600 border-indigo-600/30 hover:border-indigo-600 hover:bg-indigo-50'
-              }`}
-            >
-              Sign In
-            </button>
-            <button 
-              onClick={() => navigate('/register')} 
-              className={`hidden sm:inline-flex px-5 py-2 text-sm font-semibold rounded-full shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer ${
-                isDark ? 'text-[#0b0c10] bg-[#66fcf1] hover:bg-[#45a29e] shadow-[#66fcf1]/20 hover:shadow-[#45a29e]/30' : 'text-white bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10 hover:shadow-indigo-600/20'
-              }`}
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Feature Intro Section */}
       <section className="relative z-10 max-w-5xl mx-auto px-6 pt-16 pb-12 text-center">
@@ -309,27 +253,31 @@ export default function HowItWorks() {
       </section>
 
       {/* Footer */}
-      <footer className={`border-t bg-[#0b0c10] py-12 relative z-10 ${isDark ? 'border-[#1f2833]/40' : 'border-slate-200'}`}>
+      <footer className={`border-t py-12 relative z-10 ${
+        isDark ? 'border-[#1f2833]/40 bg-[#0b0c10]' : 'border-slate-200 bg-white'
+      }`}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#66fcf1] to-[#45a29e] flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-[#0b0c10]" />
             </div>
-            <span className="font-bold text-white text-sm">NexusWealth</span>
+            <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>NexusWealth</span>
           </div>
 
-          <div className="flex gap-8 text-sm text-[#c5c6c7]/80">
-            <Link to="/" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
-            <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
+          <div className={`flex gap-8 text-sm ${
+            isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'
+          }`}>
+            <Link to="/" className={`transition-colors ${isDark ? 'hover:text-white' : 'hover:text-indigo-600'}`}>Home</Link>
+            <Link to="/about" className={`transition-colors ${isDark ? 'hover:text-white' : 'hover:text-indigo-600'}`}>About Us</Link>
+            <Link to="/how-it-works" className={`transition-colors ${isDark ? 'hover:text-white' : 'hover:text-indigo-600'}`}>How It Works</Link>
+            <Link to="/login" className={`transition-colors ${isDark ? 'hover:text-white' : 'hover:text-indigo-600'}`}>Sign In</Link>
           </div>
 
-          <p className="text-xs text-[#c5c6c7]/40">
+          <p className={`text-xs ${isDark ? 'text-[#c5c6c7]/40' : 'text-slate-400'}`}>
             &copy; {new Date().getFullYear()} NexusWealth. All rights reserved.
           </p>
         </div>
       </footer>
-    </div>
+    </>
   );
 }

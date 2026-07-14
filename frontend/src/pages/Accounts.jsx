@@ -228,6 +228,7 @@ export default function Accounts() {
                 <option className="bg-base-100 text-base-content" value="SAVINGS">Savings Account</option>
                 <option className="bg-base-100 text-base-content" value="INVESTMENT">Investment Account</option>
                 <option className="bg-base-100 text-base-content" value="CRYPTO">Crypto Wallet</option>
+                <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
               </select>
             </div>
 
