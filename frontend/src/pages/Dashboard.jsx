@@ -246,6 +246,10 @@ export default function Dashboard() {
   };
 
   const totalForActiveTab = categoryData.reduce((sum, item) => sum + item.value, 0);
+  const totalIncome = cashFlowData.reduce((sum, item) => sum + item.Income, 0);
+  const totalExpense = cashFlowData.reduce((sum, item) => sum + item.Expenses, 0);
+  const netSavings = totalIncome - totalExpense;
+  const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
   const [showAdvancedCharts, setShowAdvancedCharts] = useState(false);
 
   return (
