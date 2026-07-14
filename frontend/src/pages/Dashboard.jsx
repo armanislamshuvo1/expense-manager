@@ -17,6 +17,116 @@ import {
   Sun, Moon
 } from 'lucide-react';
 
+const adjustY = (list) => {
+  if (list.length <= 1) return;
+  const minGap = 16; // vertical spacing gap in pixels
+  // Top to bottom
+  for (let i = 1; i < list.length; i++) {
+    if (list[i].y - list[i-1].y < minGap) {
+      list[i].y = list[i-1].y + minGap;
+    }
+  }
+  // Bottom to top
+  for (let i = list.length - 2; i >= 0; i--) {
+    if (list[i+1].y - list[i].y < minGap) {
+      list[i].y = list[i+1].y - minGap;
+    }
+  }
+};
+
+const LIGHT_TEXT_COLORS = [
+  '#e11d48', // Coral -> Darker Rose
+  '#ea580c', // Orange -> Darker Orange
+  '#b45309', // Yellow -> Amber/Gold
+  '#15803d', // Lime -> Dark Green
+  '#047857', // Teal -> Dark Emerald
+  '#0369a1', // Cyan -> Dark Sky Blue
+  '#1d4ed8', // Indigo -> Dark Blue
+  '#7e22ce', // Purple -> Dark Purple
+];
+
+const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) => {
+  const total = categoryData.reduce((sum, d) => sum + d.value, 0);
+  if (total === 0) return null;
+  
+  let currentAngle = 0;
+  
+  const items = categoryData.map((item, idx) => {
+    const percentage = item.value / total;
+    const angle = currentAngle + (percentage * 360) / 2;
+    currentAngle += percentage * 360;
+    
+    // Recharts uses 0 at 3 o'clock, counter-clockwise
+    const rad = angle * Math.PI / 180;
+    
+    // Position label outer point
+    const rLabel = 70 + 26;
+    const lx = cx + rLabel * Math.cos(rad);
+    const ly = cy - rLabel * Math.sin(rad);
+    
+    const xEdge = cx + 70 * Math.cos(rad);
+    const yEdge = cy - 70 * Math.sin(rad);
+    
+    return {
+      index: idx,
+      name: item.name,
+      emoji: item.emoji || '🏷️',
+      percent: percentage,
+      x: lx,
+      y: ly,
+      xEdge,
+      yEdge,
+      isLeft: lx < cx
+    };
+  });
+  
+  // Stagger left side
+  const leftItems = items.filter(item => item.isLeft).sort((a, b) => a.y - b.y);
+  adjustY(leftItems);
+  
+  // Stagger right side
+  const rightItems = items.filter(item => !item.isLeft).sort((a, b) => a.y - b.y);
+  adjustY(rightItems);
+  
+  // Find current item's adjusted position
+  const currentItem = [...leftItems, ...rightItems].find(item => item.index === index);
+  if (!currentItem) return null;
+  
+  const textAnchor = currentItem.isLeft ? 'end' : 'start';
+  
+  // Curved path: starting from edge of slice to the label position.
+  // Using quadratic Bezier curve to make it smooth, like in the screenshot
+  const pathData = `M ${currentItem.xEdge} ${currentItem.yEdge} Q ${(currentItem.xEdge + currentItem.x) / 2} ${currentItem.y} ${currentItem.x} ${currentItem.y}`;
+  
+  // Determine eye-catching text color
+  const textColor = isDark 
+    ? ACCENT_SHADES[index % ACCENT_SHADES.length]
+    : LIGHT_TEXT_COLORS[index % LIGHT_TEXT_COLORS.length];
+  
+  return (
+    <g>
+      <path
+        d={pathData}
+        fill="none"
+        stroke={ACCENT_SHADES[index % ACCENT_SHADES.length]}
+        strokeWidth="1"
+        opacity="0.8"
+      />
+      <text
+        x={currentItem.x + (currentItem.isLeft ? -4 : 4)}
+        y={currentItem.y + 3.5}
+        fill={textColor}
+        textAnchor={textAnchor}
+        fontSize="11"
+        fontWeight="800"
+        className="select-none"
+      >
+        {`${currentItem.emoji} ${currentItem.name} ${(currentItem.percent * 100).toFixed(1)}%`}
+      </text>
+    </g>
+  );
+};
+
 export default function Dashboard() {
   const axiosSecure = useAxiosSecure();
 
@@ -399,10 +509,17 @@ export default function Dashboard() {
                       cx="50%"
                       cy="50%"
                       innerRadius={0}
-                      outerRadius={85}
+                      outerRadius={70}
                       dataKey="value"
-                      labelLine={true}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                      labelLine={false}
+                      label={(props) => (
+                        <CustomPieLabel
+                          {...props}
+                          categoryData={categoryData}
+                          ACCENT_SHADES={ACCENT_SHADES}
+                          isDark={isDark}
+                        />
+                      )}
                       onClick={(data) => handleCategoryClick(data.name)}
                       className="cursor-pointer"
                     >

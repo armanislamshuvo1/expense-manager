@@ -721,7 +721,7 @@ export default function Transactions() {
       {/* Transaction Entry Modal (daisyUI Bottom Sheet layout) */}
       <dialog id="add_transaction_modal" className="modal modal-bottom sm:modal-middle">
         <div className={`modal-box bg-base-300 border border-base-content/10 p-0 relative overflow-hidden text-base-content rounded-2xl shadow-2xl transition-all duration-300 ${
-          showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[540px]' : 'min-h-[350px]'
+          showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[480px] sm:min-h-[540px]' : 'min-h-[350px]'
         }`}>
           {/* Top Tabs */}
           <div className="grid grid-cols-3 text-center border-b border-base-content/10">
