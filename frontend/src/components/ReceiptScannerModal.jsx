@@ -1,12 +1,28 @@
 import React, { useState } from 'react';
 import { useAxiosSecure } from '../hooks/useApi';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Camera, Upload, AlertCircle, Check, Loader2, X } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { queueOperation, generateUUID } from '../utils/syncManager';
 
 export default function ReceiptScannerModal({ isOpen, onClose, onTransactionApproved }) {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/accounts');
+      return res.data.success ? res.data.data : [];
+    }
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await axiosSecure.get('/api/categories');
+      return res.data.success ? res.data.data : [];
+    }
+  });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
@@ -116,6 +132,9 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     if (!parsedResult) return;
     setLoading(true);
     try {
+      const matchedAccount = accounts.find(a => a._id === parsedResult.accountId);
+      const matchedCategory = categories.find(c => c._id === parsedResult.categoryId);
+
       // Post transaction directly
       const payload = {
         accountId: parsedResult.accountId,
@@ -125,26 +144,27 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         currency: 'MYR', // Default base currency
         date: parsedResult.date,
         description: parsedResult.description || 'Receipt Scan',
-        note: parsedResult.note || ''
+        note: parsedResult.note || '',
+        accountName: matchedAccount ? matchedAccount.name : 'Account',
+        categoryName: matchedCategory ? matchedCategory.name : 'Category'
       };
 
-      const res = await axiosSecure.post('/api/transactions', payload);
-      if (res.data.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Transaction Logged',
-          text: 'Receipt transaction added successfully!',
-          timer: 1500,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10'
-          }
-        });
-        queryClient.invalidateQueries(['transactions']);
-        queryClient.invalidateQueries(['accounts']);
-        onClose();
-        if (onTransactionApproved) onTransactionApproved();
-      }
+      const clientTxId = generateUUID();
+      queueOperation('CREATE', clientTxId, null, payload);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Transaction Logged',
+        text: 'Receipt transaction added successfully!',
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10'
+        }
+      });
+      queryClient.invalidateQueries(['transactions']);
+      onClose();
+      if (onTransactionApproved) onTransactionApproved();
     } catch (err) {
       console.error(err);
       Swal.fire({

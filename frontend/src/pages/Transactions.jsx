@@ -6,6 +6,14 @@ import Swal from 'sweetalert2';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { 
+  getQueue, 
+  getMergedTransactions, 
+  setCache, 
+  queueOperation, 
+  subscribeToSync, 
+  generateUUID 
+} from '../utils/syncManager';
 
 // Import modularized components
 import Filters from '../components/transactions/Filters';
@@ -65,14 +73,35 @@ export default function Transactions() {
     return [...new Set(suggestions)].slice(0, 5);
   };
 
+  const [syncStatus, setSyncStatus] = useState('synced');
+  const [syncQueueLength, setSyncQueueLength] = useState(0);
+
+  useEffect(() => {
+    return subscribeToSync((status, qLength) => {
+      setSyncStatus(status);
+      setSyncQueueLength(qLength);
+      if (status === 'synced' && qLength === 0) {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      }
+    });
+  }, [queryClient]);
+
   // Queries using TanStack Query
-  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
+  const { data: rawTransactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/transactions');
+      if (res.data.success) {
+        setCache(res.data.data);
+      }
       return res.data.success ? res.data.data : [];
     }
   });
+
+  const transactions = useMemo(() => {
+    return getMergedTransactions();
+  }, [rawTransactions, syncQueueLength]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
@@ -90,28 +119,35 @@ export default function Transactions() {
     }
   });
 
-  // Mutations using TanStack Query
+  // Mutations using TanStack Query - Queue operations locally and immediately succeed
   const createMutation = useMutation({
-    mutationFn: (txData) => axiosSecure.post('/api/transactions', txData),
+    mutationFn: async (txData) => {
+      const clientTxId = generateUUID();
+      queueOperation('CREATE', clientTxId, null, txData);
+      return { success: true, data: { _id: clientTxId, ...txData } };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, txData }) => axiosSecure.put(`/api/transactions/${id}`, txData),
+    mutationFn: async ({ id, txData }) => {
+      queueOperation('UPDATE', null, id, txData);
+      return { success: true };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => axiosSecure.delete(`/api/transactions/${id}`),
+    mutationFn: async (id) => {
+      queueOperation('DELETE', null, id, null);
+      return { success: true };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
@@ -196,7 +232,10 @@ export default function Transactions() {
         exchangeRate: Number(exchangeRate) || 1.0,
         note,
         description,
-        date: date
+        date: date,
+        accountName,
+        toAccountName,
+        categoryName
       };
 
       if (editMode) {

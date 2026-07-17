@@ -7,6 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { isPwaMode } from '../utils/pwaUtils';
 import { useTheme } from '../context/ThemeContext';
 import { Sparkles, Camera, AlertTriangle, Loader2, Check, X, MessageSquare, Plus } from 'lucide-react';
+import { 
+  getQueue, 
+  getMergedTransactions, 
+  setCache, 
+  queueOperation, 
+  subscribeToSync, 
+  generateUUID 
+} from '../utils/syncManager';
 
 import Swal from 'sweetalert2';
 
@@ -21,6 +29,21 @@ import ReceiptScannerModal from '../components/ReceiptScannerModal';
 
 export default function Dashboard() {
   const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
+
+  const [syncStatus, setSyncStatus] = useState('synced');
+  const [syncQueueLength, setSyncQueueLength] = useState(0);
+
+  useEffect(() => {
+    return subscribeToSync((status, qLength) => {
+      setSyncStatus(status);
+      setSyncQueueLength(qLength);
+      if (status === 'synced' && qLength === 0) {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      }
+    });
+  }, [queryClient]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
@@ -30,18 +53,22 @@ export default function Dashboard() {
     }
   });
 
-  const { data: transactions = [] } = useQuery({
+  const { data: rawTransactions = [] } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/transactions');
+      if (res.data.success) {
+        setCache(res.data.data);
+      }
       return res.data.success ? res.data.data : [];
     }
   });
 
-  const queryClient = useQueryClient();
+  const transactions = useMemo(() => {
+    return getMergedTransactions();
+  }, [rawTransactions, syncQueueLength]);
 
   const { data: categories = [] } = useQuery({
-
     queryKey: ['categories'],
     queryFn: async () => {
       const res = await axiosSecure.get('/api/categories');
@@ -130,6 +157,9 @@ export default function Dashboard() {
     if (!reviewTransaction) return;
     setReviewLoading(true);
     try {
+      const matchedAccount = accounts.find(a => a._id === reviewTransaction.accountId);
+      const matchedCategory = categories.find(c => c._id === reviewTransaction.categoryId);
+
       const payload = {
         accountId: reviewTransaction.accountId,
         categoryId: reviewTransaction.categoryId,
@@ -138,23 +168,24 @@ export default function Dashboard() {
         currency: 'MYR',
         date: reviewTransaction.date,
         description: reviewTransaction.description || 'Quick AI Log',
-        note: reviewTransaction.note || ''
+        note: reviewTransaction.note || '',
+        accountName: matchedAccount ? matchedAccount.name : 'Account',
+        categoryName: matchedCategory ? matchedCategory.name : 'Category'
       };
 
-      const res = await axiosSecure.post('/api/transactions', payload);
-      if (res.data.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Logged!',
-          text: 'Transaction recorded successfully.',
-          timer: 1500,
-          showConfirmButton: false
-        });
-        setReviewTransaction(null);
-        queryClient.invalidateQueries(['transactions']);
-        queryClient.invalidateQueries(['accounts']);
-        refetchInsights();
-      }
+      const clientTxId = generateUUID();
+      queueOperation('CREATE', clientTxId, null, payload);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Logged!',
+        text: 'Transaction recorded successfully.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      setReviewTransaction(null);
+      queryClient.invalidateQueries(['transactions']);
+      refetchInsights();
     } catch (err) {
       console.error(err);
       Swal.fire({

@@ -1,7 +1,63 @@
-import React from 'react';
-import { Wallet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, Cloud, CloudOff, RefreshCw, CloudAlert } from 'lucide-react';
+import { subscribeToSync, triggerSync } from '../../utils/syncManager';
 
 export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode }) {
+  const [syncStatus, setSyncStatus] = useState('synced');
+  const [queueCount, setQueueCount] = useState(0);
+
+  useEffect(() => {
+    return subscribeToSync((status, qLength) => {
+      setSyncStatus(status);
+      setQueueCount(qLength);
+    });
+  }, []);
+
+  const renderSyncBadge = () => {
+    if (syncStatus === 'offline') {
+      return (
+        <div 
+          onClick={triggerSync}
+          className="flex items-center gap-1 text-[9px] font-bold text-orange-500 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-orange-500/20 transition-all select-none"
+          title={`${queueCount} pending changes cached offline`}
+        >
+          <CloudOff className="w-2.5 h-2.5" />
+          <span>Offline ({queueCount})</span>
+        </div>
+      );
+    }
+    if (syncStatus === 'syncing') {
+      return (
+        <div className="flex items-center gap-1 text-[9px] font-bold text-info bg-info/10 border border-info/20 px-2 py-0.5 rounded-full select-none">
+          <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+          <span>Syncing...</span>
+        </div>
+      );
+    }
+    if (syncStatus === 'error') {
+      return (
+        <div 
+          onClick={triggerSync}
+          className="flex items-center gap-1 text-[9px] font-bold text-error bg-error/10 border border-error/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-error/20 transition-all select-none"
+          title="Sync error, click to retry"
+        >
+          <CloudAlert className="w-2.5 h-2.5" />
+          <span>Error</span>
+        </div>
+      );
+    }
+    return (
+      <div 
+        onClick={triggerSync}
+        className="flex items-center gap-1 text-[9px] font-bold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-success/20 transition-all select-none"
+        title="All changes synced"
+      >
+        <Cloud className="w-2.5 h-2.5" />
+        <span>Synced</span>
+      </div>
+    );
+  };
+
   return (
     <aside className="w-full lg:w-72 flex flex-col gap-6">
       {/* Logo / Title Panel */}
@@ -17,11 +73,17 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
             <span className="text-xl font-black text-white">N</span>
           </div>
           <div>
-            <h1 className={`font-extrabold text-sm tracking-wider transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>NEXUS WEALTH</h1>
-            <p className={`text-[10px] uppercase tracking-widest transition-colors duration-300 ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>Premium Tracker</p>
+            <div className="flex items-center gap-2">
+              <h1 className={`font-extrabold text-sm tracking-wider transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>NEXUS WEALTH</h1>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`text-[9px] uppercase tracking-widest transition-colors duration-300 ${isDark ? 'opacity-40 text-white' : 'text-slate-400 font-semibold'}`}>Premium Tracker</span>
+              <span>•</span>
+              {renderSyncBadge()}
+            </div>
           </div>
         </div>
-        <button onClick={logout} className="btn btn-xs btn-ghost text-error/80 hover:text-error hover:bg-error/10 rounded-lg">
+        <button onClick={logout} className="btn btn-xs btn-ghost text-error/80 hover:text-error hover:bg-error/10 rounded-lg shrink-0">
           Sign Out
         </button>
       </div>
