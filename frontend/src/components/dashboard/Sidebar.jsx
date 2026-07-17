@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, Cloud, CloudOff, RefreshCw, CloudAlert } from 'lucide-react';
+import { Wallet, Cloud, CloudOff, RefreshCw, CloudAlert, ChevronDown } from 'lucide-react';
 import { subscribeToSync, triggerSync } from '../../utils/syncManager';
 
 export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode }) {
   const [syncStatus, setSyncStatus] = useState('synced');
   const [queueCount, setQueueCount] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
 
   useEffect(() => {
     return subscribeToSync((status, qLength) => {
@@ -92,15 +98,23 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
       <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl transition-all duration-300 ${
         isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
       }`}>
-        <div className="flex justify-between items-center mb-4">
+        <div 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="flex justify-between items-center cursor-pointer select-none"
+        >
           <div>
             <h2 className={`text-xs uppercase tracking-widest font-bold ${isDark ? 'opacity-40 text-white' : 'text-slate-400'}`}>Connected Accounts</h2>
             <h3 className={`text-xs font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-700'}`}>Total Assets Summary</h3>
           </div>
-          <Wallet className="w-4 h-4 text-error" />
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-error" />
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`} />
+          </div>
         </div>
 
-        <div className="space-y-3">
+        <div className={`space-y-3 overflow-hidden transition-all duration-300 ${
+          isCollapsed ? 'max-h-0 opacity-0 mt-0 pointer-events-none' : 'max-h-[1000px] opacity-100 mt-4'
+        }`}>
           {accounts.map(acc => (
             <div key={acc._id} className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
               isDark 
