@@ -11,6 +11,9 @@ connectDB().then(() => {
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxies (like Render)
+app.set('trust proxy', 1);
+
 const { apiLimiter } = require('./middleware/rateLimiter');
 
 // Middlewares
