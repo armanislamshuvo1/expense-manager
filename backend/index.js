@@ -11,9 +11,12 @@ connectDB().then(() => {
 
 const app = express();
 
+const { apiLimiter } = require('./middleware/rateLimiter');
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -24,6 +27,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/share', require('./routes/shareRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/sync', require('./routes/syncRoutes'));
 
 
 

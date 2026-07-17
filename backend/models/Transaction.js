@@ -71,6 +71,11 @@ const transactionSchema = new mongoose.Schema({
   reimbursable: { 
     type: Boolean, 
     default: false 
+  },
+  clientTxId: {
+    type: String,
+    sparse: true,
+    index: true
   }
 }, { timestamps: true });
 
