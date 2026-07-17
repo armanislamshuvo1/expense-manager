@@ -19,9 +19,11 @@ import IncomeCategoriesSetting from './pages/IncomeCategoriesSetting';
 import ExpenseCategoriesSetting from './pages/ExpenseCategoriesSetting';
 import AccountsSetting from './pages/AccountsSetting';
 import SharedDashboard from './pages/SharedDashboard';
+import WealthBuddy from './pages/WealthBuddy';
 import ScrollToTop from './components/ScrollToTop';
 
 import PublicLayout from './components/PublicLayout';
+
 
 function PwaSafeRoute({ element }) {
   if (isPwaMode()) {
@@ -71,6 +73,13 @@ function App() {
                 <More />
               </ProtectedRoute>
             } />
+
+            <Route path="/wealthbuddy" element={
+              <ProtectedRoute>
+                <WealthBuddy />
+              </ProtectedRoute>
+            } />
+
 
             <Route path="/profile" element={
               <ProtectedRoute>

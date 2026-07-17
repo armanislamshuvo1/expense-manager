@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Sun, Moon, Share2, Link, Copy } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Sun, Moon, Share2, Link, Copy, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Import modularized components
+
 import PreferencesModal from '../components/more/PreferencesModal';
 import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
 
@@ -318,10 +319,27 @@ export default function More() {
           </form>
         </div>
 
+        {/* AI Features List */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-error" /> AI Assistance
+          </h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+            <button
+              onClick={() => navigate('/wealthbuddy')}
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+            >
+              <span className="text-sm font-medium text-base-content/80">Chat with WealthBuddy AI</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
+            </button>
+          </div>
+        </div>
+
         {/* Category & Repeat Settings List */}
         <div>
           <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Category/Repeat</h2>
           <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+
             <button
               onClick={() => navigate('/settings/income-categories')}
               className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
