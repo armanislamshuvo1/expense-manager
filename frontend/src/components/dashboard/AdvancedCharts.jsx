@@ -1,6 +1,7 @@
 import React from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { Activity, Calendar } from 'lucide-react';
+import ErrorBoundary from '../ErrorBoundary';
 
 export default function AdvancedCharts({
   showAdvancedCharts,
@@ -39,21 +40,23 @@ export default function AdvancedCharts({
             </div>
             <div className="flex-1 min-h-0">
               {netWorthData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={netWorthData}>
-                    <defs>
-                      <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={ACCENT_COLOR} stopOpacity={0.25}/>
-                        <stop offset="95%" stopColor={ACCENT_COLOR} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                    <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                    <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
-                    <Area type="monotone" dataKey="Assets" stroke={ACCENT_COLOR} strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssets)" />
-                    <Area type="monotone" dataKey="Liabilities" stroke={ACCENT_COLOR} strokeDasharray="4 4" strokeWidth={1.5} fillOpacity={0} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <ErrorBoundary>
+                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                    <AreaChart data={netWorthData}>
+                      <defs>
+                        <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={ACCENT_COLOR} stopOpacity={0.25}/>
+                          <stop offset="95%" stopColor={ACCENT_COLOR} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
+                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
+                      <Area type="monotone" dataKey="Assets" stroke={ACCENT_COLOR} strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssets)" />
+                      <Area type="monotone" dataKey="Liabilities" stroke={ACCENT_COLOR} strokeDasharray="4 4" strokeWidth={1.5} fillOpacity={0} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ErrorBoundary>
               ) : (
                 <div className="flex items-center justify-center h-full text-xs opacity-40">No statistics available.</div>
               )}
@@ -73,15 +76,17 @@ export default function AdvancedCharts({
             </div>
             <div className="flex-1 min-h-0">
               {cashFlowData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={cashFlowData}>
-                    <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
-                    <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                    <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
-                    <Bar dataKey="Income" fill={ACCENT_COLOR} fillOpacity={0.8} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Expenses" fill={ACCENT_COLOR} fillOpacity={0.25} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ErrorBoundary>
+                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                    <BarChart data={cashFlowData}>
+                      <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
+                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
+                      <Bar dataKey="Income" fill={ACCENT_COLOR} fillOpacity={0.8} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Expenses" fill={ACCENT_COLOR} fillOpacity={0.25} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ErrorBoundary>
               ) : (
                 <div className="flex items-center justify-center h-full text-xs opacity-40">No statistics available.</div>
               )}

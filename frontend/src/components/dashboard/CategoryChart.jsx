@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import ErrorBoundary from '../ErrorBoundary';
 
 const adjustY = (list) => {
   if (list.length <= 1) return;
@@ -125,43 +126,44 @@ const CategoryChart = React.memo(({
     }`}>
       <div className="w-full h-64 md:h-72">
         {categoryData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                innerRadius={0}
-                outerRadius={70}
-                dataKey="value"
-                labelLine={false}
-                label={(props) => (
-                  <CustomPieLabel
-                    {...props}
-                    categoryData={categoryData}
-                    ACCENT_SHADES={ACCENT_SHADES}
-                    isDark={isDark}
-                  />
-                )}
-                onClick={(data) => handleCategoryClick(data.name)}
-                className="cursor-pointer"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={ACCENT_SHADES[index % ACCENT_SHADES.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value) => `${baseCurrency} ${Number(value).toLocaleString()}`} 
-                contentStyle={{ 
-                  backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, 
-                  borderRadius: '12px', 
-                  fontSize: '11px', 
-                  color: isDark ? '#ffffff' : '#1e293b' 
-                }} 
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <ErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%" debounce={1}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={0}
+                  outerRadius={70}
+                  dataKey="value"
+                  labelLine={false}
+                  label={
+                    <CustomPieLabel
+                      categoryData={categoryData}
+                      ACCENT_SHADES={ACCENT_SHADES}
+                      isDark={isDark}
+                    />
+                  }
+                  onClick={(data) => handleCategoryClick(data.name)}
+                  className="cursor-pointer"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={ACCENT_SHADES[index % ACCENT_SHADES.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => `${baseCurrency} ${Number(value).toLocaleString()}`} 
+                  contentStyle={{ 
+                    backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, 
+                    borderRadius: '12px', 
+                    fontSize: '11px', 
+                    color: isDark ? '#ffffff' : '#1e293b' 
+                  }} 
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </ErrorBoundary>
         ) : (
           <div className="flex items-center justify-center h-full text-xs opacity-40">No transactions recorded for this period.</div>
         )}

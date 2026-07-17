@@ -152,16 +152,18 @@ export const AuthProvider = ({ children }) => {
 
   const publicPaths = ['/', '/about', '/how-it-works', '/login', '/register'];
   const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname.startsWith('/shared/');
+  const isLocked = isAuthenticated && user?.settings?.passcodeEnabled && !isUnlocked && !isPublicRoute;
 
   return (
     <AuthContext.Provider value={{ token, user, isAuthenticated, loading, login, logout, setUser, isUnlocked, setIsUnlocked }}>
-      {children}
-      {isAuthenticated && user?.settings?.passcodeEnabled && !isUnlocked && !isPublicRoute && (
+      {isLocked ? (
         <PasscodeLockScreen
           passcodeValue={user.settings.passcodeValue}
           onUnlock={() => setIsUnlocked(true)}
           onLogout={logout}
         />
+      ) : (
+        children
       )}
     </AuthContext.Provider>
   );

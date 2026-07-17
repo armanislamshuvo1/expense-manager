@@ -341,7 +341,7 @@ export default function Dashboard() {
     setSelectedDate(nextDate);
   };
 
-  const handleCategoryClick = (categoryName) => {
+  const handleCategoryClick = React.useCallback((categoryName) => {
     const catTx = transactions.filter(tx => {
       const isCat = (tx.categoryId?.name || (tx.type === 'TRANSFER' ? 'Transfer' : 'Other')) === categoryName;
       const isType = tx.type === activeTab;
@@ -370,7 +370,7 @@ export default function Dashboard() {
       categoryName,
       transactions: catTx
     });
-  };
+  }, [transactions, activeTab, periodType, selectedDate]);
 
   const totalForActiveTab = useMemo(() => categoryData.reduce((sum, item) => sum + item.value, 0), [categoryData]);
   const totalIncome = useMemo(() => cashFlowData.reduce((sum, item) => sum + item.Income, 0), [cashFlowData]);
