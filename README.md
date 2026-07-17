@@ -5,12 +5,14 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
 ## ✨ Key Features
 
 - **📊 Comprehensive Financial Dashboard:** Dynamic charts powered by `recharts` visualizing monthly income vs. expenses, category breakdown, and total balance.
+- **🤖 AI-Powered Assistant (WealthBuddy):** Chat with an AI advisor powered by Google Gemini SDK for personalized budgeting tips, receipt scanning/OCR processing, and weekly digests.
+- **🔌 Local-First Caching & Offline Sync:** Keep working offline with a local-first queueing mechanism ([syncManager.js](file:///g:/project/expense%20manager/frontend/src/utils/syncManager.js)) that caches transaction operations and auto-syncs when online.
 - **🔗 Shared Dashboards (Multiplayer View):** Share dashboard configurations and views with partners or family members using secure shared links.
 - **🔢 Custom Virtual Keypad:** Optimized for mobile-first entries, ensuring super fast expense/income logging across all devices.
 - **🏦 Account & Category Management:** Create and manage multiple accounts (Cash, Bank, Credit Card, etc.) and customize income/expense categories.
 - **🔍 Advanced Transaction Ledger:** Sort, filter, and paginate transactions with inline state management.
+- **🛡️ Advanced Security & Rate Limiting:** IP-based rate limiting on sensitive auth, AI, and sync endpoints using `express-rate-limit` with proper proxy trust setup.
 - **🌗 Responsive Dark/Light Modes:** Fluid, accessible CSS variables providing full theme customizability (powered by Tailwind CSS v4, DaisyUI v5, and a custom React Theme Context).
-- **⚡ Performance-Driven Architecture:** Minimal refetching delays using state cache optimization through `@tanstack/react-query`.
 
 ---
 
@@ -26,9 +28,10 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
 
 ### Backend
 - **Node.js** & **Express**
-- **MongoDB** & **Mongoose** (Robust object data modeling)
+- **Google Gemini SDK** (AI capabilities & OCR receipt processing)
+- **Express Rate Limit** (API security and request throttling)
+- **MongoDB** & **Mongoose** (Robust object data modeling & multi-document transactions)
 - **JSON Web Tokens (JWT)** & **BcryptJS** (Secure local auth)
-- **Google Auth Library** (Third-party SSO integration support)
 
 ---
 
@@ -38,6 +41,7 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
 ├── backend/            # Express.js REST API
 │   ├── config/         # Database connections & environment setup
 │   ├── controllers/    # Request handlers & logic
+│   ├── middleware/     # Rate limiter, auth filters, and error handlers
 │   ├── models/         # Mongoose Schemas (User, Account, Category, Transaction)
 │   ├── routes/         # Express Router mapping (Auth, Accounts, Transactions, etc.)
 │   └── index.js        # Entry point
@@ -48,6 +52,7 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
     │   ├── context/    # Global State Contexts (AuthContext, ThemeContext)
     │   ├── hooks/      # Custom hooks for state queries
     │   ├── pages/      # Router Pages (Dashboard, SharedDashboard, Transactions, Profile)
+    │   ├── utils/      # SyncManager, apiConfig, and helpers
     │   └── main.jsx    # Entry point
 ```
 
@@ -58,6 +63,7 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
 ### Prerequisites
 - Node.js (v18+)
 - MongoDB Atlas URI or local MongoDB instance
+- Gemini API Key (for WealthBuddy AI functionality)
 
 ### Installation
 
@@ -74,6 +80,8 @@ NexusWealth is a highly polished, modern MERN-stack wealth and expense manager d
    # PORT=5000
    # MONGO_URI=mongodb://localhost:27017/nexuswealth
    # JWT_SECRET=your_jwt_secret_here
+   # GEMINI_API_KEY=your_gemini_api_key_here
+   # TRUST_PROXY=true (if deploying behind a proxy like Render)
    
    npm install
    npm run dev
@@ -105,20 +113,25 @@ To facilitate smooth user onboarding, the backend includes an automated checking
 |---|---|---|
 | `/api/auth` | User Security | Local signup/login, Google authentication integration |
 | `/api/accounts` | Balance Ledger | Create, update, view, and delete payment channels |
-| `/api/categories` | Custom Budget Items | Manage custom income/expense category types, colors, and emojis |
+| `/api/categories` | Custom Budget Items | Manage custom category types, colors, and emojis |
 | `/api/transactions` | Core Bookkeeping | Advanced query filters, date-time selection, custom numeric inputs |
+| `/api/sync` | Offline Bookkeeping Sync | Batch sync transaction queue with backend integrity protection |
+| `/api/ai` | AI Financial Advisors | OCR receipt scan, dynamic chat advisory, and weekly digests |
 | `/api/share` | Collaborative Views | Generates cryptographically secure links for sharing real-time dashboards |
 
 ---
 
-## 🌐 Deployment Configuration
+## 🌐 Deployment & CI/CD Configuration
+
+### Continuous Deployment (Render Auto-Deploy)
+The project includes a GitHub Actions CI/CD workflow at [.github/workflows/deploy.yml](file:///g:/project/expense%20manager/.github/workflows/deploy.yml) that triggers automated deployments to Render on every push to the `master` branch.
 
 ### Backend Deployment (Render)
 NexusWealth is designed for zero-config deployment on Render. The configuration is specified in the root [render.yaml](file:///g:/project/expense%20manager/render.yaml):
 - **Service Name:** `nexuswealth-backend`
 - **Build Command:** `npm install`
 - **Start Command:** `node index.js`
-- **Environment Variables:** `PORT`, `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`
+- **Environment Variables:** `PORT`, `MONGO_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `NODE_ENV=production`
 
 ### Frontend Deployment (Vercel)
 The React client is fully compatible with Vercel routing structures. The [vercel.json](file:///g:/project/expense%20manager/frontend/vercel.json) at the frontend root enables seamless SPA history routing:
