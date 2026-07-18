@@ -34,6 +34,7 @@ app.use('/api/sync', require('./routes/syncRoutes'));
 
 
 
+// Test trigger for Render auto-deploy
 // Root Status check
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'NexusWealth API is running.' });
