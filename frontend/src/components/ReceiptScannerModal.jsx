@@ -244,7 +244,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         type: parsedResult.type || 'EXPENSE',
         amount: parsedResult.amount,
         currency: 'MYR', // Default base currency
-        date: parsedResult.date,
+        date: parsedResult.date ? new Date(parsedResult.date) : new Date(),
         description: parsedResult.description || 'Receipt Scan',
         note: parsedResult.note || '',
         accountName: matchedAccount ? matchedAccount.name : 'Account',
