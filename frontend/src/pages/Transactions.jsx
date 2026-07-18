@@ -315,13 +315,13 @@ export default function Transactions() {
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
   };
 
   const baseCurrency = user?.baseCurrency || 'MYR';
 
   const getDayDate = (key) => {
-    const [day, month, year] = key.split('/');
+    const [day, month, year] = key.split('-');
     return new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day));
   };
 
