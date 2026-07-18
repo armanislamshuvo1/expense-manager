@@ -28,12 +28,22 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [parsedResult, setParsedResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem('receiptActiveTab') || 'upload';
+  });
   const [stream, setStream] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      sessionStorage.setItem('receiptActiveTab', activeTab);
+    }
+  }, [activeTab, isOpen]);
   const videoRef = useRef(null);
   const nativeCameraInputRef = useRef(null);
 
   const triggerNativeCamera = () => {
+    sessionStorage.setItem('receiptModalOpen', 'true');
+    sessionStorage.setItem('receiptActiveTab', activeTab);
     if (nativeCameraInputRef.current) {
       nativeCameraInputRef.current.click();
     }
@@ -100,6 +110,8 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const handleClose = () => {
     stopCamera();
     onClose();
+    sessionStorage.removeItem('receiptModalOpen');
+    sessionStorage.removeItem('receiptActiveTab');
   };
 
   useEffect(() => {

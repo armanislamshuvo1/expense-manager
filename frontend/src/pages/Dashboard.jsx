@@ -93,7 +93,19 @@ export default function Dashboard() {
 
   const [quickLogText, setQuickLogText] = useState('');
   const [parsing, setParsing] = useState(false);
-  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpenState] = useState(() => {
+    return sessionStorage.getItem('receiptModalOpen') === 'true';
+  });
+
+  const setReceiptModalOpen = (val) => {
+    setReceiptModalOpenState(val);
+    if (val) {
+      sessionStorage.setItem('receiptModalOpen', 'true');
+    } else {
+      sessionStorage.removeItem('receiptModalOpen');
+      sessionStorage.removeItem('receiptActiveTab');
+    }
+  };
   const [reviewTransaction, setReviewTransaction] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
 
