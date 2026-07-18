@@ -31,6 +31,13 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const [activeTab, setActiveTab] = useState('upload');
   const [stream, setStream] = useState(null);
   const videoRef = useRef(null);
+  const nativeCameraInputRef = useRef(null);
+
+  const triggerNativeCamera = () => {
+    if (nativeCameraInputRef.current) {
+      nativeCameraInputRef.current.click();
+    }
+  };
 
   const startCamera = async () => {
     try {
@@ -40,9 +47,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         audio: false
       });
       setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
     } catch (err) {
       console.error(err);
       setError('Could not access the camera. Please check permissions or try uploading a file.');
@@ -55,6 +59,13 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       setStream(null);
     }
   };
+
+  // Bind the media stream to the video element when it becomes available
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
 
   const capturePhoto = () => {
     if (!videoRef.current) return;
@@ -265,6 +276,16 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="relative w-full max-w-lg rounded-3xl border border-base-content/10 bg-base-100 p-6 shadow-2xl transition-all duration-300">
         
+        {/* Hidden system camera input */}
+        <input
+          ref={nativeCameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
@@ -309,17 +330,17 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             )}
 
             {preview ? (
-              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200">
+              <div className="relative aspect-[3/4] md:aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200">
                 <img src={preview} alt="Receipt preview" className="w-full h-full object-contain" />
                 <button 
                   onClick={() => { setPreview(''); setImage(null); }}
-                  className="absolute top-2 right-2 btn btn-xs btn-circle btn-error"
+                  className="absolute top-2 right-2 btn btn-xs btn-circle btn-error z-10"
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
             ) : activeTab === 'camera' ? (
-              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200 flex flex-col items-center justify-center">
+              <div className="relative aspect-[3/4] md:aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200 flex flex-col items-center justify-center">
                 {stream ? (
                   <>
                     <video
@@ -330,8 +351,16 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                     />
                     <button
                       type="button"
+                      onClick={triggerNativeCamera}
+                      className="absolute top-4 right-4 btn btn-xs bg-black/60 hover:bg-black text-white border-none rounded-xl flex items-center gap-1 z-10 font-bold"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Use System Camera
+                    </button>
+                    <button
+                      type="button"
                       onClick={capturePhoto}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 btn btn-circle btn-error border-2 border-white shadow-lg w-12 h-12 flex items-center justify-center"
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 btn btn-circle btn-error border-2 border-white shadow-lg w-12 h-12 flex items-center justify-center z-10"
                     >
                       <div className="w-4 h-4 bg-white rounded-full" />
                     </button>
@@ -340,13 +369,22 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                   <div className="text-center p-6 space-y-3">
                     <Camera className="w-8 h-8 mx-auto text-base-content/40" />
                     <p className="text-xs opacity-60">Camera stream loading or permission needed</p>
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="btn btn-xs btn-error text-white rounded-xl"
-                    >
-                      Retry Camera
-                    </button>
+                    <div className="flex flex-col gap-2 items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="btn btn-xs btn-error text-white rounded-xl font-bold"
+                      >
+                        Retry Camera
+                      </button>
+                      <button
+                        type="button"
+                        onClick={triggerNativeCamera}
+                        className="btn btn-xs btn-outline btn-error rounded-xl font-bold"
+                      >
+                        Use System Camera
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -356,11 +394,18 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                   type="file" 
                   accept="image/*" 
                   onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  className="absolute inset-0 opacity-0 cursor-pointer animate-none"
                 />
                 <Upload className="w-8 h-8 text-base-content/40 mb-3" />
                 <p className="text-xs font-bold text-base-content/85 mb-1">Click to Upload / Capture Photo</p>
-                <p className="text-[10px] opacity-40">Supports JPG, PNG, WEBP</p>
+                <p className="text-[10px] opacity-40 mb-4">Supports JPG, PNG, WEBP</p>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); triggerNativeCamera(); }}
+                  className="btn btn-xs btn-outline btn-error rounded-xl font-bold relative z-10"
+                >
+                  Use System Camera
+                </button>
               </div>
             )}
 
