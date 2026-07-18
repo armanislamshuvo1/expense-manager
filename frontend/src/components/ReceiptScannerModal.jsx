@@ -465,10 +465,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                   />
                 </div>
                 <div className="form-control">
-                  <label className="label text-[10px] uppercase font-bold opacity-40">Date</label>
+                  <label className="label text-[10px] uppercase font-bold opacity-40">Date & Time</label>
                   <input
-                    type="date"
-                    value={parsedResult.date ? parsedResult.date.split('T')[0] : ''}
+                    type="datetime-local"
+                    value={parsedResult.date ? (parsedResult.date.includes('T') ? parsedResult.date.substring(0, 16) : `${parsedResult.date}T12:00`) : ''}
                     onChange={(e) => setParsedResult({ ...parsedResult, date: e.target.value })}
                     className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
                   />

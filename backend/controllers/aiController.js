@@ -121,6 +121,10 @@ exports.scanReceipt = async (req, res, next) => {
 
     const imagePart = bufferToGenerativePart(req.file.buffer, req.file.mimetype);
 
+    const currentDate = new Date();
+    const todayStr = currentDate.toISOString().split('T')[0];
+    const timeStr = currentDate.toTimeString().split(' ')[0]; // "HH:MM:SS"
+
     const systemInstruction = `
       You are an expert receipt parsing tool. Extract information from the receipt image.
       Available Accounts: ${JSON.stringify(accounts.map(a => ({ id: a._id, name: a.name })))}
@@ -130,13 +134,16 @@ exports.scanReceipt = async (req, res, next) => {
       {
         "amount": number,
         "type": "EXPENSE",
-        "date": "YYYY-MM-DD",
+        "date": "YYYY-MM-DDTHH:mm:ss",
         "description": "extracted line items or receipt info (other details)",
         "note": "merchant name (maximum 30 characters)",
         "accountId": "matched_account_id",
         "categoryId": "matched_category_id"
       }
-      If the date is not readable or missing, use today's date (${new Date().toISOString().split('T')[0]}).
+      Extract both the transaction date and time from the receipt image.
+      Format the date field as ISO 8601 "YYYY-MM-DDTHH:mm:ss".
+      If date or time is not readable or missing, use today's date (${todayStr}) and the current time (${timeStr}).
+      If date is present but time is not, default the time part to "12:00:00".
       Map category and account to the closest IDs provided.
       Do not include markdown wrappers. Return raw JSON.
     `;
