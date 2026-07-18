@@ -634,12 +634,22 @@ export default function Dashboard() {
               </div>
 
               <div className="form-control">
-                <label className="label text-[10px] uppercase font-bold opacity-40">Description</label>
+                <label className="label text-[10px] uppercase font-bold opacity-40">Merchant / Note</label>
                 <input
                   type="text"
+                  value={reviewTransaction.note || ''}
+                  onChange={(e) => setReviewTransaction({ ...reviewTransaction, note: e.target.value })}
+                  maxLength={30}
+                  className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label text-[10px] uppercase font-bold opacity-40">Description / Details</label>
+                <textarea
                   value={reviewTransaction.description || ''}
                   onChange={(e) => setReviewTransaction({ ...reviewTransaction, description: e.target.value })}
-                  className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
+                  className="textarea textarea-bordered rounded-xl text-xs bg-base-200 h-20"
                 />
               </div>
 

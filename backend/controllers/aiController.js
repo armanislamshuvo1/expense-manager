@@ -74,7 +74,7 @@ exports.parseTransaction = async (req, res, next) => {
       - Parse the amount as a number.
       - Parse the date (format YYYY-MM-DD). If no date is mentioned, use today's date (${new Date().toISOString().split('T')[0]}).
       - Identify the type: 'INCOME', 'EXPENSE', or 'TRANSFER'.
-      - Extract a short description/note.
+      - Extract the merchant name or a brief summary as 'note' (maximum 30 characters). Extract other details or detailed context as 'description'.
       - If it is a TRANSFER, match 'accountId' (source) and 'toAccountId' (destination), and set categoryId to null.
 
       Output strictly valid JSON with this structure:
@@ -82,8 +82,8 @@ exports.parseTransaction = async (req, res, next) => {
         "amount": number,
         "type": "INCOME" | "EXPENSE" | "TRANSFER",
         "date": "YYYY-MM-DD",
-        "description": "string",
-        "note": "string",
+        "description": "extracted detailed description or other details",
+        "note": "merchant name or brief summary (maximum 30 characters)",
         "accountId": "matched_account_id",
         "toAccountId": "matched_to_account_id_or_null",
         "categoryId": "matched_category_id_or_null"
@@ -131,8 +131,8 @@ exports.scanReceipt = async (req, res, next) => {
         "amount": number,
         "type": "EXPENSE",
         "date": "YYYY-MM-DD",
-        "description": "merchant name or brief summary",
-        "note": "extracted line items or receipt info",
+        "description": "extracted line items or receipt info (other details)",
+        "note": "merchant name (maximum 30 characters)",
         "accountId": "matched_account_id",
         "categoryId": "matched_category_id"
       }

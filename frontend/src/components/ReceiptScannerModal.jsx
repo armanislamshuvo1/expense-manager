@@ -280,20 +280,21 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
               </div>
 
               <div className="form-control">
-                <label className="label text-[10px] uppercase font-bold opacity-40">Merchant / Description</label>
+                <label className="label text-[10px] uppercase font-bold opacity-40">Merchant / Note</label>
                 <input
                   type="text"
-                  value={parsedResult.description || ''}
-                  onChange={(e) => setParsedResult({ ...parsedResult, description: e.target.value })}
+                  value={parsedResult.note || ''}
+                  onChange={(e) => setParsedResult({ ...parsedResult, note: e.target.value })}
+                  maxLength={30}
                   className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
                 />
               </div>
 
               <div className="form-control">
-                <label className="label text-[10px] uppercase font-bold opacity-40">Notes / Details</label>
+                <label className="label text-[10px] uppercase font-bold opacity-40">Description / Details</label>
                 <textarea
-                  value={parsedResult.note || ''}
-                  onChange={(e) => setParsedResult({ ...parsedResult, note: e.target.value })}
+                  value={parsedResult.description || ''}
+                  onChange={(e) => setParsedResult({ ...parsedResult, description: e.target.value })}
                   className="textarea textarea-bordered rounded-xl text-xs bg-base-200 h-20"
                 />
               </div>
