@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Camera, Upload, AlertCircle, Check, Loader2, X } from 'lucide-react';
@@ -28,6 +28,79 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [parsedResult, setParsedResult] = useState(null);
+  const [activeTab, setActiveTab] = useState('upload');
+  const [stream, setStream] = useState(null);
+  const videoRef = useRef(null);
+
+  const startCamera = async () => {
+    try {
+      setError('');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Could not access the camera. Please check permissions or try uploading a file.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setError('Failed to capture photo.');
+        return;
+      }
+      const file = new File([blob], `receipt_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      stopCamera();
+      
+      setLoading(true);
+      try {
+        const compressed = await compressImageFile(file);
+        setImage(compressed);
+        setPreview(URL.createObjectURL(compressed));
+      } catch (err) {
+        setError('Image processing failed.');
+      } finally {
+        setLoading(false);
+      }
+    }, 'image/jpeg', 0.85);
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
+
+  useEffect(() => {
+    if (activeTab === 'camera' && isOpen && !preview) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [activeTab, isOpen, preview]);
 
   // Client-Side Canvas-based Compression and EXIF Stripping
   const compressImageFile = (file) => {
@@ -169,7 +242,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         }
       });
       queryClient.invalidateQueries(['transactions']);
-      onClose();
+      handleClose();
       if (onTransactionApproved) onTransactionApproved();
     } catch (err) {
       console.error(err);
@@ -198,7 +271,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             <Camera className="w-5 h-5 text-error" />
             <h3 className="font-extrabold text-sm uppercase tracking-wider">AI Receipt Scanner</h3>
           </div>
-          <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
+          <button onClick={handleClose} className="btn btn-sm btn-circle btn-ghost">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -206,6 +279,35 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         {/* Content */}
         {!parsedResult ? (
           <div className="space-y-6">
+            {!preview && (
+              <div className="flex bg-base-200 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('upload'); stopCamera(); }}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'upload'
+                      ? 'bg-base-100 shadow text-error'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('camera'); }}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'camera'
+                      ? 'bg-base-100 shadow text-error'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <Camera className="w-4 h-4" />
+                  Take Photo
+                </button>
+              </div>
+            )}
+
             {preview ? (
               <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200">
                 <img src={preview} alt="Receipt preview" className="w-full h-full object-contain" />
@@ -215,6 +317,38 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                 >
                   <X className="w-3 h-3" />
                 </button>
+              </div>
+            ) : activeTab === 'camera' ? (
+              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200 flex flex-col items-center justify-center">
+                {stream ? (
+                  <>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={capturePhoto}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 btn btn-circle btn-error border-2 border-white shadow-lg w-12 h-12 flex items-center justify-center"
+                    >
+                      <div className="w-4 h-4 bg-white rounded-full" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center p-6 space-y-3">
+                    <Camera className="w-8 h-8 mx-auto text-base-content/40" />
+                    <p className="text-xs opacity-60">Camera stream loading or permission needed</p>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="btn btn-xs btn-error text-white rounded-xl"
+                    >
+                      Retry Camera
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="border-2 border-dashed border-base-content/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-base-200/50 hover:bg-base-200 transition-all cursor-pointer relative">
