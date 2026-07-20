@@ -155,6 +155,43 @@ export const AuthProvider = ({ children }) => {
     setIsUnlocked(false);
   };
 
+  // Inactivity auto-lock timer: lock after 1 minute (60,000 ms) of inactivity
+  useEffect(() => {
+    if (!isAuthenticated || !user?.settings?.passcodeEnabled || !isUnlocked) return;
+
+    let timeoutId;
+    let lastReset = Date.now();
+
+    const resetTimer = () => {
+      // Throttle event handler to prevent excessive call stack updates
+      const now = Date.now();
+      if (now - lastReset < 1000) return; 
+      lastReset = now;
+
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsUnlocked(false);
+      }, 60000); // 1 minute
+    };
+
+    // Initial trigger
+    timeoutId = setTimeout(() => {
+      setIsUnlocked(false);
+    }, 60000);
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [isAuthenticated, user?.settings?.passcodeEnabled, isUnlocked]);
+
 
 
   const publicPaths = ['/', '/about', '/how-it-works', '/login', '/register'];
