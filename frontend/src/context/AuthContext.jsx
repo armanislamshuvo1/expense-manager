@@ -139,7 +139,12 @@ export const AuthProvider = ({ children }) => {
     setToken(jwtToken);
     setUser(userData);
     setIsAuthenticated(true);
-    setIsUnlocked(false);
+    setIsUnlocked(true); // Start unlocked so user doesn't have to enter passcode immediately after login
+  };
+
+  const updateToken = (newToken) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
   };
 
   const logout = () => {
@@ -150,12 +155,14 @@ export const AuthProvider = ({ children }) => {
     setIsUnlocked(false);
   };
 
+
+
   const publicPaths = ['/', '/about', '/how-it-works', '/login', '/register'];
   const isPublicRoute = publicPaths.includes(location.pathname) || location.pathname.startsWith('/shared/');
   const isLocked = isAuthenticated && user?.settings?.passcodeEnabled && !isUnlocked && !isPublicRoute;
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated, loading, login, logout, setUser, isUnlocked, setIsUnlocked }}>
+    <AuthContext.Provider value={{ token, user, isAuthenticated, loading, login, logout, updateToken, setUser, isUnlocked, setIsUnlocked }}>
       {isLocked ? (
         <PasscodeLockScreen
           passcodeValue={user.settings.passcodeValue}
@@ -170,3 +177,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
