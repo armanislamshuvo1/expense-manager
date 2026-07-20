@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CreditCard, Tag, Calendar, Plus, Calculator } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
@@ -6,6 +6,7 @@ import { CategorySelector } from '../CategorySelector';
 import DateTimePickerModal from '../DateTimePickerModal';
 import AddCategoryModal from './AddCategoryModal';
 import AddAccountModal from './AddAccountModal';
+import { useFormModal } from '../../hooks/useFormModal';
 
 export default function FormModal({
   type,
@@ -50,16 +51,27 @@ export default function FormModal({
   handleDeleteTransaction,
   getNoteSuggestions
 }) {
-  // Modal display toggles internalized inside FormModal
-  const [showKeypad, setShowKeypad] = useState(false);
-  const [showAccountSheet, setShowAccountSheet] = useState(false);
-  const [showCategorySheet, setShowCategorySheet] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  
-  const [selectingAccountType, setSelectingAccountType] = useState('source'); // 'source' | 'destination'
-  
-  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
-  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const {
+    showKeypad,
+    setShowKeypad,
+    showAccountSheet,
+    setShowAccountSheet,
+    showCategorySheet,
+    setShowCategorySheet,
+    showDatePicker,
+    setShowDatePicker,
+    selectingAccountType,
+    setSelectingAccountType,
+    showAddCategoryModal,
+    setShowAddCategoryModal,
+    showAddAccountModal,
+    setShowAddAccountModal,
+    openKeypad,
+    openAccountSheet,
+    openCategorySheet,
+    openDatePicker,
+    closeAllSheets
+  } = useFormModal();
 
   return (
     <>
@@ -142,11 +154,7 @@ export default function FormModal({
                   <button
                     type="button"
                     title="Open Calculator"
-                    onClick={() => {
-                      setShowKeypad(true);
-                      setShowAccountSheet(false);
-                      setShowCategorySheet(false);
-                    }}
+                    onClick={openKeypad}
                     className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost btn-sm text-base-content/60 hover:text-error"
                   >
                     <Calculator className="w-5 h-5" />
@@ -188,12 +196,7 @@ export default function FormModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setSelectingAccountType('source');
-                  setShowAccountSheet(true);
-                  setShowKeypad(false);
-                  setShowCategorySheet(false);
-                }}
+                onClick={() => openAccountSheet('source')}
                 className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
               >
                 <CreditCard className="w-4 h-4 text-base-content/60" />
@@ -203,12 +206,7 @@ export default function FormModal({
               {type === 'TRANSFER' ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectingAccountType('destination');
-                    setShowAccountSheet(true);
-                    setShowKeypad(false);
-                    setShowCategorySheet(false);
-                  }}
+                  onClick={() => openAccountSheet('destination')}
                   className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                 >
                   <CreditCard className="w-4 h-4 text-base-content/60" />
@@ -217,11 +215,7 @@ export default function FormModal({
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowCategorySheet(true);
-                    setShowKeypad(false);
-                    setShowAccountSheet(false);
-                  }}
+                  onClick={openCategorySheet}
                   className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                 >
                   <Tag className="w-4 h-4 text-base-content/60" />
@@ -239,12 +233,7 @@ export default function FormModal({
               </label>
               <button
                 type="button"
-                onClick={() => {
-                  setShowDatePicker(true);
-                  setShowKeypad(false);
-                  setShowCategorySheet(false);
-                  setShowAccountSheet(false);
-                }}
+                onClick={openDatePicker}
                 className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full text-left flex items-center justify-between cursor-pointer font-semibold text-xs transition-all hover:bg-base-100"
               >
                 <span>{(() => {
