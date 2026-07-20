@@ -79,6 +79,10 @@ const transactionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Add compound indexes for dashboard analytics query scaling
+transactionSchema.index({ userId: 1, date: -1 });
+transactionSchema.index({ userId: 1, type: 1, date: -1 });
+
 // Pre-save middleware to verify convertedAmount mapping
 transactionSchema.pre('save', function () {
   if (this.shouldConvert) {
