@@ -63,6 +63,11 @@ exports.parseTransaction = async (req, res, next) => {
     const accounts = await Account.find({ userId: req.user.id });
     const categories = await Category.find({ userId: req.user.id });
 
+    const currentDate = new Date();
+    const todayStr = currentDate.toISOString().split('T')[0];
+    const timeStr = currentDate.toTimeString().split(' ')[0]; // "HH:MM:SS"
+    const currentDateTimeStr = `${todayStr}T${timeStr}`;
+
     const systemInstruction = `
       You are an expert personal finance assistant. Parse the user's text into a structured JSON transaction.
       Available Accounts: ${JSON.stringify(accounts.map(a => ({ id: a._id, name: a.name, type: a.type, currency: a.currency })))}
@@ -72,7 +77,8 @@ exports.parseTransaction = async (req, res, next) => {
       - Match the account to the closest available account. If no account matches, map to the user's first account.
       - Match the category to the closest available category of correct type (INCOME or EXPENSE). If no category matches, choose a generic fallback category.
       - Parse the amount as a number.
-      - Parse the date (format YYYY-MM-DD). If no date is mentioned, use today's date (${new Date().toISOString().split('T')[0]}).
+      - Parse the date and time (format YYYY-MM-DDTHH:mm:ss). If no date or time is mentioned in the text, use the current date and time (${currentDateTimeStr}).
+      - If only a date is mentioned (e.g., "yesterday"), default the time part to the current time (${timeStr}).
       - Identify the type: 'INCOME', 'EXPENSE', or 'TRANSFER'.
       - Extract the merchant name or a brief summary as 'note' (maximum 30 characters). Extract other details or detailed context as 'description'.
       - If it is a TRANSFER, match 'accountId' (source) and 'toAccountId' (destination), and set categoryId to null.
@@ -81,7 +87,7 @@ exports.parseTransaction = async (req, res, next) => {
       {
         "amount": number,
         "type": "INCOME" | "EXPENSE" | "TRANSFER",
-        "date": "YYYY-MM-DD",
+        "date": "YYYY-MM-DDTHH:mm:ss",
         "description": "extracted detailed description or other details",
         "note": "merchant name or brief summary (maximum 30 characters)",
         "accountId": "matched_account_id",
