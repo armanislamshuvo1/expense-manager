@@ -23,6 +23,7 @@ import Sidebar from '../components/dashboard/Sidebar';
 import PeriodHeader from '../components/dashboard/PeriodHeader';
 import CategoryChart from '../components/dashboard/CategoryChart';
 import AdvancedCharts from '../components/dashboard/AdvancedCharts';
+import { useDashboardData } from '../hooks/useDashboardData';
 import CategoryTransactionsModal from '../components/dashboard/CategoryTransactionsModal';
 import ReceiptScannerModal from '../components/ReceiptScannerModal';
 import DashboardAiConsole from '../components/dashboard/DashboardAiConsole';
@@ -110,21 +111,42 @@ export default function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(false);
 
 
-  const [netWorthData, setNetWorthData] = useState([]);
-  const [cashFlowData, setCashFlowData] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-
-  // Dynamic selector states
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [periodType, setPeriodType] = useState('Monthly'); // 'Weekly' | 'Monthly' | 'Yearly' | 'All'
-  const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
-  const [selectedCategoryTransactions, setSelectedCategoryTransactions] = useState(null);
-  
   const { user, logout } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const baseCurrency = user?.baseCurrency || 'MYR';
   const navigate = useNavigate();
+
+  // Use the custom hook for dashboard metrics and period selections
+  const dashboardProps = useDashboardData(accounts, transactions);
+  const {
+    netWorthData,
+    cashFlowData,
+    categoryData,
+    selectedDate,
+    setSelectedDate,
+    periodType,
+    setPeriodType,
+    activeTab,
+    setActiveTab,
+    selectedCategoryTransactions,
+    setSelectedCategoryTransactions,
+    formatPeriodLabel,
+    handlePrevPeriod,
+    handleNextPeriod
+  } = dashboardProps;
+
+  // Vibrant high contrast color palette
+  const ACCENT_SHADES = useMemo(() => [
+    '#ff5c5c', // Coral/Red
+    '#ffa043', // Orange
+    '#ffe033', // Yellow
+    '#8bf23d', // Lime Green
+    '#3df2a5', // Greenish Teal
+    '#3dc2f2', // Cyan/Light Blue
+    '#3d52f2', // Indigo/Blue
+    '#aa3df2', // Purple
+  ], []);
 
   useEffect(() => {
     if (user?.settings?.quickAddEnabled) {
@@ -212,148 +234,6 @@ export default function Dashboard() {
     } finally {
       setReviewLoading(false);
     }
-  };
-
-
-  // Vibrant high contrast color palette
-  const ACCENT_SHADES = useMemo(() => [
-    '#ff5c5c', // Coral/Red
-    '#ffa043', // Orange
-    '#ffe033', // Yellow
-    '#8bf23d', // Lime Green
-    '#3df2a5', // Greenish Teal
-    '#3dc2f2', // Cyan/Light Blue
-    '#3d52f2', // Indigo/Blue
-    '#aa3df2', // Purple
-  ], []);
-
-  const processDashboardData = (txList, currentAssets, period, refDate, currentTab) => {
-    let filteredTx = [...txList];
-
-    if (period !== 'All') {
-      let start, end;
-      if (period === 'Weekly') {
-        start = new Date(refDate);
-        start.setDate(refDate.getDate() - refDate.getDay());
-        start.setHours(0, 0, 0, 0);
-        end = new Date(start);
-        end.setDate(start.getDate() + 7);
-      } else if (period === 'Monthly') {
-        start = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-        end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 1);
-      } else if (period === 'Yearly') {
-        start = new Date(refDate.getFullYear(), 0, 1);
-        end = new Date(refDate.getFullYear() + 1, 0, 1);
-      }
-      filteredTx = txList.filter(tx => {
-        const txDate = new Date(tx.date);
-        return txDate >= start && txDate < end;
-      });
-    }
-
-    // 1. Net Worth Pacing Chart (Assets vs Liabilities / Cumulative)
-    let runningTotal = currentAssets;
-    const sortedTx = [...txList].sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
-
-    // Create a time series for net worth tracking
-    const pacingMap = {};
-    const todayStr = new Date().toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
-    pacingMap[todayStr] = runningTotal;
-
-    sortedTx.forEach(tx => {
-      const dateKey = new Date(tx.date).toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
-      if (tx.type === 'INCOME') {
-        runningTotal -= tx.convertedAmount || tx.amount;
-      } else if (tx.type === 'EXPENSE') {
-        runningTotal += tx.convertedAmount || tx.amount;
-      }
-      pacingMap[dateKey] = runningTotal;
-    });
-
-    const netWorthChartValues = Object.keys(pacingMap).map(key => ({
-      name: key,
-      Assets: Number(pacingMap[key].toFixed(2)),
-      Liabilities: Number((pacingMap[key] * 0.15).toFixed(2))
-    })).reverse();
-
-    setNetWorthData(netWorthChartValues.slice(-12));
-
-    // 2. Cash Flow Chart (Income vs Expense by Month)
-    const monthlyData = {};
-    filteredTx.forEach(tx => {
-      const monthName = new Date(tx.date).toLocaleDateString(undefined, { month: 'short' });
-      if (!monthlyData[monthName]) {
-        monthlyData[monthName] = { name: monthName, Income: 0, Expenses: 0 };
-      }
-      if (tx.type === 'INCOME') {
-        monthlyData[monthName].Income += tx.convertedAmount || tx.amount;
-      } else if (tx.type === 'EXPENSE') {
-        monthlyData[monthName].Expenses += tx.convertedAmount || tx.amount;
-      }
-    });
-
-    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const sortedCashFlow = Object.values(monthlyData).sort((a, b) => {
-      return monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name);
-    });
-    setCashFlowData(sortedCashFlow);
-
-    // 3. Category Donut Chart
-    const categoriesMap = {};
-    const categoriesEmojiMap = {};
-    filteredTx.filter(tx => tx.type === currentTab).forEach(tx => {
-      const catName = tx.categoryId ? tx.categoryId.name : (tx.type === 'TRANSFER' ? 'Transfer' : 'Other');
-      const emoji = tx.categoryId ? tx.categoryId.emoji : (tx.type === 'TRANSFER' ? '🔄' : '🏷️');
-      categoriesMap[catName] = (categoriesMap[catName] || 0) + (tx.convertedAmount || tx.amount);
-      categoriesEmojiMap[catName] = emoji;
-    });
-
-    const categoryPieData = Object.keys(categoriesMap).map(key => ({
-      name: key,
-      value: Number(categoriesMap[key].toFixed(2)),
-      emoji: categoriesEmojiMap[key] || '🏷️'
-    })).sort((a, b) => b.value - a.value);
-
-    setCategoryData(categoryPieData);
-  };
-
-  useEffect(() => {
-    const assetsSum = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-    processDashboardData(transactions, assetsSum, periodType, selectedDate, activeTab);
-  }, [accounts, transactions, periodType, selectedDate, activeTab]);
-
-  const formatPeriodLabel = () => {
-    if (periodType === 'All') return 'All Time';
-    if (periodType === 'Yearly') return selectedDate.getFullYear().toString();
-    if (periodType === 'Monthly') {
-      return selectedDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-    }
-    if (periodType === 'Weekly') {
-      const start = new Date(selectedDate);
-      start.setDate(selectedDate.getDate() - selectedDate.getDay());
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      const startStr = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      const endStr = end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      return `${startStr} - ${endStr}`;
-    }
-    return '';
-  };
-
-  const handlePrevPeriod = () => {
-    const nextDate = new Date(selectedDate);
-    if (periodType === 'Weekly') nextDate.setDate(selectedDate.getDate() - 7);
-    else if (periodType === 'Monthly') nextDate.setMonth(selectedDate.getMonth() - 1);
-    else if (periodType === 'Yearly') nextDate.setFullYear(selectedDate.getFullYear() - 1);
-    setSelectedDate(nextDate);
-  };
-
-  const handleNextPeriod = () => {
-    const nextDate = new Date(selectedDate);
-    if (periodType === 'Weekly') nextDate.setDate(selectedDate.getDate() + 7);
-    else if (periodType === 'Monthly') nextDate.setMonth(selectedDate.getMonth() + 1);
-    else if (periodType === 'Yearly') nextDate.setFullYear(selectedDate.getFullYear() + 1);
-    setSelectedDate(nextDate);
   };
 
   const handleCategoryClick = React.useCallback((categoryName) => {
