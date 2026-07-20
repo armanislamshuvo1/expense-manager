@@ -291,3 +291,62 @@ exports.resetPassword = async (req, res, next) => {
   }
 };
 
+exports.refreshToken = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Token is required.' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', { ignoreExpiration: true });
+    } catch (err) {
+      return res.status(401).json({ success: false, message: 'Invalid token signature.' });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const maxExpirationAge = 7 * 24 * 60 * 60; // Allow refresh for up to 7 days after expiry
+    if (decoded.exp && (now - decoded.exp > maxExpirationAge)) {
+      return res.status(401).json({ success: false, message: 'Token expired too long ago. Please log in again.' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    if (user.status === 'SUSPENDED' || user.status === 'BANNED') {
+      return res.status(403).json({ success: false, message: 'Account status restricted.' });
+    }
+
+    const newToken = jwt.sign(
+      { id: user._id, email: user.email, role: user.role, status: user.status },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '1d' }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        token: newToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          provider: user.provider,
+          baseCurrency: user.baseCurrency,
+          preferredCurrencies: user.preferredCurrencies,
+          theme: user.theme,
+          settings: user.settings,
+          createdAt: user.createdAt
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
