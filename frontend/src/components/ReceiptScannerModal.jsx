@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Camera, Upload, AlertCircle, Check, Loader2, X } from 'lucide-react';
+import { Camera, Upload, AlertCircle, Loader2, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { queueOperation, generateUUID } from '../utils/syncManager';
+import { ReceiptCameraView } from './receipt/ReceiptCameraView';
+import { ReceiptReviewForm } from './receipt/ReceiptReviewForm';
 
 export default function ReceiptScannerModal({ isOpen, onClose, onTransactionApproved }) {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
+  
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -23,6 +26,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       return res.data.success ? res.data.data : [];
     }
   });
+
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,6 +42,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       sessionStorage.setItem('receiptActiveTab', activeTab);
     }
   }, [activeTab, isOpen]);
+
   const videoRef = useRef(null);
   const nativeCameraInputRef = useRef(null);
 
@@ -70,7 +75,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     }
   };
 
-  // Bind the media stream to the video element when it becomes available
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
@@ -125,7 +129,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     };
   }, [activeTab, isOpen, preview]);
 
-  // Client-Side Canvas-based Compression and EXIF Stripping
   const compressImageFile = (file) => {
     return new Promise((resolve, reject) => {
       const objectUrl = URL.createObjectURL(file);
@@ -134,8 +137,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-
-        // Standardize image sizes for faster OCR processing
         const MAX_SIZE = 1200;
         if (width > height) {
           if (width > MAX_SIZE) {
@@ -148,14 +149,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             height = MAX_SIZE;
           }
         }
-
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-
-        // toBlob naturally discards EXIF/metadata
         canvas.toBlob((blob) => {
           URL.revokeObjectURL(objectUrl);
           if (!blob) {
@@ -180,14 +177,11 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Security Check: Restrict to valid raster images
     const validMimes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validMimes.includes(file.type)) {
       setError('Invalid file type. Only JPG, PNG, and WEBP images are supported.');
       return;
     }
-
     setError('');
     setLoading(true);
     try {
@@ -206,17 +200,14 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       setError('Please upload or capture a receipt photo first.');
       return;
     }
-
     setLoading(true);
     setError('');
     const formData = new FormData();
     formData.append('receipt', image);
-
     try {
       const res = await axiosSecure.post('/api/ai/scan-receipt', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-
       if (res.data.success) {
         setParsedResult(res.data.data);
       } else {
@@ -236,14 +227,12 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     try {
       const matchedAccount = accounts.find(a => a._id === parsedResult.accountId);
       const matchedCategory = categories.find(c => c._id === parsedResult.categoryId);
-
-      // Post transaction directly
       const payload = {
         accountId: parsedResult.accountId,
         categoryId: parsedResult.categoryId,
         type: parsedResult.type || 'EXPENSE',
         amount: parsedResult.amount,
-        currency: 'MYR', // Default base currency
+        currency: 'MYR',
         date: parsedResult.date ? new Date(parsedResult.date) : new Date(),
         description: parsedResult.description || 'Receipt Scan',
         note: parsedResult.note || '',
@@ -260,9 +249,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         text: 'Receipt transaction added successfully!',
         timer: 1500,
         showConfirmButton: false,
-        customClass: {
-          popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10'
-        }
+        customClass: { popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10' }
       });
       queryClient.invalidateQueries(['transactions']);
       handleClose();
@@ -273,9 +260,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         icon: 'error',
         title: 'Save Failed',
         text: err.response?.data?.message || 'Could not log transaction.',
-        customClass: {
-          popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10'
-        }
+        customClass: { popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10' }
       });
     } finally {
       setLoading(false);
@@ -287,8 +272,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="relative w-full max-w-lg rounded-3xl border border-base-content/10 bg-base-100 p-6 shadow-2xl transition-all duration-300">
-        
-        {/* Hidden system camera input */}
         <input
           ref={nativeCameraInputRef}
           type="file"
@@ -298,7 +281,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
           className="hidden"
         />
 
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-error" />
@@ -309,7 +291,6 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
           </button>
         </div>
 
-        {/* Content */}
         {!parsedResult ? (
           <div className="space-y-6">
             {!preview && (
@@ -318,9 +299,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                   type="button"
                   onClick={() => { setActiveTab('upload'); stopCamera(); }}
                   className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'upload'
-                      ? 'bg-base-100 shadow text-error'
-                      : 'opacity-60 hover:opacity-100'
+                    activeTab === 'upload' ? 'bg-base-100 shadow text-error' : 'opacity-60 hover:opacity-100'
                   }`}
                 >
                   <Upload className="w-4 h-4" />
@@ -328,11 +307,9 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setActiveTab('camera'); }}
+                  onClick={() => setActiveTab('camera')}
                   className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'camera'
-                      ? 'bg-base-100 shadow text-error'
-                      : 'opacity-60 hover:opacity-100'
+                    activeTab === 'camera' ? 'bg-base-100 shadow text-error' : 'opacity-60 hover:opacity-100'
                   }`}
                 >
                   <Camera className="w-4 h-4" />
@@ -352,54 +329,13 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                 </button>
               </div>
             ) : activeTab === 'camera' ? (
-              <div className="relative aspect-[3/4] md:aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200 flex flex-col items-center justify-center">
-                {stream ? (
-                  <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={triggerNativeCamera}
-                      className="absolute top-4 right-4 btn btn-xs bg-black/60 hover:bg-black text-white border-none rounded-xl flex items-center gap-1 z-10 font-bold"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      Use System Camera
-                    </button>
-                    <button
-                      type="button"
-                      onClick={capturePhoto}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 btn btn-circle btn-error border-2 border-white shadow-lg w-12 h-12 flex items-center justify-center z-10"
-                    >
-                      <div className="w-4 h-4 bg-white rounded-full" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="text-center p-6 space-y-3">
-                    <Camera className="w-8 h-8 mx-auto text-base-content/40" />
-                    <p className="text-xs opacity-60">Camera stream loading or permission needed</p>
-                    <div className="flex flex-col gap-2 items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={startCamera}
-                        className="btn btn-xs btn-error text-white rounded-xl font-bold"
-                      >
-                        Retry Camera
-                      </button>
-                      <button
-                        type="button"
-                        onClick={triggerNativeCamera}
-                        className="btn btn-xs btn-outline btn-error rounded-xl font-bold"
-                      >
-                        Use System Camera
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ReceiptCameraView
+                stream={stream}
+                videoRef={videoRef}
+                triggerNativeCamera={triggerNativeCamera}
+                capturePhoto={capturePhoto}
+                startCamera={startCamera}
+              />
             ) : (
               <div className="border-2 border-dashed border-base-content/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-base-200/50 hover:bg-base-200 transition-all cursor-pointer relative">
                 <input 
@@ -443,75 +379,12 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             </button>
           </div>
         ) : (
-          /* Review & Confirm Mode */
-          <div className="space-y-6">
-            <div className="bg-success/10 border border-success/20 rounded-2xl p-4 text-center">
-              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-2 text-success">
-                <Check className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-black text-success uppercase tracking-wider">AI Extraction Complete</h4>
-              <p className="text-[10px] opacity-60 mt-0.5">Please review the details before saving.</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label text-[10px] uppercase font-bold opacity-40">Amount (MYR)</label>
-                  <input
-                    type="number"
-                    value={parsedResult.amount || ''}
-                    onChange={(e) => setParsedResult({ ...parsedResult, amount: Number(e.target.value) })}
-                    className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
-                  />
-                </div>
-                <div className="form-control">
-                  <label className="label text-[10px] uppercase font-bold opacity-40">Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    value={parsedResult.date ? (parsedResult.date.includes('T') ? parsedResult.date.substring(0, 16) : `${parsedResult.date}T12:00`) : ''}
-                    onChange={(e) => setParsedResult({ ...parsedResult, date: e.target.value })}
-                    className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
-                  />
-                </div>
-              </div>
-
-              <div className="form-control">
-                <label className="label text-[10px] uppercase font-bold opacity-40">Merchant / Note</label>
-                <input
-                  type="text"
-                  value={parsedResult.note || ''}
-                  onChange={(e) => setParsedResult({ ...parsedResult, note: e.target.value })}
-                  maxLength={30}
-                  className="input input-bordered rounded-xl text-xs font-bold bg-base-200"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label text-[10px] uppercase font-bold opacity-40">Description / Details</label>
-                <textarea
-                  value={parsedResult.description || ''}
-                  onChange={(e) => setParsedResult({ ...parsedResult, description: e.target.value })}
-                  className="textarea textarea-bordered rounded-xl text-xs bg-base-200 h-20"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setParsedResult(null)}
-                className="btn btn-ghost flex-1 rounded-2xl font-bold"
-              >
-                Rescan
-              </button>
-              <button
-                onClick={handleApprove}
-                disabled={loading}
-                className="btn btn-error flex-1 rounded-2xl text-white font-bold"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Log Transaction'}
-              </button>
-            </div>
-          </div>
+          <ReceiptReviewForm
+            parsedResult={parsedResult}
+            setParsedResult={setParsedResult}
+            loading={loading}
+            handleApprove={handleApprove}
+          />
         )}
       </div>
     </div>
