@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Account = require('../models/Account');
 const Category = require('../models/Category');
 const Transaction = require('../models/Transaction');
+const InsightCache = require('../models/InsightCache');
 
 const generateContentWithFallback = async (generateArgs) => {
   if (!process.env.GEMINI_API_KEY) {
@@ -10,12 +11,14 @@ const generateContentWithFallback = async (generateArgs) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
   const modelsToTry = [
-    process.env.GEMINI_MODEL, // E.g., gemini-3.5-flash
-    'gemini-3.5-flash',
-    'gemini-2.5-flash',
+    process.env.GEMINI_MODEL, // Configured model
     'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash'
+    'gemini-2.0-flash-lite',
+    'gemini-flash-latest', // 1.5 Flash alias
+    'gemini-2.5-flash',
+    'gemini-3.5-flash',
+    'gemini-2.5-pro',
+    'gemini-pro-latest' // 1.5 Pro alias
   ].filter(Boolean);
 
 
@@ -248,6 +251,18 @@ exports.advisorChat = async (req, res, next) => {
 exports.getInsights = async (req, res, next) => {
   let anomalies = [];
   try {
+    // 1. Check if we have a valid cached version of insights
+    const cached = await InsightCache.findOne({ userId: req.user.id });
+    if (cached) {
+      console.log(`[AI Cache] Serving cached dashboard insights for user: ${req.user.id}`);
+      return res.status(200).json({
+        success: true,
+        data: {
+          digest: cached.digest,
+          anomalies: cached.anomalies
+        }
+      });
+    }
 
     const transactions = await Transaction.find({ userId: req.user.id })
       .populate('categoryId')
@@ -264,7 +279,7 @@ exports.getInsights = async (req, res, next) => {
       });
     }
 
-    // 1. Core Anomaly Detection (Simple outlier checks: transactions > 3x the category average)
+    // 2. Core Anomaly Detection (Simple outlier checks: transactions > 3x the category average)
     const categoryTotals = {};
     const categoryCounts = {};
     transactions.forEach(t => {
@@ -298,7 +313,7 @@ exports.getInsights = async (req, res, next) => {
       }
     });
 
-    // 2. Generate Weekly/Monthly AI Summary Text
+    // 3. Generate Weekly/Monthly AI Summary Text
     const cleanList = transactions.slice(0, 30).map(t => ({
       amount: t.amount,
       type: t.type,
@@ -315,6 +330,16 @@ exports.getInsights = async (req, res, next) => {
     const result = await generateContentWithFallback(prompt);
     const digestText = result.response.text();
 
+    // 4. Save to InsightCache
+    try {
+      await InsightCache.findOneAndUpdate(
+        { userId: req.user.id },
+        { digest: digestText, anomalies, createdAt: new Date() },
+        { upsert: true, new: true }
+      );
+    } catch (cacheErr) {
+      console.error('Error saving dashboard insights to cache:', cacheErr);
+    }
 
     res.status(200).json({
       success: true,

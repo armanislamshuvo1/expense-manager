@@ -92,4 +92,42 @@ transactionSchema.pre('save', function () {
   }
 });
 
+// Post hooks to invalidate InsightCache when transactions change
+transactionSchema.post('save', async function (doc) {
+  try {
+    await mongoose.model('InsightCache').deleteMany({ userId: doc.userId });
+  } catch (err) {
+    console.error('Error clearing InsightCache post-save:', err);
+  }
+});
+
+transactionSchema.post(/^findOneAnd/, async function (doc) {
+  if (doc) {
+    try {
+      await mongoose.model('InsightCache').deleteMany({ userId: doc.userId });
+    } catch (err) {
+      console.error('Error clearing InsightCache post-query-change:', err);
+    }
+  }
+});
+
+transactionSchema.post('deleteOne', { document: true, query: false }, async function (doc) {
+  try {
+    await mongoose.model('InsightCache').deleteMany({ userId: doc.userId });
+  } catch (err) {
+    console.error('Error clearing InsightCache post-delete:', err);
+  }
+});
+
+transactionSchema.post('deleteOne', { document: false, query: true }, async function () {
+  const filter = this.getFilter();
+  if (filter && filter.userId) {
+    try {
+      await mongoose.model('InsightCache').deleteMany({ userId: filter.userId });
+    } catch (err) {
+      console.error('Error clearing InsightCache post-query-delete:', err);
+    }
+  }
+});
+
 module.exports = mongoose.model('Transaction', transactionSchema);
