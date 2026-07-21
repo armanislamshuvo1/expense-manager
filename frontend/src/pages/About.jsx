@@ -99,6 +99,14 @@ export default function About() {
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
+              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>WealthBuddy AI financial advice</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
+              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Secure shared dashboard tokens</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
               <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Fully responsive mobile layouts</span>
             </div>
             <div className="flex items-center gap-3">

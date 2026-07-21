@@ -12,7 +12,9 @@ import {
   Layers2,
   Sun,
   Moon,
-  Gift
+  Gift,
+  Share2,
+  Coins
 } from 'lucide-react';
 
 export default function Landing() {
@@ -196,7 +198,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className={`border rounded-2xl p-8 transition-all duration-300 group ${
               isDark ? 'bg-[#0b0c10]/60 border-[#1f2833] hover:border-[#66fcf1]/40' : 'bg-slate-50 border-slate-200 hover:border-indigo-500/30 hover:bg-white shadow-sm'
             }`}>
@@ -213,11 +215,47 @@ export default function Landing() {
               isDark ? 'bg-[#0b0c10]/60 border-[#1f2833] hover:border-[#66fcf1]/40' : 'bg-slate-50 border-slate-200 hover:border-indigo-500/30 hover:bg-white shadow-sm'
             }`}>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Sparkles className={`w-6 h-6 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+              </div>
+              <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>WealthBuddy AI</h3>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
+                Consult our virtual financial advisor to parse your spending logs, identify trends, and receive instant recommendations.
+              </p>
+            </div>
+
+            <div className={`border rounded-2xl p-8 transition-all duration-300 group ${
+              isDark ? 'bg-[#0b0c10]/60 border-[#1f2833] hover:border-[#66fcf1]/40' : 'bg-slate-50 border-slate-200 hover:border-indigo-500/30 hover:bg-white shadow-sm'
+            }`}>
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Share2 className={`w-6 h-6 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+              </div>
+              <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>Shared Dashboards</h3>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
+                Share read-only, live statistics of your net worth and cashflows securely with partners, spouses, or financial planners.
+              </p>
+            </div>
+
+            <div className={`border rounded-2xl p-8 transition-all duration-300 group ${
+              isDark ? 'bg-[#0b0c10]/60 border-[#1f2833] hover:border-[#66fcf1]/40' : 'bg-slate-50 border-slate-200 hover:border-indigo-500/30 hover:bg-white shadow-sm'
+            }`}>
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Coins className={`w-6 h-6 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+              </div>
+              <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>Rolling Budgets</h3>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
+                Automatically carry over monthly excess funds or debts, customize salary start dates, and track with high precision.
+              </p>
+            </div>
+
+            <div className={`border rounded-2xl p-8 transition-all duration-300 group ${
+              isDark ? 'bg-[#0b0c10]/60 border-[#1f2833] hover:border-[#66fcf1]/40' : 'bg-slate-50 border-slate-200 hover:border-indigo-500/30 hover:bg-white shadow-sm'
+            }`}>
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className={`w-6 h-6 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
               </div>
               <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>Secure & Private</h3>
               <p className={`text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
-                Your data is safe with us. We use enterprise-grade encryption to protect your records and financial plans.
+                Your data is protected. We use advanced secure sessions and token protection to ensure your logs remain completely private.
               </p>
             </div>
 

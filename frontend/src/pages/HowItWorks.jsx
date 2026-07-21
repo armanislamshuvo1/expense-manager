@@ -9,11 +9,12 @@ import {
   HelpCircle,
   Keyboard,
   Sliders,
-  DollarSign,
   Smartphone,
   CheckCircle2,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Sparkles,
+  Share2
 } from 'lucide-react';
 
 export default function HowItWorks() {
@@ -27,7 +28,7 @@ export default function HowItWorks() {
       title: "1. Quick Logging & Currency Preferences",
       description: "Log your daily transactions instantly. Configure your main base currency and set preferred currencies for quick entry.",
       icon: Keyboard,
-      color: "from-teal-400 to-emerald-500",
+      color: "from-indigo-500 to-teal-500",
       details: [
         "Use the dynamic custom keypad for ultra-fast value input.",
         "Set multiple Keypad Currencies for instant conversions when writing expenses.",
@@ -35,32 +36,43 @@ export default function HowItWorks() {
       ]
     },
     {
-      title: "2. Personalize Categories & Subcategories",
-      description: "Match tracking to your actual lifestyle. Organize with high fidelity income/expense groups and granular subcategories.",
+      title: "2. Personalize Categories & Rollover Budgets",
+      description: "Match tracking to your actual lifestyle. Configure limits, salary dates, and month-to-month rollovers.",
       icon: Sliders,
-      color: "from-indigo-400 to-purple-500",
+      color: "from-indigo-500 to-teal-500",
       details: [
-        "Create custom expense and income categories with your preferred names.",
-        "Enable subcategories under More Configuration for granular tracking (e.g., Food > Groceries).",
-        "Enable autocomplete in configuration to speed up description writing."
-      ]
-    },
-    {
-      title: "3. Advanced Budgeting & Carry-over",
-      description: "Configure limits and month-to-month rollovers. Maintain strict budget health without manual spreadsheets.",
-      icon: DollarSign,
-      color: "from-amber-400 to-orange-500",
-      details: [
-        "Set monthly budget limits to get warnings when you approach thresholds.",
+        "Create custom categories and subcategories under Settings for granular tracking.",
         "Enable 'Carry-over' settings to carry remaining positive budget or debt to the next month.",
         "Customize your Monthly Start Date (e.g., matching salary day on the 25th instead of 1st)."
       ]
     },
     {
-      title: "4. PWA Installation & Offline Support",
+      title: "3. Chat with WealthBuddy AI Advisor",
+      description: "Consult your virtual financial advisor to parse your spending logs, identify trends, and receive instant recommendations.",
+      icon: Sparkles,
+      color: "from-indigo-500 to-teal-500",
+      details: [
+        "Ask WealthBuddy details about weekly summaries, highest expenses, or optimization tips.",
+        "Securely powered by the Gemini API, contextualizing your logs safely.",
+        "Quick selection suggestion chips help you get financial guidance instantly."
+      ]
+    },
+    {
+      title: "4. Share Secure Read-Only Dashboards",
+      description: "Generate tokenized shareable links to show live read-only financial summaries to spouses, partners, or advisors.",
+      icon: Share2,
+      color: "from-indigo-500 to-teal-500",
+      details: [
+        "Create high-performance read-only links from your wealth dashboard settings.",
+        "Shared users can view assets, net worth charts, and cash flow pacing without write access.",
+        "Easily revoke or refresh sharing link tokens at any time for total privacy control."
+      ]
+    },
+    {
+      title: "5. PWA Installation & Offline Support",
       description: "Install NexusWealth as a standalone application on your mobile device or computer for instant offline logging.",
       icon: Smartphone,
-      color: "from-pink-400 to-rose-500",
+      color: "from-indigo-500 to-teal-500",
       details: [
         "Simply add the page to your device's home screen using your browser's install prompt.",
         "Open it anytime directly from your home screen—no browser address bar.",
@@ -207,6 +219,22 @@ export default function HowItWorks() {
             </h4>
             <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
               Yes! Navigate to the 'Accounts' screen or open 'Accounts Setting' inside configuration. You can add cash wallets, banks, and credit card accounts and filter dashboard transactions by them.
+            </p>
+          </div>
+          <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#1f2833]/20 border-[#1f2833]' : 'bg-white border-slate-200'}`}>
+            <h4 className={`font-bold text-sm sm:text-base mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              How does WealthBuddy AI handle my private financial logs?
+            </h4>
+            <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
+              WealthBuddy parses your balances and category totals contextually to provide optimization advice. Your full transaction details remain encrypted, and we never share or train AI models on your personal financial history.
+            </p>
+          </div>
+          <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#1f2833]/20 border-[#1f2833]' : 'bg-white border-slate-200'}`}>
+            <h4 className={`font-bold text-sm sm:text-base mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              How secure are the Shared Dashboard link tokens?
+            </h4>
+            <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-600'}`}>
+              Shared links are completely read-only tokenized URLs. Shared users can view your asset trends and cash flow charts but have no write permissions. You can revoke, expire, or refresh these tokens instantly from your dashboard settings.
             </p>
           </div>
           <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#1f2833]/20 border-[#1f2833]' : 'bg-white border-slate-200'}`}>
