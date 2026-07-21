@@ -122,7 +122,9 @@ exports.syncTransactions = async (req, res, next) => {
         processedOps.push({ clientTxId, status: 'CREATED', id: transaction._id });
 
       } else if (type === 'UPDATE') {
-        const query = id ? { _id: id, userId } : { clientTxId, userId };
+        const query = (id && mongoose.Types.ObjectId.isValid(id)) 
+          ? { _id: id, userId } 
+          : { clientTxId: id || clientTxId, userId };
         const transaction = await Transaction.findOne(query).session(session);
         if (!transaction) continue; // Skip if transaction doesn't exist
 
@@ -217,7 +219,9 @@ exports.syncTransactions = async (req, res, next) => {
         processedOps.push({ clientTxId, status: 'UPDATED', id: transaction._id });
 
       } else if (type === 'DELETE') {
-        const query = id ? { _id: id, userId } : { clientTxId, userId };
+        const query = (id && mongoose.Types.ObjectId.isValid(id)) 
+          ? { _id: id, userId } 
+          : { clientTxId: id || clientTxId, userId };
         const transaction = await Transaction.findOne(query).session(session);
         if (!transaction) continue;
 
