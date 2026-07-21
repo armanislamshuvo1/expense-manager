@@ -133,11 +133,30 @@ export const triggerSync = async () => {
     return;
   }
 
-  const queue = getQueue();
+  let queue = getQueue();
   if (queue.length === 0) {
     syncStatus = 'synced';
     notify();
     return;
+  }
+
+  // Sanitize queue: prune any CREATE TRANSFER operations that are missing toAccountId to prevent queue blocking
+  const validQueue = queue.filter(op => {
+    if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
+      console.warn('Pruning invalid transfer sync operation (missing destination account):', op);
+      return false;
+    }
+    return true;
+  });
+
+  if (validQueue.length !== queue.length) {
+    queue = validQueue;
+    saveQueue(queue);
+    if (queue.length === 0) {
+      syncStatus = 'synced';
+      notify();
+      return;
+    }
   }
 
   isSyncing = true;

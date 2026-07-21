@@ -196,9 +196,11 @@ export default function Dashboard() {
     try {
       const matchedAccount = accounts.find(a => a._id === reviewTransaction.accountId);
       const matchedCategory = categories.find(c => c._id === reviewTransaction.categoryId);
+      const matchedToAccount = accounts.find(a => a._id === reviewTransaction.toAccountId);
 
       const payload = {
         accountId: reviewTransaction.accountId,
+        toAccountId: reviewTransaction.toAccountId,
         categoryId: reviewTransaction.categoryId,
         type: reviewTransaction.type || 'EXPENSE',
         amount: reviewTransaction.amount,
@@ -207,6 +209,7 @@ export default function Dashboard() {
         description: reviewTransaction.description || 'Quick AI Log',
         note: reviewTransaction.note || '',
         accountName: matchedAccount ? matchedAccount.name : 'Account',
+        toAccountName: matchedToAccount ? matchedToAccount.name : 'Account',
         categoryName: matchedCategory ? matchedCategory.name : 'Category'
       };
 

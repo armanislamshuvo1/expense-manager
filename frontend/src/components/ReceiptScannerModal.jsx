@@ -227,8 +227,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     try {
       const matchedAccount = accounts.find(a => a._id === parsedResult.accountId);
       const matchedCategory = categories.find(c => c._id === parsedResult.categoryId);
+      const matchedToAccount = accounts.find(a => a._id === parsedResult.toAccountId);
       const payload = {
         accountId: parsedResult.accountId,
+        toAccountId: parsedResult.toAccountId,
         categoryId: parsedResult.categoryId,
         type: parsedResult.type || 'EXPENSE',
         amount: parsedResult.amount,
@@ -237,6 +239,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         description: parsedResult.description || 'Receipt Scan',
         note: parsedResult.note || '',
         accountName: matchedAccount ? matchedAccount.name : 'Account',
+        toAccountName: matchedToAccount ? matchedToAccount.name : 'Account',
         categoryName: matchedCategory ? matchedCategory.name : 'Category'
       };
 
