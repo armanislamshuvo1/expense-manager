@@ -335,7 +335,7 @@ exports.getInsights = async (req, res, next) => {
       await InsightCache.findOneAndUpdate(
         { userId: req.user.id },
         { digest: digestText, anomalies, createdAt: new Date() },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     } catch (cacheErr) {
       console.error('Error saving dashboard insights to cache:', cacheErr);

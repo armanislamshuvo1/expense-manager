@@ -59,7 +59,7 @@ exports.updatePromoBanner = async (req, res, next) => {
     const updatedBanner = await PromoBanner.findByIdAndUpdate(
       id, 
       { promoText, btnText, isActive }, 
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updatedBanner) {
