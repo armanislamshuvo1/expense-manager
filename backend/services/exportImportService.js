@@ -116,12 +116,22 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
   const headers = rows[headerIndex].map(h => String(h || '').trim());
   const normHeaders = headers.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-  const findColIndex = (keywords) => {
-    return normHeaders.findIndex(h => keywords.some(k => h.includes(k)));
+  const findColIndex = (keywords, excludeIndices = []) => {
+    // 1. Try exact match first
+    for (const kw of keywords) {
+      const idx = normHeaders.findIndex((h, i) => !excludeIndices.includes(i) && h === kw);
+      if (idx !== -1) return idx;
+    }
+    // 2. Fall back to includes match
+    for (const kw of keywords) {
+      const idx = normHeaders.findIndex((h, i) => !excludeIndices.includes(i) && h.includes(kw));
+      if (idx !== -1) return idx;
+    }
+    return -1;
   };
 
   const dateIdx = findColIndex(['date', 'time', 'timestamp', 'created']);
-  const typeIdx = findColIndex(['type', 'flow', 'inc/exp', 'incomeexpense', 'transtype']);
+  const typeIdx = findColIndex(['type', 'flow', 'incexp', 'incomeexpense', 'transtype']);
   const amountIdx = findColIndex(['amount', 'val', 'value', 'total', 'sum']);
   const incomeIdx = findColIndex(['income', 'deposit', 'credit']);
   const expenseIdx = findColIndex(['expense', 'withdrawal', 'debit']);
@@ -130,7 +140,34 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
   const toAccIdx = findColIndex(['toaccount', 'destaccount', 'targetaccount', 'destinationaccount', 'transferto']);
   const catIdx = findColIndex(['category', 'cat']);
   const subCatIdx = findColIndex(['subcategory', 'subcat']);
-  const descIdx = findColIndex(['description', 'note', 'memo', 'remark', 'detail', 'title']);
+  const descIdx = findColIndex(['description', 'desc', 'detail']);
+  const noteIdx = findColIndex(['note', 'memo', 'remark', 'title']);
+  const rateIdx = findColIndex(['exchangerate', 'rate', 'fxrate', 'conversionrate']);
+
+  // Find converted amount column index (e.g., 'MYR', 'Converted Amount', 'Base Amount')
+  const usedIndices = [dateIdx, typeIdx, amountIdx, incomeIdx, expenseIdx, currIdx, accIdx, toAccIdx, catIdx, subCatIdx, descIdx, noteIdx, rateIdx].filter(i => i >= 0);
+
+  let convertedAmtIdx = findColIndex([
+    'convertedamount', 'convertedamt', 'converted', 'baseamount', 'localamount', 
+    'targetamount', 'convertedval', 'basecurr', 'myramount', 'usdamount', 'euramount',
+    'sgdamount', 'inramount', 'gbpamount', 'amountinbase', 'basecurrencyamount'
+  ], usedIndices);
+
+  if (convertedAmtIdx === -1) {
+    const knownCurrencies = ['myr', 'usd', 'eur', 'gbp', 'sgd', 'inr', 'cad', 'aud', 'jpy', 'cny', 'hkd', 'npr', 'pkr', 'bdt', 'php', 'idr', 'thb', 'vnd', 'krw', 'rub', 'zar', 'brl', 'mxn', 'chf', 'nzd', 'aed', 'sar'];
+    convertedAmtIdx = normHeaders.findIndex((h, idx) => {
+      if (usedIndices.includes(idx)) return false;
+      return knownCurrencies.includes(h) || knownCurrencies.some(c => h === `${c}amount` || h === `amount${c}` || h === `amountin${c}`);
+    });
+  }
+
+  const parseNumericVal = (val) => {
+    if (val === null || val === undefined || val === '') return null;
+    if (typeof val === 'number') return isNaN(val) ? null : val;
+    const str = String(val).replace(/,/g, '').replace(/[^0-9.-]/g, '');
+    const num = parseFloat(str);
+    return isNaN(num) ? null : num;
+  };
 
   const accountMap = {};
   const categoryMap = {};
@@ -200,6 +237,19 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
       } else {
         const d = new Date(rawDate);
         if (!isNaN(d.getTime())) parsedDate = d;
+        else {
+          const parts = String(rawDate).trim().split(/[\sT]+/);
+          const datePart = parts[0];
+          const timePart = parts[1] || '00:00:00';
+          const subParts = datePart.split(/[/.-]/);
+          if (subParts.length === 3) {
+            let [p1, p2, p3] = subParts.map(Number);
+            if (p3 > 1000) {
+              const dTry = new Date(`${p3}-${String(p2).padStart(2, '0')}-${String(p1).padStart(2, '0')}T${timePart}`);
+              if (!isNaN(dTry.getTime())) parsedDate = dTry;
+            }
+          }
+        }
       }
     }
 
@@ -208,7 +258,10 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
     const rawCategory = catIdx >= 0 ? String(row[catIdx] || '') : 'General';
     const rawSubCategory = subCatIdx >= 0 ? String(row[subCatIdx] || '') : '';
     const rawCurrency = currIdx >= 0 ? String(row[currIdx] || '').toUpperCase() : 'USD';
-    const rawDesc = descIdx >= 0 ? String(row[descIdx] || '') : '';
+
+    const descStr = descIdx >= 0 ? String(row[descIdx] || '').trim() : '';
+    const noteStr = noteIdx >= 0 ? String(row[noteIdx] || '').trim() : '';
+    const fullDesc = [descStr, noteStr].filter(Boolean).join(descStr && noteStr && descStr !== noteStr ? ' - ' : '') || descStr || noteStr;
 
     let type = 'EXPENSE';
     let amount = 0;
@@ -225,9 +278,8 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
     }
 
     if (amountIdx >= 0 && row[amountIdx] !== undefined && row[amountIdx] !== '') {
-      const valStr = String(row[amountIdx]).replace(/[^0-9.-]/g, '');
-      const valNum = parseFloat(valStr);
-      if (!isNaN(valNum)) {
+      const valNum = parseNumericVal(row[amountIdx]);
+      if (valNum !== null) {
         if (valNum < 0) {
           amount = Math.abs(valNum);
           if (typeIdx < 0) type = 'EXPENSE';
@@ -236,20 +288,37 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
         }
       }
     } else if (incomeIdx >= 0 && row[incomeIdx] !== undefined && row[incomeIdx] !== '') {
-      const valNum = parseFloat(String(row[incomeIdx]).replace(/[^0-9.-]/g, ''));
-      if (!isNaN(valNum) && valNum > 0) {
+      const valNum = parseNumericVal(row[incomeIdx]);
+      if (valNum !== null && valNum > 0) {
         amount = valNum;
         type = 'INCOME';
       }
     } else if (expenseIdx >= 0 && row[expenseIdx] !== undefined && row[expenseIdx] !== '') {
-      const valNum = parseFloat(String(row[expenseIdx]).replace(/[^0-9.-]/g, ''));
-      if (!isNaN(valNum) && valNum > 0) {
+      const valNum = parseNumericVal(row[expenseIdx]);
+      if (valNum !== null && valNum > 0) {
         amount = valNum;
         type = 'EXPENSE';
       }
     }
 
     if (amount <= 0) continue;
+
+    // Currency conversion logic (Converted Amount & Exchange Rate)
+    let convertedAmount = amount;
+    let exchangeRate = 1.0;
+
+    const rawConvVal = convertedAmtIdx >= 0 ? parseNumericVal(row[convertedAmtIdx]) : null;
+    const rawRateVal = rateIdx >= 0 ? parseNumericVal(row[rateIdx]) : null;
+
+    if (rawConvVal !== null && rawConvVal > 0) {
+      convertedAmount = rawConvVal;
+      if (amount > 0) {
+        exchangeRate = Number((convertedAmount / amount).toFixed(6));
+      }
+    } else if (rawRateVal !== null && rawRateVal > 0) {
+      exchangeRate = rawRateVal;
+      convertedAmount = Number((amount * exchangeRate).toFixed(2));
+    }
 
     const accountRef = getAccountRef(rawAccount, rawCurrency);
     let toAccountRef = null;
@@ -266,11 +335,11 @@ export const convertRowsToPayload = (rows, accountsFromSheet = []) => {
       type,
       amount,
       currency: rawCurrency || 'USD',
-      convertedAmount: amount,
-      exchangeRate: 1,
+      convertedAmount,
+      exchangeRate,
       date: parsedDate.toISOString(),
-      description: rawDesc,
-      note: rawDesc
+      description: fullDesc,
+      note: fullDesc
     });
   }
 

@@ -573,6 +573,7 @@ export const commitImportData = async (req, res, next) => {
       if (userChoice === 'REPLACE') {
         const existingId = existingTxByClientTxId.get(tx.clientTxId);
         if (existingId) {
+          const convertedAmt = tx.convertedAmount !== undefined ? tx.convertedAmount : (tx.shouldConvert === false ? tx.amount : Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)));
           bulkUpdates.push({
             updateOne: {
               filter: { _id: existingId },
@@ -580,6 +581,8 @@ export const commitImportData = async (req, res, next) => {
                 $set: {
                   amount: tx.amount,
                   currency: tx.currency || 'MYR',
+                  exchangeRate: tx.exchangeRate || 1.0,
+                  convertedAmount: convertedAmt,
                   type: tx.type,
                   date: tx.date,
                   description: tx.description || tx.note
@@ -593,7 +596,7 @@ export const commitImportData = async (req, res, next) => {
       }
 
       // New or DUPLICATE insert
-      const convertedAmt = tx.convertedAmount || (tx.shouldConvert === false ? tx.amount : Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)));
+      const convertedAmt = tx.convertedAmount !== undefined ? tx.convertedAmount : (tx.shouldConvert === false ? tx.amount : Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)));
 
       bulkInserts.push({
         userId,
