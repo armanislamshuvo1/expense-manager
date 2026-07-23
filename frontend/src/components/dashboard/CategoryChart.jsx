@@ -113,19 +113,35 @@ const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) 
 };
 
 const CategoryChart = React.memo(({
-  categoryData,
-  totalForActiveTab,
-  baseCurrency,
-  isDark,
-  ACCENT_SHADES,
+  categoryData = [],
+  totalForActiveTab = 0,
+  baseCurrency = 'MYR',
+  isDark = true,
+  ACCENT_SHADES = [],
   handleCategoryClick
 }) => {
+  const tooltipStyle = React.useMemo(() => ({
+    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+    borderRadius: '12px',
+    fontSize: '11px',
+    color: isDark ? '#ffffff' : '#1e293b'
+  }), [isDark]);
+
+  const customLabelElement = React.useMemo(() => (
+    <CustomPieLabel
+      categoryData={categoryData}
+      ACCENT_SHADES={ACCENT_SHADES}
+      isDark={isDark}
+    />
+  ), [categoryData, ACCENT_SHADES, isDark]);
+
   return (
     <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col items-center justify-center transition-all duration-300 ${
       isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
     }`}>
       <div className="w-full h-64 md:h-72">
-        {categoryData.length > 0 ? (
+        {categoryData && categoryData.length > 0 ? (
           <ErrorBoundary>
             <ResponsiveContainer width="100%" height="100%" debounce={1}>
               <PieChart>
@@ -137,14 +153,8 @@ const CategoryChart = React.memo(({
                   outerRadius={70}
                   dataKey="value"
                   labelLine={false}
-                  label={
-                    <CustomPieLabel
-                      categoryData={categoryData}
-                      ACCENT_SHADES={ACCENT_SHADES}
-                      isDark={isDark}
-                    />
-                  }
-                  onClick={(data) => handleCategoryClick(data.name)}
+                  label={customLabelElement}
+                  onClick={(data) => handleCategoryClick && handleCategoryClick(data.name)}
                   className="cursor-pointer"
                 >
                   {categoryData.map((entry, index) => (
@@ -153,13 +163,7 @@ const CategoryChart = React.memo(({
                 </Pie>
                 <Tooltip 
                   formatter={(value) => `${baseCurrency} ${Number(value).toLocaleString()}`} 
-                  contentStyle={{ 
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, 
-                    borderRadius: '12px', 
-                    fontSize: '11px', 
-                    color: isDark ? '#ffffff' : '#1e293b' 
-                  }} 
+                  contentStyle={tooltipStyle} 
                 />
               </PieChart>
             </ResponsiveContainer>
