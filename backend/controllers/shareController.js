@@ -1,8 +1,8 @@
-const User = require('../models/User');
-const Account = require('../models/Account');
-const Transaction = require('../models/Transaction');
+import User from '../models/User.js';
+import Account from '../models/Account.js';
+import Transaction from '../models/Transaction.js';
 
-exports.getSharedData = async (req, res, next) => {
+export const getSharedData = async (req, res, next) => {
   try {
     const { token } = req.params;
 

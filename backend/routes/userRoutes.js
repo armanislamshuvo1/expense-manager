@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { getProfile, changePassword, toggleSharing, regenerateShareToken } from '../controllers/userController.js';
+import { wipeUserData, deleteUserAccount } from '../controllers/userDataManagementController.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const { getProfile, changePassword, toggleSharing, regenerateShareToken } = require('../controllers/userController');
-const { wipeUserData, deleteUserAccount } = require('../controllers/userDataManagementController');
-const { requireAuth } = require('../middleware/authMiddleware');
 
 router.use(requireAuth);
 
@@ -15,4 +16,4 @@ router.post('/regenerate-share-token', regenerateShareToken);
 router.delete('/wipe-data', wipeUserData);
 router.delete('/account', deleteUserAccount);
 
-module.exports = router;
+export default router;

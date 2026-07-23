@@ -1,5 +1,5 @@
-const Transaction = require('../models/Transaction');
-const Account = require('../models/Account');
+import Transaction from '../models/Transaction.js';
+import Account from '../models/Account.js';
 
 const getBalanceEffectForAccount = (transaction, accountCurrency, baseCurrency) => {
   if (transaction.currency === accountCurrency) {
@@ -10,7 +10,7 @@ const getBalanceEffectForAccount = (transaction, accountCurrency, baseCurrency) 
     : transaction.amount;
 };
 
-exports.getTransactions = async (req, res, next) => {
+export const getTransactions = async (req, res, next) => {
   try {
     const transactions = await Transaction.find({ userId: req.user.id })
       .populate('accountId')
@@ -23,7 +23,7 @@ exports.getTransactions = async (req, res, next) => {
   }
 };
 
-exports.createTransaction = async (req, res, next) => {
+export const createTransaction = async (req, res, next) => {
   try {
     const { 
       accountId, 
@@ -102,7 +102,7 @@ exports.createTransaction = async (req, res, next) => {
   }
 };
 
-exports.deleteTransaction = async (req, res, next) => {
+export const deleteTransaction = async (req, res, next) => {
   try {
     const transaction = await Transaction.findOne({ _id: req.params.id, userId: req.user.id });
     if (!transaction) {
@@ -140,7 +140,7 @@ exports.deleteTransaction = async (req, res, next) => {
   }
 };
 
-exports.updateTransaction = async (req, res, next) => {
+export const updateTransaction = async (req, res, next) => {
   try {
     const { 
       accountId, 
@@ -241,4 +241,3 @@ exports.updateTransaction = async (req, res, next) => {
     next(error);
   }
 };
-

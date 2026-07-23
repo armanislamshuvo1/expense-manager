@@ -1,61 +1,13 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const Account = require('../models/Account');
-const Category = require('../models/Category');
-const Transaction = require('../models/Transaction');
-const InsightCache = require('../models/InsightCache');
-
-const generateContentWithFallback = async (generateArgs) => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY environment variable is not configured');
-  }
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-  const modelsToTry = [
-    process.env.GEMINI_MODEL, // Configured model
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-flash-latest', // 1.5 Flash alias
-    'gemini-2.5-flash',
-    'gemini-3.5-flash',
-    'gemini-2.5-pro',
-    'gemini-pro-latest' // 1.5 Pro alias
-  ].filter(Boolean);
-
-
-  // Remove duplicates
-  const uniqueModels = [...new Set(modelsToTry)];
-
-  let lastError;
-  for (const modelName of uniqueModels) {
-    try {
-      console.log(`[AI] Attempting call with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(generateArgs);
-      return result;
-    } catch (err) {
-      console.warn(`[AI Warning] Model ${modelName} failed:`, err.message || err);
-      lastError = err;
-    }
-  }
-  throw lastError;
-};
-
-
-
-// Helper to convert file buffer to Gemini inline data
-const bufferToGenerativePart = (buffer, mimeType) => {
-  return {
-    inlineData: {
-      data: buffer.toString('base64'),
-      mimeType
-    }
-  };
-};
+import Account from '../models/Account.js';
+import Category from '../models/Category.js';
+import Transaction from '../models/Transaction.js';
+import InsightCache from '../models/InsightCache.js';
+import { generateContentWithFallback, bufferToGenerativePart } from '../services/aiService.js';
 
 /**
  * 1. Parse natural language inputs into transaction structures
  */
-exports.parseTransaction = async (req, res, next) => {
+export const parseTransaction = async (req, res, next) => {
   try {
     const { text } = req.body;
     if (!text || typeof text !== 'string') {
@@ -119,7 +71,7 @@ exports.parseTransaction = async (req, res, next) => {
 /**
  * 2. Scan image receipts using Gemini Vision
  */
-exports.scanReceipt = async (req, res, next) => {
+export const scanReceipt = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No receipt image uploaded' });
@@ -160,7 +112,6 @@ exports.scanReceipt = async (req, res, next) => {
     const response = await generateContentWithFallback([systemInstruction, imagePart]);
     const cleanJson = response.response.text().trim().replace(/```json/g, '').replace(/```/g, '').trim();
 
-
     const parsedData = JSON.parse(cleanJson);
 
     res.status(200).json({ success: true, data: parsedData });
@@ -173,7 +124,7 @@ exports.scanReceipt = async (req, res, next) => {
 /**
  * 3. AI Advisor Chat
  */
-exports.advisorChat = async (req, res, next) => {
+export const advisorChat = async (req, res, next) => {
   try {
     const { message, history } = req.body;
     if (!message) {
@@ -237,7 +188,6 @@ exports.advisorChat = async (req, res, next) => {
     const result = await generateContentWithFallback({ contents });
     const replyText = result.response.text();
 
-
     res.status(200).json({ success: true, data: { text: replyText } });
   } catch (error) {
     console.error('Error in advisorChat:', error);
@@ -248,7 +198,7 @@ exports.advisorChat = async (req, res, next) => {
 /**
  * 4. Generate Dashboard Insights (Weekly Digests & Anomalies)
  */
-exports.getInsights = async (req, res, next) => {
+export const getInsights = async (req, res, next) => {
   let anomalies = [];
   try {
     // 1. Check if we have a valid cached version of insights
@@ -360,4 +310,3 @@ exports.getInsights = async (req, res, next) => {
     });
   }
 };
-

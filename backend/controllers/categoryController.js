@@ -1,6 +1,6 @@
-const Category = require('../models/Category');
+import Category from '../models/Category.js';
 
-exports.getCategories = async (req, res, next) => {
+export const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find({ userId: req.user.id });
     res.status(200).json({ success: true, data: categories });
@@ -9,7 +9,7 @@ exports.getCategories = async (req, res, next) => {
   }
 };
 
-exports.createCategory = async (req, res, next) => {
+export const createCategory = async (req, res, next) => {
   try {
     const { name, emoji, color, parentId, type } = req.body;
     if (!name) {
@@ -31,7 +31,7 @@ exports.createCategory = async (req, res, next) => {
   }
 };
 
-exports.updateCategory = async (req, res, next) => {
+export const updateCategory = async (req, res, next) => {
   try {
     const { name, emoji, color, parentId, type } = req.body;
     const category = await Category.findOne({ _id: req.params.id, userId: req.user.id });
@@ -52,7 +52,7 @@ exports.updateCategory = async (req, res, next) => {
   }
 };
 
-exports.deleteCategory = async (req, res, next) => {
+export const deleteCategory = async (req, res, next) => {
   try {
     const category = await Category.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     if (!category) {

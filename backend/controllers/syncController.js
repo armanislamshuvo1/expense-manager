@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Transaction = require('../models/Transaction');
-const Account = require('../models/Account');
+import mongoose from 'mongoose';
+import Transaction from '../models/Transaction.js';
+import Account from '../models/Account.js';
 
 const getBalanceEffectForAccount = (transaction, accountCurrency, baseCurrency) => {
   if (transaction.currency === accountCurrency) {
@@ -11,7 +11,7 @@ const getBalanceEffectForAccount = (transaction, accountCurrency, baseCurrency) 
     : transaction.amount;
 };
 
-exports.syncTransactions = async (req, res, next) => {
+export const syncTransactions = async (req, res, next) => {
   const { ops } = req.body;
   if (!ops || !Array.isArray(ops)) {
     return res.status(400).json({ success: false, message: 'Invalid sync operations format.' });

@@ -1,6 +1,6 @@
-const User = require('./models/User');
-const Category = require('./models/Category');
-const Account = require('./models/Account');
+import User from './models/User.js';
+import Category from './models/Category.js';
+import Account from './models/Account.js';
 
 const seedExistingUsers = async () => {
   try {
@@ -43,4 +43,4 @@ const seedExistingUsers = async () => {
   }
 };
 
-module.exports = seedExistingUsers;
+export default seedExistingUsers;

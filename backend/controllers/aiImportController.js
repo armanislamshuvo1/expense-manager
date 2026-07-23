@@ -1,10 +1,8 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const Category = require('../models/Category');
-const Account = require('../models/Account');
+import Category from '../models/Category.js';
+import Account from '../models/Account.js';
+import { generateContentWithFallback } from '../services/aiService.js';
 
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-
-exports.aiAnalyzeImport = async (req, res, next) => {
+export const aiAnalyzeImport = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { items = [] } = req.body;
@@ -27,7 +25,7 @@ exports.aiAnalyzeImport = async (req, res, next) => {
       rawDescription: i.description || i.note || ''
     }));
 
-    if (!genAI) {
+    if (!process.env.GEMINI_API_KEY) {
       // Graceful fallback if GEMINI_API_KEY is not configured
       return res.status(200).json({
         success: true,
@@ -37,7 +35,6 @@ exports.aiAnalyzeImport = async (req, res, next) => {
       });
     }
 
-    const model = genAI.getGenerativeAIModel({ model: 'gemini-1.5-flash' });
     const prompt = `
 You are an expert AI financial assistant helping users import transactions into ExpenseManager.
 Existing Categories: [${catListStr}]
@@ -63,7 +60,7 @@ Return ONLY a JSON object formatted as:
 }
 `;
 
-    const result = await model.generateContent(prompt);
+    const result = await generateContentWithFallback(prompt);
     const responseText = result.response.text();
 
     let aiData;

@@ -1,7 +1,7 @@
-const rateLimit = require('express-rate-limit');
+import rateLimit from 'express-rate-limit';
 
 // General API Limiter: Max 80 requests per 15 minutes per IP (reduced for local-first sync batching)
-const apiLimiter = rateLimit({
+export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 80, // Limit each IP to 80 requests per window
   standardHeaders: true, // Return rate limit info in the RateLimit-* headers
@@ -13,7 +13,7 @@ const apiLimiter = rateLimit({
 });
 
 // Authentication Limiter: Max 15 requests per 15 minutes per IP for register/login/etc
-const authLimiter = rateLimit({
+export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15, // Limit each IP to 15 requests per window
   standardHeaders: true,
@@ -25,7 +25,7 @@ const authLimiter = rateLimit({
 });
 
 // AI endpoints Limiter: Max 10 requests per 5 minutes per IP to control cost and load
-const aiLimiter = rateLimit({
+export const aiLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 10, // Limit each IP to 10 requests per window
   standardHeaders: true,
@@ -37,7 +37,7 @@ const aiLimiter = rateLimit({
 });
 
 // Local-first Sync Limiter: Max 30 requests per 15 minutes per IP for heavy DB write sync batches
-const syncLimiter = rateLimit({
+export const syncLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 30, // Limit each IP to 30 sync requests per window
   standardHeaders: true,
@@ -47,10 +47,3 @@ const syncLimiter = rateLimit({
     message: 'Too many sync attempts. Please try again after 15 minutes.'
   }
 });
-
-module.exports = {
-  apiLimiter,
-  authLimiter,
-  aiLimiter,
-  syncLimiter
-};
