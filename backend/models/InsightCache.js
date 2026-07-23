@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const insightCacheSchema = new mongoose.Schema({
   userId: {
@@ -22,4 +22,4 @@ const insightCacheSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('InsightCache', insightCacheSchema);
+export default mongoose.model('InsightCache', insightCacheSchema);

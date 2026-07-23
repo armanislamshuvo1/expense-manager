@@ -1,12 +1,12 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const Transaction = require('../models/Transaction');
-const Account = require('../models/Account');
-const Category = require('../models/Category');
-const User = require('../models/User');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import Transaction from '../models/Transaction.js';
+import Account from '../models/Account.js';
+import Category from '../models/Category.js';
+import User from '../models/User.js';
 
 // --- WIPE ALL USER FINANCIAL DATA ---
-exports.wipeUserData = async (req, res, next) => {
+export const wipeUserData = async (req, res, next) => {
   const userId = req.user.id;
   const { confirmationText } = req.body;
 
@@ -69,7 +69,7 @@ exports.wipeUserData = async (req, res, next) => {
 };
 
 // --- DELETE USER ACCOUNT ---
-exports.deleteUserAccount = async (req, res, next) => {
+export const deleteUserAccount = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { password, confirmationText } = req.body;

@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 /**
  * Middleware: Verify user JWT and inject verified context into Request object
  */
-exports.requireAuth = (req, res, next) => {
+export const requireAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
@@ -42,7 +42,7 @@ exports.requireAuth = (req, res, next) => {
 /**
  * Middleware: Enforces roles (e.g., ADMIN only)
  */
-exports.requireRole = (allowedRoles) => {
+export const requireRole = (allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
       return res.status(403).json({

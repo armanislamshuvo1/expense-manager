@@ -1,9 +1,9 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
-const User = require('../models/User');
-const Category = require('../models/Category');
-const Account = require('../models/Account');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+import User from '../models/User.js';
+import Category from '../models/Category.js';
+import Account from '../models/Account.js';
 
 const prePopulateDefaults = async (userId, baseCurrency) => {
   const currency = baseCurrency || 'USD';
@@ -32,7 +32,7 @@ const prePopulateDefaults = async (userId, baseCurrency) => {
   }
 };
 
-exports.register = async (req, res, next) => {
+export const register = async (req, res, next) => {
   try {
     const { name, email, password, baseCurrency } = req.body;
     if (!name || !email || !password) {
@@ -86,7 +86,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -144,7 +144,7 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.getMe = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-passwordHash');
     if (!user) {
@@ -156,7 +156,7 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
-exports.updateSettings = async (req, res, next) => {
+export const updateSettings = async (req, res, next) => {
   try {
     const { baseCurrency, preferredCurrencies, theme, settings } = req.body;
     const user = await User.findById(req.user.id);
@@ -173,27 +173,27 @@ exports.updateSettings = async (req, res, next) => {
 
     await user.save();
 
-      res.status(200).json({
-        success: true,
-        data: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          provider: user.provider,
-          baseCurrency: user.baseCurrency,
-          preferredCurrencies: user.preferredCurrencies,
-          theme: user.theme,
-          settings: user.settings,
-          createdAt: user.createdAt
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        provider: user.provider,
+        baseCurrency: user.baseCurrency,
+        preferredCurrencies: user.preferredCurrencies,
+        theme: user.theme,
+        settings: user.settings,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.googleLogin = async (req, res, next) => {
+export const googleLogin = async (req, res, next) => {
   try {
     let email;
     let name;
@@ -274,7 +274,7 @@ exports.googleLogin = async (req, res, next) => {
   }
 };
 
-exports.forgotPassword = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -293,7 +293,7 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-exports.resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
   try {
     const { email, newPassword } = req.body;
     const user = await User.findOne({ email });
@@ -311,7 +311,7 @@ exports.resetPassword = async (req, res, next) => {
   }
 };
 
-exports.refreshToken = async (req, res, next) => {
+export const refreshToken = async (req, res, next) => {
   try {
     const { token } = req.body;
     if (!token) {
@@ -368,5 +368,3 @@ exports.refreshToken = async (req, res, next) => {
     next(error);
   }
 };
-
-

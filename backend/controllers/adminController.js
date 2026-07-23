@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const PromoBanner = require('../models/PromoBanner');
+import User from '../models/User.js';
+import PromoBanner from '../models/PromoBanner.js';
 
-exports.getActivePromoBanner = async (req, res, next) => {
+export const getActivePromoBanner = async (req, res, next) => {
   try {
     let activeBanner = await PromoBanner.findOne({ isActive: true });
     // Seed default banner if collection is completely empty
@@ -21,7 +21,7 @@ exports.getActivePromoBanner = async (req, res, next) => {
   }
 };
 
-exports.getPromoBanners = async (req, res, next) => {
+export const getPromoBanners = async (req, res, next) => {
   try {
     const banners = await PromoBanner.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: banners });
@@ -30,7 +30,7 @@ exports.getPromoBanners = async (req, res, next) => {
   }
 };
 
-exports.createPromoBanner = async (req, res, next) => {
+export const createPromoBanner = async (req, res, next) => {
   try {
     const { promoText, btnText, isActive } = req.body;
     
@@ -46,7 +46,7 @@ exports.createPromoBanner = async (req, res, next) => {
   }
 };
 
-exports.updatePromoBanner = async (req, res, next) => {
+export const updatePromoBanner = async (req, res, next) => {
   try {
     const { promoText, btnText, isActive } = req.body;
     const { id } = req.params;
@@ -72,7 +72,7 @@ exports.updatePromoBanner = async (req, res, next) => {
   }
 };
 
-exports.deletePromoBanner = async (req, res, next) => {
+export const deletePromoBanner = async (req, res, next) => {
   try {
     const { id } = req.params;
     const deletedBanner = await PromoBanner.findByIdAndDelete(id);
@@ -85,8 +85,7 @@ exports.deletePromoBanner = async (req, res, next) => {
   }
 };
 
-
-exports.getUsers = async (req, res, next) => {
+export const getUsers = async (req, res, next) => {
   try {
     // Zero-Trust context: admin can only access user account info, roles, and status
     const users = await User.find().select('name email role status createdAt');
@@ -96,7 +95,7 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-exports.updateUserStatus = async (req, res, next) => {
+export const updateUserStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     if (!['ACTIVE', 'SUSPENDED', 'BANNED'].includes(status)) {

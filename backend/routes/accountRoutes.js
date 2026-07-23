@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { getAccounts, createAccount, updateAccount, deleteAccount } from '../controllers/accountController.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const { getAccounts, createAccount, updateAccount, deleteAccount } = require('../controllers/accountController');
-const { requireAuth } = require('../middleware/authMiddleware');
 
 router.use(requireAuth);
 
@@ -10,4 +11,4 @@ router.post('/', createAccount);
 router.put('/:id', updateAccount);
 router.delete('/:id', deleteAccount);
 
-module.exports = router;
+export default router;

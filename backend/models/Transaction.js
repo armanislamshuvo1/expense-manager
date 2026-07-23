@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   userId: { 
@@ -130,4 +130,4 @@ transactionSchema.post('deleteOne', { document: false, query: true }, async func
   }
 });
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+export default mongoose.model('Transaction', transactionSchema);

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const appConfigSchema = new mongoose.Schema({
   key: { 
@@ -13,4 +13,4 @@ const appConfigSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('AppConfig', appConfigSchema);
+export default mongoose.model('AppConfig', appConfigSchema);

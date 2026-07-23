@@ -1,8 +1,10 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const seedExistingUsers = require('./seedExisting');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import connectDB from './config/db.js';
+import seedExistingUsers from './seedExisting.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
+import apiRouter from './routes/index.js';
 
 // Connect to Database
 connectDB().then(() => {
@@ -13,8 +15,6 @@ const app = express();
 
 // Trust proxy for rate limiting behind reverse proxies (like Render)
 app.set('trust proxy', 1);
-
-const { apiLimiter } = require('./middleware/rateLimiter');
 
 // Middlewares
 const allowedOrigins = [
@@ -47,20 +47,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api', apiLimiter);
 
-// Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/accounts', require('./routes/accountRoutes'));
-app.use('/api/categories', require('./routes/categoryRoutes'));
-app.use('/api/transactions', require('./routes/transactionRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/user', require('./routes/userRoutes'));
-app.use('/api/share', require('./routes/shareRoutes'));
-app.use('/api/ai', require('./routes/aiRoutes'));
-app.use('/api/sync', require('./routes/syncRoutes'));
+// Master Routes Mounting
+app.use('/api', apiRouter);
 
-
-
-// Test trigger for Render auto-deploy
 // Root Status check
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'NexusWealth API is running.' });
