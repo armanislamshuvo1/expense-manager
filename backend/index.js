@@ -17,8 +17,14 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middlewares
+const clientUrls = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  : [];
+
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  ...clientUrls,
+  'https://nexuswealthmanager.xyz',
+  'https://www.nexuswealthmanager.xyz',
   'http://localhost:5173',
   'http://localhost:3000'
 ].filter(Boolean);
@@ -30,7 +36,8 @@ const corsOptions = {
 
     if (
       allowedOrigins.includes(origin) ||
-      /\.vercel\.app$/.test(origin)
+      /\.vercel\.app$/.test(origin) ||
+      /nexuswealthmanager\.xyz$/.test(origin)
     ) {
       return callback(null, true);
     }
