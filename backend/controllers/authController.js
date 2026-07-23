@@ -98,6 +98,14 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
+    if (user.status === 'DELETED') {
+      return res.status(403).json({ 
+        success: false, 
+        code: 'ACCOUNT_DELETED', 
+        message: 'This account has been deleted. Please contact support to restore your account.' 
+      });
+    }
+
     if (user.status === 'SUSPENDED' || user.status === 'BANNED') {
       return res.status(403).json({ success: false, message: 'Account status restricted.' });
     }
@@ -213,16 +221,28 @@ exports.googleLogin = async (req, res, next) => {
     }
 
     let user = await User.findOne({ email });
-    if (!user) {
+    if (user) {
+      if (user.status === 'DELETED') {
+        return res.status(403).json({ 
+          success: false, 
+          code: 'ACCOUNT_DELETED', 
+          message: 'This account has been deleted. Please contact support to restore your account.' 
+        });
+      }
+      if (user.status === 'SUSPENDED' || user.status === 'BANNED') {
+        return res.status(403).json({ success: false, message: 'Account status restricted.' });
+      }
+      if (name && user.name !== name) {
+        user.name = name;
+        await user.save();
+      }
+    } else {
       user = await User.create({
         name: name || 'Google User',
         email,
         provider: 'google'
       });
       await prePopulateDefaults(user._id, user.baseCurrency);
-    } else if (name && user.name !== name) {
-      user.name = name;
-      await user.save();
     }
 
     const token = jwt.sign(

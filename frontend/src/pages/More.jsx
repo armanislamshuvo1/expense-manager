@@ -13,13 +13,23 @@ import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
 import QuickPreferenceForm from '../components/more/QuickPreferenceForm';
 import SettingsSection from '../components/more/SettingsSection';
 
-
+import DeviceImportExportModal from '../components/more/DeviceImportExportModal';
+import ConflictResolutionModal from '../components/more/ConflictResolutionModal';
+import WipeDataConfirmModal from '../components/more/WipeDataConfirmModal';
+import AccountDeleteModal from '../components/more/AccountDeleteModal';
 
 export default function More() {
   const { user, setUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
+
+  // Data Governance modal states
+  const [deviceSyncModalOpen, setDeviceSyncModalOpen] = useState(false);
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [wipeDataModalOpen, setWipeDataModalOpen] = useState(false);
+  const [accountDeleteModalOpen, setAccountDeleteModalOpen] = useState(false);
+  const [scanResultData, setScanResultData] = useState(null);
 
   const ALL_CURRENCIES = [
     { code: 'MYR', name: 'Malaysian Ringgit (RM)' },
@@ -283,6 +293,9 @@ export default function More() {
           loading={loading}
           setSuccess={setSuccess}
           ALL_CURRENCIES={ALL_CURRENCIES}
+          onOpenDeviceSync={() => setDeviceSyncModalOpen(true)}
+          onOpenWipeData={() => setWipeDataModalOpen(true)}
+          onOpenDeleteAccount={() => setAccountDeleteModalOpen(true)}
         />
       </div>
 
@@ -309,6 +322,43 @@ export default function More() {
         setPasscodeConfirm={setPasscodeConfirm}
         passcodeError={passcodeError}
         handleSavePasscode={handleSavePasscode}
+      />
+
+      {/* Device Import, Export & PDF Reports Modal */}
+      <DeviceImportExportModal
+        isOpen={deviceSyncModalOpen}
+        onClose={() => setDeviceSyncModalOpen(false)}
+        onTriggerConflictResolution={(scanData) => {
+          setScanResultData(scanData);
+          setConflictModalOpen(true);
+        }}
+      />
+
+      {/* Item-by-Item Interactive Conflict Resolution Modal */}
+      <ConflictResolutionModal
+        isOpen={conflictModalOpen}
+        onClose={() => setConflictModalOpen(false)}
+        scanData={scanResultData}
+        onImportFinished={(results) => {
+          setSuccess(`Import completed! ${results.importedCount || 0} imported, ${results.replacedCount || 0} replaced, ${results.skippedCount || 0} skipped.`);
+          setTimeout(() => setSuccess(''), 4000);
+        }}
+      />
+
+      {/* Wipe Data Modal */}
+      <WipeDataConfirmModal
+        isOpen={wipeDataModalOpen}
+        onClose={() => setWipeDataModalOpen(false)}
+        onSuccess={(msg) => {
+          setSuccess(msg);
+          setTimeout(() => setSuccess(''), 4000);
+        }}
+      />
+
+      {/* Delete Account Modal */}
+      <AccountDeleteModal
+        isOpen={accountDeleteModalOpen}
+        onClose={() => setAccountDeleteModalOpen(false)}
       />
 
       <BottomNav />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert } from 'lucide-react';
+import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database } from 'lucide-react';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -36,7 +36,10 @@ export default function SettingsSection({
   handleRegenerateShareToken,
   loading,
   setSuccess,
-  ALL_CURRENCIES
+  ALL_CURRENCIES,
+  onOpenDeviceSync,
+  onOpenWipeData,
+  onOpenDeleteAccount
 }) {
   return (
     <>
@@ -329,6 +332,56 @@ export default function SettingsSection({
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Data & Device Management */}
+      <div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1 flex items-center gap-1.5">
+          <Database className="w-3.5 h-3.5 text-error" /> Data & Device Governance
+        </h2>
+        <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+          <button
+            type="button"
+            onClick={onOpenDeviceSync}
+            className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+          >
+            <div>
+              <span className="text-sm font-medium text-base-content/80 flex items-center gap-2">
+                <Download className="w-4 h-4 text-error" /> Device Import, Export & PDF Reports
+              </span>
+              <span className="text-[10px] text-base-content/50 block pl-6">Backup, restore, XLSX, PDF reports & Money Manager files</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-base-content/50" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenWipeData}
+            className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+          >
+            <div>
+              <span className="text-sm font-medium text-warning flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-warning" /> Wipe All Financial Data
+              </span>
+              <span className="text-[10px] text-base-content/50 block pl-6">Reset transactions, accounts & categories</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-base-content/50" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenDeleteAccount}
+            className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+          >
+            <div>
+              <span className="text-sm font-medium text-error flex items-center gap-2">
+                <UserX className="w-4 h-4 text-error" /> Delete Account
+              </span>
+              <span className="text-[10px] text-base-content/50 block pl-6">Soft delete user profile & restrict login access</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-base-content/50" />
+          </button>
         </div>
       </div>
 
