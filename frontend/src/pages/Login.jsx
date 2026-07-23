@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAxiosPublic } from '../hooks/useApi';
 import { Lock, Mail, Key, Eye, EyeOff } from 'lucide-react';
 import AccountDeletedModal from '../components/auth/AccountDeletedModal';
 

@@ -8,7 +8,10 @@ import {
   ArrowRight, 
   BookOpen, 
   CheckCircle,
-  Award
+  Award,
+  ShieldCheck,
+  Smartphone,
+  Download
 } from 'lucide-react';
 
 export default function About() {
@@ -30,10 +33,10 @@ export default function About() {
 
       {/* About Main Section */}
       <section className="relative z-10 max-w-4xl mx-auto px-6 pt-16 pb-20 text-center">
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold mb-6 ${
+        <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold mb-6 ${
           isDark ? 'bg-[#1f2833]/60 border-[#66fcf1]/20 text-[#66fcf1]' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
         }`}>
-          <BookOpen className="w-4 h-4" /> Our Story
+          <BookOpen className="w-4 h-4" /> Our Story & Mission
         </div>
         <h1 className={`text-4xl sm:text-5xl font-extrabold leading-tight mb-6 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>
           Empowering Your <span className={`text-transparent bg-clip-text bg-gradient-to-r ${
@@ -41,11 +44,11 @@ export default function About() {
           }`}>Financial Journey</span>
         </h1>
         <p className={`text-lg leading-relaxed mb-12 ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>
-          NexusWealth was built on a simple premise: managing personal finances shouldn't be complicated, intimidating, or dull. We combine elegant user experience design with robust tracking tools to help you build stable saving habits and achieve long-term wealth.
+          NexusWealth was built on a simple premise: managing personal finances shouldn't be complicated, intimidating, or dull. We combine cutting-edge AI utilities with private data portability to help you build stable saving habits and achieve long-term financial independence.
         </p>
 
-        {/* Pillars / Values */}
-        <div className="grid sm:grid-cols-3 gap-6 text-left mb-16">
+        {/* Pillars / Values Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left mb-16">
           <div className={`border rounded-2xl p-6 transition-colors ${
             isDark ? 'bg-[#1f2833]/30 border-[#1f2833]/60 hover:border-[#66fcf1]/30' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm'
           }`}>
@@ -54,7 +57,31 @@ export default function About() {
             </div>
             <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Our Mission</h3>
             <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
-              To provide clarity and insights into everyday cashflows, turning raw transactional data into meaningful budget strategies.
+              To provide absolute clarity into daily cashflows, turning raw transactional logs into meaningful budget strategies.
+            </p>
+          </div>
+
+          <div className={`border rounded-2xl p-6 transition-colors ${
+            isDark ? 'bg-[#1f2833]/30 border-[#1f2833]/60 hover:border-[#66fcf1]/30' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm'
+          }`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${isDark ? 'bg-[#66fcf1]/10' : 'bg-indigo-50'}`}>
+              <ShieldCheck className={`w-5 h-5 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+            </div>
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>AI & Privacy First</h3>
+            <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
+              Leveraging Google Gemini AI for smart receipt OCR scanning and WealthBuddy advice without compromising user privacy.
+            </p>
+          </div>
+
+          <div className={`border rounded-2xl p-6 transition-colors ${
+            isDark ? 'bg-[#1f2833]/30 border-[#1f2833]/60 hover:border-[#66fcf1]/30' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm'
+          }`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${isDark ? 'bg-[#66fcf1]/10' : 'bg-indigo-50'}`}>
+              <Download className={`w-5 h-5 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+            </div>
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Data Portability (.mmbak)</h3>
+            <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
+              Full offline database backup/restore in `.mmbak` format plus emoji-free CSV exports for spreadsheet processing.
             </p>
           </div>
 
@@ -64,9 +91,21 @@ export default function About() {
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${isDark ? 'bg-[#66fcf1]/10' : 'bg-indigo-50'}`}>
               <Users className={`w-5 h-5 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
             </div>
-            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>User First</h3>
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Shared Access</h3>
             <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
-              Designed with a responsive layouts, absolute privacy, and interactive flows tailored for both casual spenders and savvy budgeters.
+              Tokenized read-only link sharing allows partners or advisors to review net worth metrics without write access.
+            </p>
+          </div>
+
+          <div className={`border rounded-2xl p-6 transition-colors ${
+            isDark ? 'bg-[#1f2833]/30 border-[#1f2833]/60 hover:border-[#66fcf1]/30' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm'
+          }`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${isDark ? 'bg-[#66fcf1]/10' : 'bg-indigo-50'}`}>
+              <Smartphone className={`w-5 h-5 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
+            </div>
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Offline Excellence</h3>
+            <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
+              Built as a standalone Progressive Web Application (PWA) so your wealth dashboard functions offline on all devices.
             </p>
           </div>
 
@@ -76,50 +115,58 @@ export default function About() {
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${isDark ? 'bg-[#66fcf1]/10' : 'bg-indigo-50'}`}>
               <Award className={`w-5 h-5 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-600'}`} />
             </div>
-            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Excellence</h3>
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>Continuous Evolution</h3>
             <p className={`text-xs leading-relaxed ${isDark ? 'text-[#c5c6c7]/70' : 'text-slate-500'}`}>
-              Providing lightweight Progressive Web Application access so your wealth dashboard stays accessible anywhere, anytime.
+              Constantly adding requested features, multi-currency support, custom salary cycles, and admin performance metrics.
             </p>
           </div>
         </div>
 
-        {/* Feature Checkmarks list */}
-        <div className={`border rounded-3xl p-8 max-w-2xl mx-auto text-left ${
+        {/* Complete Feature Checklist */}
+        <div className={`border rounded-3xl p-8 max-w-3xl mx-auto text-left ${
           isDark ? 'bg-[#1f2833]/10 border-[#1f2833]/40' : 'bg-white border-slate-200 shadow-md'
         }`}>
-          <h3 className={`text-lg font-bold mb-6 text-center sm:text-left ${isDark ? 'text-white' : 'text-slate-800'}`}>Key Highlights of NexusWealth</h3>
+          <h3 className={`text-lg font-bold mb-6 text-center sm:text-left ${isDark ? 'text-white' : 'text-slate-800'}`}>Complete Feature Suite at a Glance</h3>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Real-time Income/Expense logging</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>AI Smart Receipt OCR Scanner</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Dynamic dashboard projections</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>WealthBuddy AI Financial Advisor</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>WealthBuddy AI financial advice</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Tokenized Shared Read-Only Dashboards</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Secure shared dashboard tokens</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Device Data Backup (.mmbak)</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Fully responsive mobile layouts</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Emoji-Free Clean CSV/JSON Export</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Categorized transaction reports</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Multi-Currency & Custom Keypad</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Offline capability via local PWA</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Smart Rollover Budgets & Salary Dates</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
-              <span className={`text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Multiple accounts support</span>
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Accounts (Cash, Bank, Cards) Manager</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Google OAuth One-Tap & JWT Auth</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#66fcf1]' : 'text-indigo-500'}`} />
+              <span className={`text-xs sm:text-sm ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>Progressive Web Application (Offline PWA)</span>
             </div>
           </div>
         </div>
@@ -133,10 +180,10 @@ export default function About() {
             : 'bg-white border-slate-200 shadow-lg'
         }`}>
           <h2 className={`text-2xl sm:text-3xl font-extrabold mb-4 ${isDark ? 'text-white' : 'text-[#0f172a]'}`}>
-            Ready to Begin?
+            Ready to Build Your Wealth?
           </h2>
           <p className={`text-sm max-w-md mx-auto mb-8 ${isDark ? 'text-[#c5c6c7]/80' : 'text-slate-600'}`}>
-            Create an account or login to explore your own customized wealth simulator and tracking metrics.
+            Join NexusWealth today and manage your finances with intelligence and complete peace of mind.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button 

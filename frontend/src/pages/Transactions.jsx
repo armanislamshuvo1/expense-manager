@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
 import Swal from 'sweetalert2';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { 
   getMergedTransactions, 
@@ -24,7 +24,7 @@ export default function Transactions() {
   const [filterType, setFilterType] = useState('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [filterAccount, setFilterAccount] = useState('ALL');
-  const [filterDateRange, setFilterDateRange] = useState('ALL');
+  const [filterDateRange, setFilterDateRange] = useState('MONTH');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -33,6 +33,7 @@ export default function Transactions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [syncStatus, setSyncStatus] = useState('synced');
   const [syncQueueLength, setSyncQueueLength] = useState(0);
@@ -127,9 +128,9 @@ export default function Transactions() {
   useEffect(() => {
     if (location.state?.openAddModal) {
       handleOpenAddModal();
-      window.history.replaceState({}, document.title);
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, handleOpenAddModal]);
+  }, [location.state?.openAddModal, handleOpenAddModal, navigate, location.pathname]);
 
   const formatDateKey = (dateStr) => {
     if (!dateStr) return '';
@@ -199,7 +200,8 @@ export default function Transactions() {
           if (txDate < startOfWeek) return false;
         } else if (filterDateRange === 'MONTH') {
           const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-          if (txDate < startOfMonth) return false;
+          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+          if (txDate < startOfMonth || txDate > endOfMonth) return false;
         } else if (filterDateRange === 'CUSTOM') {
           if (customStartDate && txDate < new Date(customStartDate)) return false;
           if (customEndDate) {

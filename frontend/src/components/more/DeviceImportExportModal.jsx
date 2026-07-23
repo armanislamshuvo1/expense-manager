@@ -58,14 +58,24 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
       link.href = url;
       
       const extMap = { json: 'json', csv: 'csv', xlsx: 'xlsx', pdf: 'pdf' };
-      link.setAttribute('download', `ExpenseManager_Export_${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`);
+      link.setAttribute('download', `NexusWealth_Export_${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export Error:', err);
-      setErrorMessage('Failed to generate export file.');
+      let msg = 'Failed to generate export file.';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) msg = json.message;
+        } catch (_) {}
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      }
+      setErrorMessage(msg);
     } finally {
       setExporting(false);
     }
@@ -95,7 +105,8 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
       if (payload && payload.transactions && payload.transactions.length > 0) {
         setAiAnalyzing(true);
         try {
-          const aiRes = await axiosSecure.post('/api/sync/ai-analyze-import', { items: payload.transactions });
+          const sampleItems = payload.transactions.slice(0, 100);
+          const aiRes = await axiosSecure.post('/api/sync/ai-analyze-import', { items: sampleItems });
           if (aiRes.data.success && aiRes.data.summary) {
             setAiSummary(aiRes.data.summary);
           }

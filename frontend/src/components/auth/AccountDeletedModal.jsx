@@ -5,7 +5,7 @@ export default function AccountDeletedModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const handleContactSupport = () => {
-    window.location.href = 'mailto:support@nexuswealth.com?subject=Account%20Restoration%20Request&body=Hello%20Support%20Team%2C%20I%20would%20like%20to%20restore%20my%20deleted%20account.';
+    window.location.href = 'mailto:support@nexuswealthmanager.xyz?subject=Account%20Restoration%20Request&body=Hello%20Support%20Team%2C%20I%20would%20like%20to%20restore%20my%20deleted%20account.';
   };
 
   return (

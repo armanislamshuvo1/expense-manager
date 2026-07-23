@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { Activity, Calendar } from 'lucide-react';
 import ErrorBoundary from '../ErrorBoundary';
 
-export default function AdvancedCharts({
+const ACCENT_COLOR = '#ff5c5c';
+
+const AdvancedCharts = React.memo(({
   showAdvancedCharts,
   setShowAdvancedCharts,
-  netWorthData,
-  cashFlowData,
-  isDark,
-  baseCurrency
-}) {
-  const ACCENT_COLOR = '#ff5c5c';
+  netWorthData = [],
+  cashFlowData = [],
+  isDark = true,
+  baseCurrency = 'MYR'
+}) => {
+  const tooltipStyle = useMemo(() => ({
+    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+    borderRadius: '12px',
+    fontSize: '11px',
+    color: isDark ? '#ffffff' : '#1e293b'
+  }), [isDark]);
 
   return (
     <div className="space-y-6">
@@ -39,7 +47,7 @@ export default function AdvancedCharts({
               <Activity className="w-4 h-4 text-error" />
             </div>
             <div className="flex-1 min-h-0">
-              {netWorthData.length > 0 ? (
+              {netWorthData && netWorthData.length > 0 ? (
                 <ErrorBoundary>
                   <ResponsiveContainer width="100%" height="100%" debounce={1}>
                     <AreaChart data={netWorthData}>
@@ -51,7 +59,7 @@ export default function AdvancedCharts({
                       </defs>
                       <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
                       <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Area type="monotone" dataKey="Assets" stroke={ACCENT_COLOR} strokeWidth={2.5} fillOpacity={1} fill="url(#colorAssets)" />
                       <Area type="monotone" dataKey="Liabilities" stroke={ACCENT_COLOR} strokeDasharray="4 4" strokeWidth={1.5} fillOpacity={0} />
                     </AreaChart>
@@ -75,13 +83,13 @@ export default function AdvancedCharts({
               <Calendar className="w-4 h-4 text-error" />
             </div>
             <div className="flex-1 min-h-0">
-              {cashFlowData.length > 0 ? (
+              {cashFlowData && cashFlowData.length > 0 ? (
                 <ErrorBoundary>
                   <ResponsiveContainer width="100%" height="100%" debounce={1}>
                     <BarChart data={cashFlowData}>
                       <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
                       <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
-                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, borderRadius: '12px', fontSize: '11px', color: isDark ? '#ffffff' : '#1e293b' }} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Bar dataKey="Income" fill={ACCENT_COLOR} fillOpacity={0.8} radius={[4, 4, 0, 0]} />
                       <Bar dataKey="Expenses" fill={ACCENT_COLOR} fillOpacity={0.25} radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -96,4 +104,8 @@ export default function AdvancedCharts({
       )}
     </div>
   );
-}
+});
+
+AdvancedCharts.displayName = 'AdvancedCharts';
+
+export default AdvancedCharts;
