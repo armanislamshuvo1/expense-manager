@@ -27,8 +27,12 @@ const userSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['ACTIVE', 'SUSPENDED', 'BANNED'], 
+    enum: ['ACTIVE', 'SUSPENDED', 'BANNED', 'DELETED'], 
     default: 'ACTIVE' 
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   },
   baseCurrency: { 
     type: String, 
