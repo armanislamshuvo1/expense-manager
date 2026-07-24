@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 
 export function useDashboardData(accounts = [], transactions = []) {
-  const [netWorthData, setNetWorthData] = useState([]);
-  const [cashFlowData, setCashFlowData] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [periodType, setPeriodType] = useState('Monthly'); // 'Weekly' | 'Monthly' | 'Yearly' | 'All'
   const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
   const [selectedCategoryTransactions, setSelectedCategoryTransactions] = useState(null);
 
-  const processDashboardData = (txList, currentAssets, period, refDate, currentTab) => {
+  const { netWorthData, cashFlowData, categoryData } = useMemo(() => {
+    const txList = transactions || [];
+    const currentAssets = (accounts || []).reduce((sum, acc) => sum + acc.balance, 0);
+    const period = periodType;
+    const refDate = selectedDate;
+    const currentTab = activeTab;
+
     let filteredTx = [...txList];
 
     if (period !== 'All') {
@@ -59,8 +61,6 @@ export function useDashboardData(accounts = [], transactions = []) {
       Liabilities: Number((pacingMap[key] * 0.15).toFixed(2))
     })).reverse();
 
-    setNetWorthData(netWorthChartValues.slice(-12));
-
     // 2. Cash Flow Chart (Income vs Expense by Month)
     const monthlyData = {};
     filteredTx.forEach(tx => {
@@ -79,7 +79,6 @@ export function useDashboardData(accounts = [], transactions = []) {
     const sortedCashFlow = Object.values(monthlyData).sort((a, b) => {
       return monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name);
     });
-    setCashFlowData(sortedCashFlow);
 
     // 3. Category Donut Chart
     const categoriesMap = {};
@@ -97,12 +96,11 @@ export function useDashboardData(accounts = [], transactions = []) {
       emoji: categoriesEmojiMap[key] || '🏷️'
     })).sort((a, b) => b.value - a.value);
 
-    setCategoryData(categoryPieData);
-  };
-
-  useEffect(() => {
-    const assetsSum = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-    processDashboardData(transactions, assetsSum, periodType, selectedDate, activeTab);
+    return {
+      netWorthData: netWorthChartValues.slice(-12),
+      cashFlowData: sortedCashFlow,
+      categoryData: categoryPieData
+    };
   }, [accounts, transactions, periodType, selectedDate, activeTab]);
 
   const formatPeriodLabel = () => {

@@ -49,7 +49,7 @@ const AdvancedCharts = React.memo(({
             <div className="flex-1 min-h-0">
               {netWorthData && netWorthData.length > 0 ? (
                 <ErrorBoundary>
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <AreaChart data={netWorthData}>
                       <defs>
                         <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
@@ -85,7 +85,7 @@ const AdvancedCharts = React.memo(({
             <div className="flex-1 min-h-0">
               {cashFlowData && cashFlowData.length > 0 ? (
                 <ErrorBoundary>
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <BarChart data={cashFlowData}>
                       <XAxis dataKey="name" stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
                       <YAxis stroke={isDark ? "#ffffff" : "#334155"} opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
