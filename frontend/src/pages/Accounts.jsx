@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { useAccountModal } from '../context/AccountModalContext';
 import { BottomNav } from '../components/BottomNav';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 export default function Accounts() {
+  const { openAccountModal } = useAccountModal();
   const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -150,9 +152,13 @@ export default function Accounts() {
                   <h2 className="text-xs font-bold uppercase opacity-60 mb-2">{groupName}</h2>
                   <div className="divide-y divide-base-200">
                     {grouped[groupName].map((acc) => (
-                      <div key={acc._id} className="flex justify-between items-center py-3">
+                      <div 
+                        key={acc._id} 
+                        onClick={() => openAccountModal(acc)}
+                        className="flex justify-between items-center py-3 px-2 rounded-xl hover:bg-base-200/50 cursor-pointer transition-colors"
+                      >
                         <div className="flex flex-col">
-                          <span className="font-semibold text-sm">{acc.name}</span>
+                          <span className="font-semibold text-sm hover:underline">{acc.name}</span>
                           <span className="text-[10px] opacity-50 uppercase">{acc.type}</span>
                         </div>
                         <div className="flex items-center gap-3">
@@ -160,7 +166,10 @@ export default function Accounts() {
                             {acc.currency} {acc.balance.toFixed(2)}
                           </span>
                           <button
-                            onClick={() => handleDeleteAccount(acc._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteAccount(acc._id);
+                            }}
                             className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
                           >
                             <Trash2 className="w-4 h-4" />

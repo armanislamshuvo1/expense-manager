@@ -21,7 +21,7 @@ import AccountsSetting from './pages/AccountsSetting';
 import SharedDashboard from './pages/SharedDashboard';
 import WealthBuddy from './pages/WealthBuddy';
 import ScrollToTop from './components/ScrollToTop';
-
+import { AccountModalProvider } from './context/AccountModalContext';
 import PublicLayout from './components/PublicLayout';
 
 
@@ -38,7 +38,8 @@ function App() {
       <ScrollToTop />
       <AuthProvider>
         <ThemeProvider>
-          <Routes>
+          <AccountModalProvider>
+            <Routes>
             {/* Public Layout Routes (Includes Global Promo Banner & Navbar) */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<PwaSafeRoute element={<Landing />} />} />
@@ -114,7 +115,8 @@ function App() {
             {/* Default fallback redirects to root landing page */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </ThemeProvider>
+        </AccountModalProvider>
+      </ThemeProvider>
       </AuthProvider>
     </Router>
   );
