@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, Cloud, CloudOff, RefreshCw, CloudAlert, ChevronDown } from 'lucide-react';
 import { subscribeToSync, triggerSync } from '../../utils/syncManager';
+import { useAccountModal } from '../../context/AccountModalContext';
 
 export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode }) {
+  const { openAccountModal } = useAccountModal();
   const [syncStatus, setSyncStatus] = useState('synced');
   const [queueCount, setQueueCount] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -116,7 +118,10 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
           isCollapsed ? 'max-h-0 opacity-0 mt-0 pointer-events-none' : 'max-h-[1000px] opacity-100 mt-4'
         }`}>
           {accounts.map(acc => (
-            <div key={acc._id} className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
+            <div 
+              key={acc._id} 
+              onClick={() => openAccountModal(acc)}
+              className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
               isDark 
                 ? 'bg-[#1e293b]/40 border-white/5 hover:bg-[#1e293b]/70' 
                 : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
