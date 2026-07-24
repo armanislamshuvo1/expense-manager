@@ -2,14 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
-import seedExistingUsers from './seedExisting.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import apiRouter from './routes/index.js';
 
 // Connect to Database
-connectDB().then(() => {
-  seedExistingUsers();
-});
+connectDB();
 
 const app = express();
 
