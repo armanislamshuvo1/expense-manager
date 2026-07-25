@@ -70,8 +70,10 @@ export default function FormModal({
     openAccountSheet,
     openCategorySheet,
     openDatePicker,
-    closeAllSheets
   } = useFormModal();
+
+  const [showNoteSuggestions, setShowNoteSuggestions] = React.useState(false);
+  const matchedSuggestions = getNoteSuggestions ? getNoteSuggestions(note) : [];
 
   return (
     <>
@@ -249,7 +251,7 @@ export default function FormModal({
             </div>
 
             {/* Optional Note */}
-            <div className="form-control">
+            <div className="form-control relative">
               <div className="flex justify-between items-center mb-1">
                 <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Note</label>
                 <span className="text-[10px] opacity-45 pr-1 font-semibold">{note.length}/30</span>
@@ -257,22 +259,31 @@ export default function FormModal({
               <input
                 type="text"
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(e) => {
+                  setNote(e.target.value);
+                  setShowNoteSuggestions(true);
+                }}
+                onFocus={() => setShowNoteSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowNoteSuggestions(false), 200)}
                 maxLength={30}
                 placeholder="Add notes..."
                 className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"
               />
-              {user?.settings?.autocomplete !== false && getNoteSuggestions().length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  <span className="text-[10px] text-base-content/40 self-center mr-1">Suggestions:</span>
-                  {getNoteSuggestions().map((sug) => (
+              {user?.settings?.autocomplete !== false && showNoteSuggestions && matchedSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-[100%] mt-1 z-30 bg-base-200 border border-base-content/20 rounded-xl shadow-xl overflow-hidden max-h-40 overflow-y-auto divide-y divide-base-content/10">
+                  {matchedSuggestions.map((sug) => (
                     <button
                       key={sug}
                       type="button"
-                      onClick={() => setNote(sug)}
-                      className="badge badge-error badge-outline text-[10px] py-1 px-2 hover:bg-error hover:text-white cursor-pointer transition-all duration-150 rounded-lg"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setNote(sug);
+                        setShowNoteSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-base-content/90 hover:bg-error/15 hover:text-error cursor-pointer transition-colors flex items-center justify-between font-medium"
                     >
-                      {sug}
+                      <span className="truncate">{sug}</span>
+                      <span className="text-[10px] opacity-40 uppercase tracking-wider ml-2 flex-shrink-0">Suggestion</span>
                     </button>
                   ))}
                 </div>

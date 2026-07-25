@@ -244,11 +244,18 @@ export function useTransactionsForm(transactions = []) {
     return false;
   };
 
-  const getNoteSuggestions = () => {
+  const getNoteSuggestions = (query = '') => {
     const suggestions = transactions
       .filter((tx) => tx.note && tx.note.trim())
       .map((tx) => tx.note.trim());
-    return [...new Set(suggestions)].slice(0, 5);
+    const unique = [...new Set(suggestions)];
+    if (!query || !query.trim()) {
+      return unique.slice(0, 5);
+    }
+    const q = query.trim().toLowerCase();
+    return unique
+      .filter((sug) => sug.toLowerCase().includes(q))
+      .slice(0, 5);
   };
 
   return {
