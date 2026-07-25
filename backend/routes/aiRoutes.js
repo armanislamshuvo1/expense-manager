@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import multer from 'multer';
+import { requireAuth } from '../middleware/authMiddleware.js';
+import { aiLimiter } from '../middleware/rateLimiter.js';
+import { parseTransaction, scanReceipt, advisorChat, getInsights } from '../controllers/aiController.js';
+
 const router = express.Router();
-const multer = require('multer');
-const { requireAuth } = require('../middleware/authMiddleware');
-const { aiLimiter } = require('../middleware/rateLimiter');
-const { parseTransaction, scanReceipt, advisorChat, getInsights } = require('../controllers/aiController');
 
 // Multer memory storage configuration with strict security filters
 const upload = multer({
@@ -30,4 +31,4 @@ router.post('/scan-receipt', upload.single('receipt'), scanReceipt);
 router.post('/chat', advisorChat);
 router.get('/insights', getInsights);
 
-module.exports = router;
+export default router;

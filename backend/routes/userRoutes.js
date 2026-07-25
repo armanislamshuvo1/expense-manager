@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { getProfile, changePassword, toggleSharing, regenerateShareToken } from '../controllers/userController.js';
+import { wipeUserData, deleteUserAccount } from '../controllers/userDataManagementController.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const { getProfile, changePassword, toggleSharing, regenerateShareToken } = require('../controllers/userController');
-const { requireAuth } = require('../middleware/authMiddleware');
 
 router.use(requireAuth);
 
@@ -10,5 +12,8 @@ router.post('/change-password', changePassword);
 router.post('/toggle-sharing', toggleSharing);
 router.post('/regenerate-share-token', regenerateShareToken);
 
-module.exports = router;
+// User Data Governance Routes
+router.delete('/wipe-data', wipeUserData);
+router.delete('/account', deleteUserAccount);
 
+export default router;

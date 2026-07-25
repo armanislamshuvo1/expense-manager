@@ -3,20 +3,22 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import ErrorBoundary from '../ErrorBoundary';
 
 const adjustY = (list) => {
-  if (list.length <= 1) return;
+  if (!list || list.length <= 1) return list;
   const minGap = 16; // vertical spacing gap in pixels
+  const result = list.map(item => ({ ...item }));
   // Top to bottom
-  for (let i = 1; i < list.length; i++) {
-    if (list[i].y - list[i-1].y < minGap) {
-      list[i].y = list[i-1].y + minGap;
+  for (let i = 1; i < result.length; i++) {
+    if (result[i].y - result[i-1].y < minGap) {
+      result[i].y = result[i-1].y + minGap;
     }
   }
   // Bottom to top
-  for (let i = list.length - 2; i >= 0; i--) {
-    if (list[i+1].y - list[i].y < minGap) {
-      list[i].y = list[i+1].y - minGap;
+  for (let i = result.length - 2; i >= 0; i--) {
+    if (result[i+1].y - result[i].y < minGap) {
+      result[i].y = result[i+1].y - minGap;
     }
   }
+  return result;
 };
 
 const LIGHT_TEXT_COLORS = [
@@ -30,7 +32,8 @@ const LIGHT_TEXT_COLORS = [
   '#7e22ce', // Purple -> Dark Purple
 ];
 
-const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) => {
+const CustomPieLabel = React.memo(({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) => {
+  if (!categoryData || categoryData.length === 0) return null;
   const total = categoryData.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) return null;
   
@@ -66,12 +69,10 @@ const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) 
   });
   
   // Stagger left side
-  const leftItems = items.filter(item => item.isLeft).sort((a, b) => a.y - b.y);
-  adjustY(leftItems);
+  const leftItems = adjustY(items.filter(item => item.isLeft).sort((a, b) => a.y - b.y));
   
   // Stagger right side
-  const rightItems = items.filter(item => !item.isLeft).sort((a, b) => a.y - b.y);
-  adjustY(rightItems);
+  const rightItems = adjustY(items.filter(item => !item.isLeft).sort((a, b) => a.y - b.y));
   
   // Find current item's adjusted position
   const currentItem = [...leftItems, ...rightItems].find(item => item.index === index);
@@ -80,20 +81,19 @@ const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) 
   const textAnchor = currentItem.isLeft ? 'end' : 'start';
   
   // Curved path: starting from edge of slice to the label position.
-  // Using quadratic Bezier curve to make it smooth, like in the screenshot
   const pathData = `M ${currentItem.xEdge} ${currentItem.yEdge} Q ${(currentItem.xEdge + currentItem.x) / 2} ${currentItem.y} ${currentItem.x} ${currentItem.y}`;
   
   // Determine eye-catching text color
   const textColor = isDark 
-    ? ACCENT_SHADES[index % ACCENT_SHADES.length]
-    : LIGHT_TEXT_COLORS[index % LIGHT_TEXT_COLORS.length];
+    ? (ACCENT_SHADES[index % ACCENT_SHADES.length] || '#ff5c5c')
+    : (LIGHT_TEXT_COLORS[index % LIGHT_TEXT_COLORS.length] || '#e11d48');
   
   return (
     <g>
       <path
         d={pathData}
         fill="none"
-        stroke={ACCENT_SHADES[index % ACCENT_SHADES.length]}
+        stroke={ACCENT_SHADES[index % ACCENT_SHADES.length] || '#ff5c5c'}
         strokeWidth="1"
         opacity="0.8"
       />
@@ -110,24 +110,43 @@ const CustomPieLabel = ({ cx, cy, index, categoryData, ACCENT_SHADES, isDark }) 
       </text>
     </g>
   );
-};
+});
+
+CustomPieLabel.displayName = 'CustomPieLabel';
 
 const CategoryChart = React.memo(({
-  categoryData,
-  totalForActiveTab,
-  baseCurrency,
-  isDark,
-  ACCENT_SHADES,
+  categoryData = [],
+  totalForActiveTab = 0,
+  baseCurrency = 'MYR',
+  isDark = true,
+  ACCENT_SHADES = [],
   handleCategoryClick
 }) => {
+  const tooltipStyle = React.useMemo(() => ({
+    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+    borderRadius: '12px',
+    fontSize: '11px',
+    color: isDark ? '#ffffff' : '#1e293b'
+  }), [isDark]);
+
+  const renderCustomLabel = React.useCallback((props) => (
+    <CustomPieLabel
+      {...props}
+      categoryData={categoryData}
+      ACCENT_SHADES={ACCENT_SHADES}
+      isDark={isDark}
+    />
+  ), [categoryData, ACCENT_SHADES, isDark]);
+
   return (
     <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl flex flex-col items-center justify-center transition-all duration-300 ${
       isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
     }`}>
       <div className="w-full h-64 md:h-72">
-        {categoryData.length > 0 ? (
+        {categoryData && categoryData.length > 0 ? (
           <ErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%" debounce={1}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -137,14 +156,8 @@ const CategoryChart = React.memo(({
                   outerRadius={70}
                   dataKey="value"
                   labelLine={false}
-                  label={
-                    <CustomPieLabel
-                      categoryData={categoryData}
-                      ACCENT_SHADES={ACCENT_SHADES}
-                      isDark={isDark}
-                    />
-                  }
-                  onClick={(data) => handleCategoryClick(data.name)}
+                  label={renderCustomLabel}
+                  onClick={(data) => handleCategoryClick && handleCategoryClick(data.name)}
                   className="cursor-pointer"
                 >
                   {categoryData.map((entry, index) => (
@@ -153,13 +166,7 @@ const CategoryChart = React.memo(({
                 </Pie>
                 <Tooltip 
                   formatter={(value) => `${baseCurrency} ${Number(value).toLocaleString()}`} 
-                  contentStyle={{ 
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, 
-                    borderRadius: '12px', 
-                    fontSize: '11px', 
-                    color: isDark ? '#ffffff' : '#1e293b' 
-                  }} 
+                  contentStyle={tooltipStyle} 
                 />
               </PieChart>
             </ResponsiveContainer>

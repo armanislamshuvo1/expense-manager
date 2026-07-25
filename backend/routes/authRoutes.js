@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { register, login, getMe, updateSettings, googleLogin, forgotPassword, resetPassword, refreshToken } from '../controllers/authController.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
+
 const router = express.Router();
-const { register, login, getMe, updateSettings, googleLogin, forgotPassword, resetPassword, refreshToken } = require('../controllers/authController');
-const { requireAuth } = require('../middleware/authMiddleware');
-const { authLimiter } = require('../middleware/rateLimiter');
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
@@ -14,4 +15,4 @@ router.get('/me', requireAuth, getMe);
 
 router.put('/settings', requireAuth, updateSettings);
 
-module.exports = router;
+export default router;

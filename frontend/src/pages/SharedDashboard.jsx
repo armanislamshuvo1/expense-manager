@@ -240,7 +240,7 @@ export default function SharedDashboard() {
               <h3 className="text-xs uppercase tracking-widest opacity-40 font-bold mb-4">Net Worth Tracker</h3>
               <div className="flex-1 min-h-0">
                 {netWorthData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <AreaChart data={netWorthData}>
                       <defs>
                         <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
@@ -266,7 +266,7 @@ export default function SharedDashboard() {
               <h3 className="text-xs uppercase tracking-widest opacity-40 font-bold mb-4">Monthly Cash Flow</h3>
               <div className="flex-1 min-h-0">
                 {cashFlowData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <BarChart data={cashFlowData}>
                       <XAxis dataKey="name" stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} />
                       <YAxis stroke="#ffffff" opacity={0.2} fontSize={9} tickLine={false} axisLine={false} width={45} />
@@ -288,7 +288,7 @@ export default function SharedDashboard() {
                 {categoryData.length > 0 ? (
                   <>
                     <div className="w-full md:w-1/2 h-48">
-                      <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <PieChart>
                           <Pie
                             data={categoryData}

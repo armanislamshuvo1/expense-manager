@@ -1,7 +1,8 @@
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import User from '../models/User.js';
 
-exports.getProfile = async (req, res, next) => {
+export const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -14,7 +15,7 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
-exports.changePassword = async (req, res, next) => {
+export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -50,9 +51,7 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-const crypto = require('crypto');
-
-exports.toggleSharing = async (req, res, next) => {
+export const toggleSharing = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -72,7 +71,7 @@ exports.toggleSharing = async (req, res, next) => {
   }
 };
 
-exports.regenerateShareToken = async (req, res, next) => {
+export const regenerateShareToken = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -87,4 +86,3 @@ exports.regenerateShareToken = async (req, res, next) => {
     next(error);
   }
 };
-

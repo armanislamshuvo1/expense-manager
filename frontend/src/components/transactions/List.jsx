@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import { useAccountModal } from '../../context/AccountModalContext';
 
 const TransactionRow = React.memo(({
   tx,
@@ -7,6 +8,7 @@ const TransactionRow = React.memo(({
   handleOpenEditModal,
   handleDeleteTransaction
 }) => {
+  const { openAccountModal } = useAccountModal();
   const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
@@ -31,11 +33,40 @@ const TransactionRow = React.memo(({
             <span className="text-[10px] opacity-50 flex items-center gap-1.5">
               <span>{txTime}</span>
               <span>•</span>
-              <span>
-                {tx.type === 'TRANSFER' 
-                  ? `${tx.accountId?.name} ➔ ${tx.toAccountId?.name || '?'}` 
-                  : tx.accountId?.name
-                }
+              <span className="flex items-center gap-1">
+                {tx.type === 'TRANSFER' ? (
+                  <>
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (tx.accountId) openAccountModal(tx.accountId);
+                      }}
+                      className="hover:underline hover:text-primary font-semibold transition-colors"
+                    >
+                      {tx.accountId?.name || 'Unknown'}
+                    </span>
+                    <span>➔</span>
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (tx.toAccountId) openAccountModal(tx.toAccountId);
+                      }}
+                      className="hover:underline hover:text-primary font-semibold transition-colors"
+                    >
+                      {tx.toAccountId?.name || '?'}
+                    </span>
+                  </>
+                ) : (
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (tx.accountId) openAccountModal(tx.accountId);
+                    }}
+                    className="hover:underline hover:text-primary font-semibold transition-colors"
+                  >
+                    {tx.accountId?.name || 'Unknown'}
+                  </span>
+                )}
               </span>
             </span>
           </div>

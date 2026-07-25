@@ -1,24 +1,27 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const seedExistingUsers = require('./seedExisting');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import connectDB from './config/db.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
+import apiRouter from './routes/index.js';
 
 // Connect to Database
-connectDB().then(() => {
-  seedExistingUsers();
-});
+connectDB();
 
 const app = express();
 
 // Trust proxy for rate limiting behind reverse proxies (like Render)
 app.set('trust proxy', 1);
 
-const { apiLimiter } = require('./middleware/rateLimiter');
-
 // Middlewares
+const clientUrls = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  : [];
+
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  ...clientUrls,
+  'https://nexuswealthmanager.xyz',
+  'https://www.nexuswealthmanager.xyz',
   'http://localhost:5173',
   'http://localhost:3000'
 ].filter(Boolean);
@@ -30,7 +33,8 @@ const corsOptions = {
 
     if (
       allowedOrigins.includes(origin) ||
-      /\.vercel\.app$/.test(origin)
+      /\.vercel\.app$/.test(origin) ||
+      /nexuswealthmanager\.xyz$/.test(origin)
     ) {
       return callback(null, true);
     }
@@ -43,23 +47,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api', apiLimiter);
 
-// Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/accounts', require('./routes/accountRoutes'));
-app.use('/api/categories', require('./routes/categoryRoutes'));
-app.use('/api/transactions', require('./routes/transactionRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/user', require('./routes/userRoutes'));
-app.use('/api/share', require('./routes/shareRoutes'));
-app.use('/api/ai', require('./routes/aiRoutes'));
-app.use('/api/sync', require('./routes/syncRoutes'));
+// Master Routes Mounting
+app.use('/api', apiRouter);
 
-
-
-// Test trigger for Render auto-deploy
 // Root Status check
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'NexusWealth API is running.' });
@@ -72,6 +66,9 @@ app.get('/api/health', (req, res) => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  if (res.headersSent) {
+    return next(err);
+  }
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Server Error'

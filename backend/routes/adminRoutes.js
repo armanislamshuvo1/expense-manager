@@ -1,6 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const { 
+import express from 'express';
+import { 
   getUsers, 
   updateUserStatus, 
   getActivePromoBanner,
@@ -8,8 +7,10 @@ const {
   createPromoBanner,
   updatePromoBanner,
   deletePromoBanner
-} = require('../controllers/adminController');
-const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+} from '../controllers/adminController.js';
+import { requireAuth, requireRole } from '../middleware/authMiddleware.js';
+
+const router = express.Router();
 
 // Public route for fetching the currently active banner
 router.get('/promo-banner', getActivePromoBanner);
@@ -26,4 +27,4 @@ router.post('/promo-banners', createPromoBanner);
 router.put('/promo-banners/:id', updatePromoBanner);
 router.delete('/promo-banners/:id', deletePromoBanner);
 
-module.exports = router;
+export default router;

@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { getSharedData } from '../controllers/shareController.js';
+
 const router = express.Router();
-const { getSharedData } = require('../controllers/shareController');
 
 router.get('/:token', getSharedData);
 
-module.exports = router;
+export default router;

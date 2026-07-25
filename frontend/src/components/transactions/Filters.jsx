@@ -154,7 +154,7 @@ export default function Filters({
               setFilterType('ALL');
               setFilterCategory('ALL');
               setFilterAccount('ALL');
-              setFilterDateRange('ALL');
+              setFilterDateRange('MONTH');
               setCustomStartDate('');
               setCustomEndDate('');
             }}

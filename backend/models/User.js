@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
   email: { 
@@ -27,8 +27,12 @@ const userSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['ACTIVE', 'SUSPENDED', 'BANNED'], 
+    enum: ['ACTIVE', 'SUSPENDED', 'BANNED', 'DELETED'], 
     default: 'ACTIVE' 
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   },
   baseCurrency: { 
     type: String, 
@@ -73,5 +77,4 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('User', userSchema);
-
+export default mongoose.model('User', userSchema);

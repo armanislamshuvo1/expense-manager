@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { useAxiosSecure } from './useApi';
@@ -69,7 +69,7 @@ export function useTransactionsForm(transactions = []) {
     }
   });
 
-  const handleOpenAddModal = (prefilledDate) => {
+  const handleOpenAddModal = useCallback((prefilledDate) => {
     setEditMode(false);
     setEditingId('');
     setType('EXPENSE');
@@ -89,9 +89,9 @@ export function useTransactionsForm(transactions = []) {
     setError('');
     const modal = document.getElementById('add_transaction_modal');
     if (modal) modal.showModal();
-  };
+  }, [user?.baseCurrency]);
 
-  const handleOpenEditModal = (tx) => {
+  const handleOpenEditModal = useCallback((tx) => {
     setEditMode(true);
     setEditingId(tx._id);
     setType(tx.type || 'EXPENSE');
@@ -111,9 +111,9 @@ export function useTransactionsForm(transactions = []) {
     setError('');
     const modal = document.getElementById('add_transaction_modal');
     if (modal) modal.showModal();
-  };
+  }, []);
 
-  const handleSaveTransaction = async (e) => {
+  const handleSaveTransaction = useCallback(async (e) => {
     if (e) e.preventDefault();
     if (type === 'TRANSFER') {
       if (!amount || !accountId || !toAccountId) {
@@ -175,9 +175,13 @@ export function useTransactionsForm(transactions = []) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    type, amount, accountId, toAccountId, categoryId, currency, shouldConvert, exchangeRate, 
+    note, description, date, accountName, toAccountName, categoryName, editMode, editingId, 
+    updateMutation, createMutation
+  ]);
 
-  const handleCreateCategory = async (catName, emoji) => {
+  const handleCreateCategory = useCallback(async (catName, emoji) => {
     try {
       await createCategoryMutation.mutateAsync({
         name: catName,
@@ -187,9 +191,9 @@ export function useTransactionsForm(transactions = []) {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [createCategoryMutation, type]);
 
-  const handleSaveCustomAccount = async (accountData) => {
+  const handleSaveCustomAccount = useCallback(async (accountData) => {
     try {
       const response = await axiosSecure.post('/api/accounts', accountData);
       if (response.data.success) {
@@ -198,9 +202,9 @@ export function useTransactionsForm(transactions = []) {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [axiosSecure, queryClient]);
 
-  const handleDeleteTransaction = async (id) => {
+  const handleDeleteTransaction = useCallback(async (id) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: 'Delete this transaction?',
@@ -242,9 +246,9 @@ export function useTransactionsForm(transactions = []) {
       }
     }
     return false;
-  };
+  }, [deleteMutation]);
 
-  const getNoteSuggestions = (query = '') => {
+  const getNoteSuggestions = useCallback((query = '') => {
     const suggestions = transactions
       .filter((tx) => tx.note && tx.note.trim())
       .map((tx) => tx.note.trim());
@@ -256,7 +260,7 @@ export function useTransactionsForm(transactions = []) {
     return unique
       .filter((sug) => sug.toLowerCase().includes(q))
       .slice(0, 5);
-  };
+  }, [transactions]);
 
   return {
     type,

@@ -1,6 +1,6 @@
-const Account = require('../models/Account');
+import Account from '../models/Account.js';
 
-exports.getAccounts = async (req, res, next) => {
+export const getAccounts = async (req, res, next) => {
   try {
     const accounts = await Account.find({ userId: req.user.id });
     res.status(200).json({ success: true, data: accounts });
@@ -9,7 +9,7 @@ exports.getAccounts = async (req, res, next) => {
   }
 };
 
-exports.createAccount = async (req, res, next) => {
+export const createAccount = async (req, res, next) => {
   try {
     const { name, type, balance, currency } = req.body;
     if (!name || !type) {
@@ -30,7 +30,7 @@ exports.createAccount = async (req, res, next) => {
   }
 };
 
-exports.updateAccount = async (req, res, next) => {
+export const updateAccount = async (req, res, next) => {
   try {
     const { name, type, balance, currency } = req.body;
     const account = await Account.findOne({ _id: req.params.id, userId: req.user.id });
@@ -50,7 +50,7 @@ exports.updateAccount = async (req, res, next) => {
   }
 };
 
-exports.deleteAccount = async (req, res, next) => {
+export const deleteAccount = async (req, res, next) => {
   try {
     const account = await Account.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     if (!account) {

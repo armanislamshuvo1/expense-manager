@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const promoBannerSchema = new mongoose.Schema({
   promoText: { 
@@ -15,4 +15,4 @@ const promoBannerSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('PromoBanner', promoBannerSchema);
+export default mongoose.model('PromoBanner', promoBannerSchema);

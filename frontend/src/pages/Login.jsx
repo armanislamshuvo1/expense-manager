@@ -3,12 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosPublic } from '../hooks/useApi';
 import { Lock, Mail, Key, Eye, EyeOff } from 'lucide-react';
+import AccountDeletedModal from '../components/auth/AccountDeletedModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [accountDeletedModalOpen, setAccountDeletedModalOpen] = useState(false);
   
   // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +40,11 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid username or password.');
+      if (err.response?.data?.code === 'ACCOUNT_DELETED') {
+        setAccountDeletedModalOpen(true);
+      } else {
+        setError(err.response?.data?.message || 'Invalid username or password.');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,7 +104,11 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Google Sign-In failed.');
+      if (err.response?.data?.code === 'ACCOUNT_DELETED') {
+        setAccountDeletedModalOpen(true);
+      } else {
+        setError(err.response?.data?.message || 'Google Sign-In failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -118,7 +128,11 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError('Google Sign-In failed.');
+      if (err.response?.data?.code === 'ACCOUNT_DELETED') {
+        setAccountDeletedModalOpen(true);
+      } else {
+        setError(err.response?.data?.message || 'Google Sign-In failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -377,6 +391,12 @@ export default function Login() {
           )}
         </div>
       </dialog>
+
+      {/* Account Deleted Modal */}
+      <AccountDeletedModal
+        isOpen={accountDeletedModalOpen}
+        onClose={() => setAccountDeletedModalOpen(false)}
+      />
     </div>
   );
 }
