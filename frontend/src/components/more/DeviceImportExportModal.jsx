@@ -23,6 +23,45 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = React.useRef(0);
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setImportFile(file);
+      setIsEncryptedFile(false);
+      handleScanFile(file, importPasscode);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -313,7 +352,17 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
               {/* File Dropzone */}
               <div>
                 <label className="text-xs font-bold uppercase text-base-content/60 mb-2 block">Upload Backup File (.json, .csv, .xlsx, .mmbak)</label>
-                <div className="border-2 border-dashed border-base-content/20 rounded-2xl p-6 text-center hover:border-error transition-colors cursor-pointer bg-base-200/30">
+                <div 
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-300 cursor-pointer ${
+                    isDragging 
+                      ? 'border-error bg-error/15 scale-[1.02] shadow-xl ring-4 ring-error/20' 
+                      : 'border-base-content/20 bg-base-200/30 hover:border-error hover:bg-base-200/50'
+                  }`}
+                >
                   <input
                     type="file"
                     accept=".json,.csv,.xlsx,.mmbak"
@@ -329,11 +378,13 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
                     id="backup-file-input"
                   />
                   <label htmlFor="backup-file-input" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Upload className="w-8 h-8 text-error" />
-                    <span className="text-xs font-medium text-base-content/80">
-                      {importFile ? importFile.name : 'Click to select or drag & drop backup file'}
+                    <Upload className={`w-8 h-8 transition-transform duration-300 ${isDragging ? 'text-error scale-125 animate-bounce' : 'text-error'}`} />
+                    <span className={`text-xs font-medium transition-colors ${isDragging ? 'text-error font-bold' : 'text-base-content/80'}`}>
+                      {isDragging ? 'Drop Backup File Here!' : importFile ? importFile.name : 'Click to select or drag & drop backup file'}
                     </span>
-                    <span className="text-[10px] text-base-content/50">Supports ExpenseManager & Money Manager (.mmbak) files</span>
+                    <span className="text-[10px] text-base-content/50">
+                      {isDragging ? 'Release to select backup' : 'Supports ExpenseManager & Money Manager (.mmbak) files'}
+                    </span>
                   </label>
                 </div>
               </div>

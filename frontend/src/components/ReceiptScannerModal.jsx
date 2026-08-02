@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Camera, Upload, AlertCircle, Loader2, X } from 'lucide-react';
+import { Camera, Upload, AlertCircle, Loader2, X, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { queueOperation, generateUUID } from '../utils/syncManager';
 import { ReceiptCameraView } from './receipt/ReceiptCameraView';
@@ -36,6 +36,8 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
     return sessionStorage.getItem('receiptActiveTab') || 'upload';
   });
   const [stream, setStream] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -114,8 +116,60 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   const handleClose = () => {
     stopCamera();
     onClose();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
     sessionStorage.removeItem('receiptModalOpen');
     sessionStorage.removeItem('receiptActiveTab');
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const validMimes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validMimes.includes(file.type)) {
+        setError('Invalid file type. Only JPG, PNG, and WEBP images are supported.');
+        return;
+      }
+      setError('');
+      setLoading(true);
+      try {
+        const compressed = await compressImageFile(file);
+        setImage(compressed);
+        setPreview(URL.createObjectURL(compressed));
+      } catch (err) {
+        setError('Image processing failed.');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   useEffect(() => {
@@ -325,7 +379,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
               <div className="relative aspect-[3/4] md:aspect-[4/3] w-full rounded-2xl overflow-hidden border border-base-content/10 bg-base-200">
                 <img src={preview} alt="Receipt preview" className="w-full h-full object-contain" />
                 <button 
-                  onClick={() => { setPreview(''); setImage(null); }}
+                  onClick={() => { setPreview(''); setImage(null); setError(''); }}
                   className="absolute top-2 right-2 btn btn-xs btn-circle btn-error z-10"
                 >
                   <X className="w-3 h-3" />
@@ -340,20 +394,34 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
                 startCamera={startCamera}
               />
             ) : (
-              <div className="border-2 border-dashed border-base-content/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-base-200/50 hover:bg-base-200 transition-all cursor-pointer relative">
+              <div 
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer relative ${
+                  isDragging
+                    ? 'border-error bg-error/15 scale-[1.02] shadow-xl ring-4 ring-error/20'
+                    : 'border-base-content/20 bg-base-200/50 hover:bg-base-200 hover:border-error/40'
+                }`}
+              >
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer animate-none"
+                  className="absolute inset-0 opacity-0 cursor-pointer animate-none z-10"
                 />
-                <Upload className="w-8 h-8 text-base-content/40 mb-3" />
-                <p className="text-xs font-bold text-base-content/85 mb-1">Click to Upload / Capture Photo</p>
-                <p className="text-[10px] opacity-40 mb-4">Supports JPG, PNG, WEBP</p>
+                <Upload className={`w-8 h-8 mb-3 transition-transform duration-300 ${isDragging ? 'text-error scale-125 animate-bounce' : 'text-base-content/40'}`} />
+                <p className={`text-xs font-bold mb-1 transition-colors ${isDragging ? 'text-error font-black' : 'text-base-content/85'}`}>
+                  {isDragging ? 'Drop Receipt Image Here!' : 'Click to Upload / Drag & Drop Photo'}
+                </p>
+                <p className="text-[10px] opacity-40 mb-4">
+                  {isDragging ? 'Release to select this file' : 'Supports JPG, PNG, WEBP'}
+                </p>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); triggerNativeCamera(); }}
-                  className="btn btn-xs btn-outline btn-error rounded-xl font-bold relative z-10"
+                  className="btn btn-xs btn-outline btn-error rounded-xl font-bold relative z-20"
                 >
                   Use System Camera
                 </button>
@@ -361,9 +429,22 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             )}
 
             {error && (
-              <div className="flex items-center gap-2 text-xs text-error bg-error/10 p-3 rounded-xl border border-error/20">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-error bg-error/10 p-3.5 rounded-xl border border-error/20">
+                <div className="flex items-center gap-2 flex-1">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+                {image && (
+                  <button
+                    type="button"
+                    onClick={handleScanReceipt}
+                    disabled={loading}
+                    className="btn btn-xs btn-error text-white font-bold shrink-0 flex items-center gap-1.5 shadow-sm"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    Retry Extraction
+                  </button>
+                )}
               </div>
             )}
 
@@ -375,6 +456,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" /> Scanning Receipt...
+                </>
+              ) : error && image ? (
+                <>
+                  <RefreshCw className="w-4 h-4" /> Retry AI Extraction
                 </>
               ) : (
                 'Start AI Extraction'
