@@ -158,6 +158,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         setError('Invalid file type. Only JPG, PNG, and WEBP images are supported.');
         return;
       }
+      if (file.size > 12 * 1024 * 1024) {
+        setError('File size exceeds the 12 MB limit.');
+        return;
+      }
       setError('');
       setLoading(true);
       try {
@@ -236,6 +240,10 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       setError('Invalid file type. Only JPG, PNG, and WEBP images are supported.');
       return;
     }
+    if (file.size > 12 * 1024 * 1024) {
+      setError('File size exceeds the 12 MB limit.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -262,13 +270,15 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
       const res = await axiosSecure.post('/api/ai/scan-receipt', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      if (res.data.success) {
+      if (res.data.success && res.data.data) {
         setParsedResult(res.data.data);
       } else {
+        setParsedResult(null);
         setError(res.data.message || 'Scanning failed.');
       }
     } catch (err) {
       console.error(err);
+      setParsedResult(null);
       setError(err.response?.data?.message || 'Error processing receipt on the server.');
     } finally {
       setLoading(false);

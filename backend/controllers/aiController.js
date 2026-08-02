@@ -69,12 +69,59 @@ export const parseTransaction = async (req, res, next) => {
 };
 
 /**
+ * Helper function to validate image magic bytes (file signature)
+ * Protects against spoofed file extensions and malicious payloads
+ */
+const validateMagicBytes = (buffer) => {
+  if (!buffer || buffer.length < 12) return false;
+
+  // JPEG magic bytes: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return true;
+  }
+
+  // PNG magic bytes: 89 50 4E 47
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4E &&
+    buffer[3] === 0x47
+  ) {
+    return true;
+  }
+
+  // WEBP magic bytes: 52 49 46 46 (RIFF) ... 57 45 42 50 (WEBP at offset 8)
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * 2. Scan image receipts using Gemini Vision
  */
 export const scanReceipt = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No receipt image uploaded' });
+    }
+
+    // Binary file signature (Magic Bytes) security check
+    if (!validateMagicBytes(req.file.buffer)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security error: Invalid image binary signature. Only genuine JPG, PNG, and WEBP files are allowed.'
+      });
     }
 
     const accounts = await Account.find({ userId: req.user.id });
@@ -87,32 +134,53 @@ export const scanReceipt = async (req, res, next) => {
     const timeStr = currentDate.toTimeString().split(' ')[0]; // "HH:MM:SS"
 
     const systemInstruction = `
-      You are an expert receipt parsing tool. Extract information from the receipt image.
+      You are an expert receipt and invoice security validation and OCR extraction tool.
+      
+      FIRST STEP - DOCUMENT CLASSIFICATION & VALIDATION:
+      Inspect the image carefully to determine if it is a genuine receipt, invoice, bill, payment slip, bank transfer proof, utility bill, POS receipt, or order confirmation summary.
+      
+      If the image is NOT a receipt, invoice, or payment document (for example: photographs of people, faces, animals, landscapes, generic objects, screenshots of unrelated apps/memes, or non-financial documents):
+      Set "isReceipt" to false, and set "error" to a clear, concise explanation explaining why it was rejected (e.g., "The uploaded image appears to be a photograph of a person on a beach, not a receipt or invoice.").
+      
+      If the image IS a valid receipt, invoice, or payment document:
+      Set "isReceipt" to true, "error" to null, and extract the financial data.
+
       Available Accounts: ${JSON.stringify(accounts.map(a => ({ id: a._id, name: a.name })))}
       Available Categories: ${JSON.stringify(categories.map(c => ({ id: c._id, name: c.name, type: c.type })))}
 
-      Output strictly valid JSON with this structure:
+      Output strictly valid JSON with this exact structure:
       {
+        "isReceipt": boolean,
+        "error": "Reason for rejection if isReceipt is false, otherwise null",
         "amount": number,
         "type": "EXPENSE",
         "date": "YYYY-MM-DDTHH:mm:ss",
-        "description": "extracted line items or receipt info (other details)",
+        "description": "extracted line items or receipt details",
         "note": "merchant name (maximum 30 characters)",
         "accountId": "matched_account_id",
         "categoryId": "matched_category_id"
       }
-      Extract both the transaction date and time from the receipt image.
-      Format the date field as ISO 8601 "YYYY-MM-DDTHH:mm:ss".
-      If date or time is not readable or missing, use today's date (${todayStr}) and the current time (${timeStr}).
-      If date is present but time is not, default the time part to "12:00:00".
-      Map category and account to the closest IDs provided.
-      Do not include markdown wrappers. Return raw JSON.
+
+      Formatting Rules for Valid Receipts:
+      - Extract both transaction date and time from the receipt image if present.
+      - Format date field as ISO 8601 "YYYY-MM-DDTHH:mm:ss".
+      - If date or time is not readable or missing, use today's date (${todayStr}) and current time (${timeStr}).
+      - If date is present but time is missing, default time to "12:00:00".
+      - Map category and account to closest IDs provided.
+      - Do not include markdown wrappers or backticks. Return raw JSON.
     `;
 
     const response = await generateContentWithFallback([systemInstruction, imagePart]);
     const cleanJson = response.response.text().trim().replace(/```json/g, '').replace(/```/g, '').trim();
 
     const parsedData = JSON.parse(cleanJson);
+
+    if (parsedData.isReceipt === false) {
+      return res.status(400).json({
+        success: false,
+        message: parsedData.error || 'The uploaded image is not a receipt, invoice, or payment document.'
+      });
+    }
 
     res.status(200).json({ success: true, data: parsedData });
   } catch (error) {
