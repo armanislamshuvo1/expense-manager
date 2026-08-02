@@ -11,7 +11,7 @@ export const getAccounts = async (req, res, next) => {
 
 export const createAccount = async (req, res, next) => {
   try {
-    const { name, type, balance, currency } = req.body;
+    const { name, type, balance, currency, creditLimit, statementDate, dueDate } = req.body;
     if (!name || !type) {
       return res.status(400).json({ success: false, message: 'Please provide account name and type.' });
     }
@@ -21,6 +21,9 @@ export const createAccount = async (req, res, next) => {
       name,
       type,
       balance: balance || 0.0,
+      creditLimit: creditLimit || 0.0,
+      statementDate: statementDate || undefined,
+      dueDate: dueDate || undefined,
       currency: currency || 'MYR'
     });
 
@@ -32,7 +35,7 @@ export const createAccount = async (req, res, next) => {
 
 export const updateAccount = async (req, res, next) => {
   try {
-    const { name, type, balance, currency } = req.body;
+    const { name, type, balance, currency, creditLimit, statementDate, dueDate } = req.body;
     const account = await Account.findOne({ _id: req.params.id, userId: req.user.id });
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found or access denied.' });
@@ -41,6 +44,9 @@ export const updateAccount = async (req, res, next) => {
     if (name) account.name = name;
     if (type) account.type = type;
     if (balance !== undefined) account.balance = balance;
+    if (creditLimit !== undefined) account.creditLimit = creditLimit;
+    if (statementDate !== undefined) account.statementDate = statementDate;
+    if (dueDate !== undefined) account.dueDate = dueDate;
     if (currency) account.currency = currency;
 
     await account.save();

@@ -206,15 +206,31 @@ export default function AccountTransactionsModal() {
                   {account.name || 'Account Details'}
                 </h2>
                 <span className="badge badge-sm badge-neutral font-semibold uppercase tracking-wider text-[10px]">
-                  {account.type || 'ACCOUNT'}
+                  {account.type ? account.type.replace('_', ' ') : 'ACCOUNT'}
                 </span>
               </div>
               <p className="text-xs text-base-content/60 font-medium mt-0.5">
-                Current Balance:{' '}
-                <span className="font-bold text-base-content">
+                {account.type === 'CREDIT_CARD' ? 'Outstanding Balance (Owed): ' : 'Current Balance: '}
+                <span className={`font-bold ${account.type === 'CREDIT_CARD' ? 'text-error' : 'text-base-content'}`}>
                   {account.currency || baseCurrency} {Number(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </p>
+              {account.type === 'CREDIT_CARD' && account.creditLimit > 0 && (
+                <div className="mt-2 text-xs bg-base-200/80 p-2 rounded-xl border border-base-content/10 max-w-sm space-y-1">
+                  <div className="flex justify-between items-center text-[11px] font-semibold">
+                    <span className="text-base-content/70">Limit: {account.currency || baseCurrency} {Number(account.creditLimit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-success font-bold">Avail: {account.currency || baseCurrency} {Number(Math.max(0, account.creditLimit - account.balance)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-300 ${
+                        (account.balance / account.creditLimit) > 0.7 ? 'bg-error' : (account.balance / account.creditLimit) > 0.3 ? 'bg-warning' : 'bg-success'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.round((account.balance / account.creditLimit) * 100))}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

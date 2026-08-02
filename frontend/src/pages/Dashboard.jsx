@@ -153,7 +153,7 @@ export default function Dashboard() {
       const quickAddDone = sessionStorage.getItem('quickAddDone');
       if (!quickAddDone) {
         sessionStorage.setItem('quickAddDone', 'true');
-        navigate('/transactions', { state: { openAddModal: true } });
+        navigate('/transactions', { state: { openAddModal: true, returnTo: '/dashboard' } });
       }
     }
   }, [user, navigate]);

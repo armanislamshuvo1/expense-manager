@@ -190,7 +190,7 @@ const List = React.memo(({
                 </span>
               </div>
               <div className="flex gap-3 text-xs font-bold font-mono">
-                <span className="text-primary">{baseCurrency} {dayIncome.toFixed(2)}</span>
+                <span className="text-success">{baseCurrency} {dayIncome.toFixed(2)}</span>
                 <span className="text-error">{baseCurrency} {dayExpense.toFixed(2)}</span>
               </div>
             </div>

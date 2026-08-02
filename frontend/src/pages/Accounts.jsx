@@ -16,6 +16,9 @@ export default function Accounts() {
   const [name, setName] = useState('');
   const [type, setType] = useState('CASH');
   const [balance, setBalance] = useState('');
+  const [creditLimit, setCreditLimit] = useState('');
+  const [statementDate, setStatementDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [currency, setCurrency] = useState('MYR');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,12 +39,18 @@ export default function Accounts() {
       const response = await axiosSecure.post('/api/accounts', {
         name,
         type,
-        balance: parseFloat(balance),
+        balance: parseFloat(balance) || 0,
+        creditLimit: type === 'CREDIT_CARD' ? (parseFloat(creditLimit) || 0) : 0,
+        statementDate: type === 'CREDIT_CARD' && statementDate ? parseInt(statementDate, 10) : undefined,
+        dueDate: type === 'CREDIT_CARD' && dueDate ? parseInt(dueDate, 10) : undefined,
         currency
       });
       if (response.data.success) {
         setName('');
         setBalance('');
+        setCreditLimit('');
+        setStatementDate('');
+        setDueDate('');
         queryClient.invalidateQueries({ queryKey: ['accounts'] });
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
         document.getElementById('add_account_modal').close();
@@ -78,12 +87,13 @@ export default function Accounts() {
     }
   };
 
-  // Group accounts by type for premium dashboard listing (Cash, Cards, Investments)
+  // Group accounts by type for premium dashboard listing (Cash, Credit Cards, Cards, Savings, Investments)
   const groupAccounts = () => {
-    const groups = { Cash: [], Card: [], Savings: [], Investments: [] };
+    const groups = { Cash: [], 'Credit Cards': [], Cards: [], Savings: [], Investments: [] };
     accounts.forEach((acc) => {
       if (acc.type === 'CASH') groups.Cash.push(acc);
-      else if (acc.type === 'CARD') groups.Card.push(acc);
+      else if (acc.type === 'CREDIT_CARD') groups['Credit Cards'].push(acc);
+      else if (acc.type === 'CARD') groups.Cards.push(acc);
       else if (acc.type === 'SAVINGS') groups.Savings.push(acc);
       else groups.Investments.push(acc);
     });
@@ -92,9 +102,19 @@ export default function Accounts() {
 
   const grouped = groupAccounts();
 
-  // Sum total net worth in User's baseCurrency
-  const calculateTotal = () => {
-    return accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  // Sum total assets (cash/savings/investments) & liabilities (credit card debt / negative balance)
+  const calculateAssets = () => {
+    return accounts.reduce((sum, acc) => {
+      if (acc.type === 'CREDIT_CARD') return sum;
+      return sum + (acc.balance > 0 ? acc.balance : 0);
+    }, 0);
+  };
+
+  const calculateLiabilities = () => {
+    return accounts.reduce((sum, acc) => {
+      if (acc.type === 'CREDIT_CARD') return sum + acc.balance;
+      return sum + (acc.balance < 0 ? Math.abs(acc.balance) : 0);
+    }, 0);
   };
 
   return (
@@ -109,14 +129,14 @@ export default function Accounts() {
           <div>
             <div className="text-[10px] uppercase tracking-wider opacity-60">Assets</div>
             <div className="text-lg font-bold text-primary">
-              {user?.baseCurrency || 'MYR'} {calculateTotal().toFixed(2)}
+              {user?.baseCurrency || 'MYR'} {calculateAssets().toFixed(2)}
             </div>
           </div>
           <div className="border-l border-base-content/10 h-8 self-center"></div>
           <div>
             <div className="text-[10px] uppercase tracking-wider opacity-60">Liabilities</div>
             <div className="text-lg font-bold text-error">
-              {user?.baseCurrency || 'MYR'} 0.00
+              {user?.baseCurrency || 'MYR'} {calculateLiabilities().toFixed(2)}
             </div>
           </div>
         </div>
@@ -151,32 +171,82 @@ export default function Accounts() {
                 <div className="card-body p-4">
                   <h2 className="text-xs font-bold uppercase opacity-60 mb-2">{groupName}</h2>
                   <div className="divide-y divide-base-200">
-                    {grouped[groupName].map((acc) => (
-                      <div 
-                        key={acc._id} 
-                        onClick={() => openAccountModal(acc)}
-                        className="flex justify-between items-center py-3 px-2 rounded-xl hover:bg-base-200/50 cursor-pointer transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-sm hover:underline">{acc.name}</span>
-                          <span className="text-[10px] opacity-50 uppercase">{acc.type}</span>
+                    {grouped[groupName].map((acc) => {
+                      const isCC = acc.type === 'CREDIT_CARD';
+                      const limit = acc.creditLimit || 0;
+                      const available = isCC && limit ? Math.max(0, limit - acc.balance) : 0;
+                      const utilPercent = isCC && limit ? Math.min(100, Math.round((acc.balance / limit) * 100)) : 0;
+
+                      return (
+                        <div 
+                          key={acc._id} 
+                          onClick={() => openAccountModal(acc)}
+                          className="py-3 px-2 rounded-xl hover:bg-base-200/50 cursor-pointer transition-colors space-y-2"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm hover:underline flex items-center gap-1.5">
+                                {acc.name}
+                                {isCC && <span className="badge badge-xs badge-outline badge-secondary">CC</span>}
+                              </span>
+                              <span className="text-[10px] opacity-50 uppercase">{acc.type.replace('_', ' ')}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className={`font-bold text-sm block ${isCC ? 'text-error' : ''}`}>
+                                  {acc.currency} {acc.balance.toFixed(2)}
+                                </span>
+                                {isCC && (
+                                  <span className="text-[10px] opacity-60 block">
+                                    Owed / Bal.
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAccount(acc._id);
+                                }}
+                                className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Credit Card Specific Progress & Limit Details */}
+                          {isCC && limit > 0 && (
+                            <div className="bg-base-200/80 p-2 rounded-xl space-y-1.5 border border-base-content/5">
+                              <div className="flex justify-between items-center text-[10px] font-semibold">
+                                <span className="text-base-content/70">
+                                  Limit: {acc.currency} {limit.toFixed(2)}
+                                </span>
+                                <span className="text-success font-bold">
+                                  Available: {acc.currency} {available.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${
+                                    utilPercent > 70 ? 'bg-error' : utilPercent > 30 ? 'bg-warning' : 'bg-success'
+                                  }`} 
+                                  style={{ width: `${utilPercent}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-[9px] opacity-60">
+                                <span>Util: {utilPercent}%</span>
+                                {(acc.statementDate || acc.dueDate) && (
+                                  <span>
+                                    {acc.statementDate ? `Stmt: Day ${acc.statementDate}` : ''} 
+                                    {acc.dueDate ? ` | Due: Day ${acc.dueDate}` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-sm">
-                            {acc.currency} {acc.balance.toFixed(2)}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteAccount(acc._id);
-                            }}
-                            className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -233,7 +303,8 @@ export default function Accounts() {
                 className="select select-bordered text-base-content"
               >
                 <option className="bg-base-100 text-base-content" value="CASH">Cash</option>
-                <option className="bg-base-100 text-base-content" value="CARD">Credit / Debit Card</option>
+                <option className="bg-base-100 text-base-content" value="CREDIT_CARD">Credit Card</option>
+                <option className="bg-base-100 text-base-content" value="CARD">Debit / Payment Card</option>
                 <option className="bg-base-100 text-base-content" value="SAVINGS">Savings Account</option>
                 <option className="bg-base-100 text-base-content" value="INVESTMENT">Investment Account</option>
                 <option className="bg-base-100 text-base-content" value="CRYPTO">Crypto Wallet</option>
@@ -243,7 +314,7 @@ export default function Accounts() {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">Initial Balance</span>
+                <span className="label-text font-semibold">{type === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : 'Initial Balance'}</span>
               </label>
               <input
                 type="number"
@@ -253,6 +324,55 @@ export default function Accounts() {
                 placeholder="0.00"
               />
             </div>
+
+            {type === 'CREDIT_CARD' && (
+              <div className="bg-base-200 p-3 rounded-xl space-y-3 border border-base-content/10">
+                <div className="text-xs font-bold text-error uppercase tracking-wider">Credit Card Options</div>
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text-alt font-semibold">Credit Limit</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input input-sm input-bordered"
+                    value={creditLimit}
+                    onChange={(e) => setCreditLimit(e.target.value)}
+                    placeholder="e.g. 5000.00"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-control">
+                    <label className="label py-0">
+                      <span className="label-text-alt">Statement Day (1-31)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      className="input input-xs input-bordered"
+                      value={statementDate}
+                      onChange={(e) => setStatementDate(e.target.value)}
+                      placeholder="e.g. 15"
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-0">
+                      <span className="label-text-alt">Due Day (1-31)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      className="input input-xs input-bordered"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      placeholder="e.g. 5"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="form-control">
               <label className="label">

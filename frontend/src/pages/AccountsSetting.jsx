@@ -11,6 +11,9 @@ export default function AccountsSetting() {
   const [name, setName] = useState('');
   const [type, setType] = useState('CASH');
   const [balance, setBalance] = useState('');
+  const [creditLimit, setCreditLimit] = useState('');
+  const [statementDate, setStatementDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [currency, setCurrency] = useState('MYR');
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -43,32 +46,38 @@ export default function AccountsSetting() {
     setError('');
 
     try {
+      const payload = {
+        name,
+        type,
+        balance: Number(balance) || 0,
+        creditLimit: type === 'CREDIT_CARD' ? (Number(creditLimit) || 0) : 0,
+        statementDate: type === 'CREDIT_CARD' && statementDate ? parseInt(statementDate, 10) : undefined,
+        dueDate: type === 'CREDIT_CARD' && dueDate ? parseInt(dueDate, 10) : undefined,
+        currency,
+      };
+
       if (editingId) {
-        const response = await axiosSecure.put(`/api/accounts/${editingId}`, {
-          name,
-          type,
-          balance: Number(balance) || 0,
-          currency,
-        });
+        const response = await axiosSecure.put(`/api/accounts/${editingId}`, payload);
         if (response.data.success) {
           setEditingId(null);
           setName('');
           setBalance('');
+          setCreditLimit('');
+          setStatementDate('');
+          setDueDate('');
           queryClient.invalidateQueries({ queryKey: ['accounts'] });
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
           fetchAccounts();
           document.getElementById('account_modal').close();
         }
       } else {
-        const response = await axiosSecure.post('/api/accounts', {
-          name,
-          type,
-          balance: Number(balance) || 0,
-          currency,
-        });
+        const response = await axiosSecure.post('/api/accounts', payload);
         if (response.data.success) {
           setName('');
           setBalance('');
+          setCreditLimit('');
+          setStatementDate('');
+          setDueDate('');
           queryClient.invalidateQueries({ queryKey: ['accounts'] });
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
           fetchAccounts();
@@ -87,6 +96,9 @@ export default function AccountsSetting() {
     setName(acc.name);
     setType(acc.type);
     setBalance(acc.balance.toString());
+    setCreditLimit(acc.creditLimit ? acc.creditLimit.toString() : '');
+    setStatementDate(acc.statementDate ? acc.statementDate.toString() : '');
+    setDueDate(acc.dueDate ? acc.dueDate.toString() : '');
     setCurrency(acc.currency || 'MYR');
     document.getElementById('account_modal').showModal();
   };
@@ -227,7 +239,8 @@ export default function AccountsSetting() {
                   className="select select-bordered bg-base-200 border-base-content/20 text-base-content"
                 >
                   <option className="bg-base-200 text-base-content" value="CASH">Cash</option>
-                  <option className="bg-base-200 text-base-content" value="CARD">Credit / Debit Card</option>
+                  <option className="bg-base-200 text-base-content" value="CREDIT_CARD">Credit Card</option>
+                  <option className="bg-base-200 text-base-content" value="CARD">Debit / Payment Card</option>
                   <option className="bg-base-200 text-base-content" value="SAVINGS">Savings Account</option>
                   <option className="bg-base-200 text-base-content" value="INVESTMENT">Investment Account</option>
                   <option className="bg-base-200 text-base-content" value="CRYPTO">Crypto Wallet</option>
@@ -253,7 +266,7 @@ export default function AccountsSetting() {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-base-content/60 font-semibold">Balance</span>
+                <span className="label-text text-base-content/60 font-semibold">{type === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : 'Balance'}</span>
               </label>
               <input
                 type="number"
@@ -263,6 +276,55 @@ export default function AccountsSetting() {
                 placeholder="0.00"
               />
             </div>
+
+            {type === 'CREDIT_CARD' && (
+              <div className="bg-base-200/50 p-3 rounded-xl space-y-3 border border-base-content/10">
+                <div className="text-xs font-bold text-error uppercase tracking-wider">Credit Card Details</div>
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text-alt text-base-content/60 font-semibold">Total Credit Limit</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content"
+                    value={creditLimit}
+                    onChange={(e) => setCreditLimit(e.target.value)}
+                    placeholder="e.g. 5000.00"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-control">
+                    <label className="label py-0">
+                      <span className="label-text-alt text-base-content/50">Statement Day (1-31)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      className="input input-xs input-bordered bg-base-200 border-base-content/20 text-base-content"
+                      value={statementDate}
+                      onChange={(e) => setStatementDate(e.target.value)}
+                      placeholder="e.g. 15"
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-0">
+                      <span className="label-text-alt text-base-content/50">Due Day (1-31)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      className="input input-xs input-bordered bg-base-200 border-base-content/20 text-base-content"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      placeholder="e.g. 5"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="modal-action flex justify-end gap-2">
               <button

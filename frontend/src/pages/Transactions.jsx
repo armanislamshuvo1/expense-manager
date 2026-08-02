@@ -125,12 +125,31 @@ export default function Transactions() {
     getNoteSuggestions
   } = formProps;
 
+  const [returnPath, setReturnPath] = useState(null);
+
   useEffect(() => {
     if (location.state?.openAddModal) {
+      if (location.state?.returnTo) {
+        setReturnPath(location.state.returnTo);
+      }
       handleOpenAddModal();
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state?.openAddModal, handleOpenAddModal, navigate, location.pathname]);
+  }, [location.state?.openAddModal, location.state?.returnTo, handleOpenAddModal, navigate, location.pathname]);
+
+  useEffect(() => {
+    const modal = document.getElementById('add_transaction_modal');
+    if (!modal) return;
+    const handleClose = () => {
+      if (returnPath) {
+        const dest = returnPath;
+        setReturnPath(null);
+        navigate(dest);
+      }
+    };
+    modal.addEventListener('close', handleClose);
+    return () => modal.removeEventListener('close', handleClose);
+  }, [returnPath, navigate]);
 
   const formatDateKey = (dateStr) => {
     if (!dateStr) return '';
@@ -312,8 +331,8 @@ export default function Transactions() {
         {/* Monthly Summary Bar */}
         <div className="grid grid-cols-3 text-center bg-base-100 p-3 rounded-xl shadow-md border border-base-200">
           <div className="flex flex-col items-center justify-center border-r border-base-200">
-            <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Income</span>
-            <span className="text-sm font-bold text-primary mt-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-success font-extrabold">Income</span>
+            <span className="text-sm font-extrabold text-success mt-1">
               {totalIncome.toFixed(2)}
             </span>
           </div>

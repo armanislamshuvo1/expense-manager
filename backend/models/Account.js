@@ -15,11 +15,25 @@ const accountSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: true,
-    enum: ['CASH', 'CARD', 'SAVINGS', 'INVESTMENT', 'CRYPTO', 'REAL_ESTATE']
+    enum: ['CASH', 'CARD', 'CREDIT_CARD', 'SAVINGS', 'INVESTMENT', 'CRYPTO', 'REAL_ESTATE', 'E-WALLET']
   },
   balance: { 
     type: Number, 
     default: 0.0 
+  },
+  creditLimit: {
+    type: Number,
+    default: 0.0
+  },
+  statementDate: {
+    type: Number,
+    min: 1,
+    max: 31
+  },
+  dueDate: {
+    type: Number,
+    min: 1,
+    max: 31
   },
   currency: { 
     type: String, 
