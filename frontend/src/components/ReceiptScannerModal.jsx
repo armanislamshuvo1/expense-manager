@@ -439,22 +439,9 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
             )}
 
             {error && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-error bg-error/10 p-3.5 rounded-xl border border-error/20">
-                <div className="flex items-center gap-2 flex-1">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-                {image && (
-                  <button
-                    type="button"
-                    onClick={handleScanReceipt}
-                    disabled={loading}
-                    className="btn btn-xs btn-error text-white font-bold shrink-0 flex items-center gap-1.5 shadow-sm"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                    Retry Extraction
-                  </button>
-                )}
+              <div className="flex items-center gap-2.5 text-xs text-error bg-error/10 p-3.5 rounded-xl border border-error/20">
+                <AlertCircle className="w-4 h-4 shrink-0 text-error" />
+                <span className="leading-snug">{error}</span>
               </div>
             )}
 
