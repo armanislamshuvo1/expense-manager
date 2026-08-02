@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ALL_CURRENCIES } from '../utils/currencies';
 import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
@@ -31,26 +32,7 @@ export default function More() {
   const [accountDeleteModalOpen, setAccountDeleteModalOpen] = useState(false);
   const [scanResultData, setScanResultData] = useState(null);
 
-  const ALL_CURRENCIES = [
-    { code: 'MYR', name: 'Malaysian Ringgit (RM)' },
-    { code: 'USD', name: 'US Dollar ($)' },
-    { code: 'EUR', name: 'Euro (€)' },
-    { code: 'SGD', name: 'Singapore Dollar (S$)' },
-    { code: 'BDT', name: 'Bangladeshi Taka (৳)' },
-    { code: 'GBP', name: 'British Pound (£)' },
-    { code: 'JPY', name: 'Japanese Yen (¥)' },
-    { code: 'AUD', name: 'Australian Dollar (A$)' },
-    { code: 'CAD', name: 'Canadian Dollar (C$)' },
-    { code: 'CHF', name: 'Swiss Franc (CHF)' },
-    { code: 'CNY', name: 'Chinese Yuan (¥)' },
-    { code: 'INR', name: 'Indian Rupee (₹)' },
-    { code: 'AED', name: 'UAE Dirham (AED)' },
-    { code: 'IDR', name: 'Indonesian Rupiah (Rp)' },
-    { code: 'PHP', name: 'Philippine Peso (₱)' },
-    { code: 'THB', name: 'Thai Baht (฿)' },
-    { code: 'KRW', name: 'South Korean Won (₩)' },
-    { code: 'TWD', name: 'New Taiwan Dollar (NT$)' },
-  ];
+
 
   const [baseCurrency, setBaseCurrency] = useState(user?.baseCurrency || 'MYR');
   const [curList, setCurList] = useState(user?.preferredCurrencies || []);
