@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { ALL_CURRENCIES, getPreferredCurrencies } from '../utils/currencies';
 
 export default function AccountsSetting() {
   const [accounts, setAccounts] = useState([]);
@@ -256,10 +257,11 @@ export default function AccountsSetting() {
                   onChange={(e) => setCurrency(e.target.value)}
                   className="select select-bordered bg-base-200 border-base-content/20 text-base-content"
                 >
-                  <option className="bg-base-200 text-base-content" value="MYR">MYR (RM)</option>
-                  <option className="bg-base-200 text-base-content" value="USD">USD ($)</option>
-                  <option className="bg-base-200 text-base-content" value="EUR">EUR (€)</option>
-                  <option className="bg-base-200 text-base-content" value="SGD">SGD (S$)</option>
+                  {getPreferredCurrencies(user, currency).map((c) => (
+                    <option key={c.code} className="bg-base-200 text-base-content" value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

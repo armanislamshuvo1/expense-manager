@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X, Wallet, CreditCard, DollarSign, Globe, Layers, Calendar, Check } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { ALL_CURRENCIES, getPreferredCurrencies } from '../../utils/currencies';
 
 export default function AddAccountModal({
   isOpen,
   onClose,
   handleSaveCustomAccount
 }) {
+  const { user } = useAuth();
   const [newAccName, setNewAccName] = useState('');
   const [newAccType, setNewAccType] = useState('SAVINGS');
   const [newAccBalance, setNewAccBalance] = useState('0');
@@ -44,34 +47,59 @@ export default function AddAccountModal({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-base-200 border border-base-content/10 rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-scaleIn text-base-content max-h-[90vh] overflow-y-auto">
-        <h3 className="text-base font-bold text-base-content mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-primary" /> Create New Account
-        </h3>
+      <div className="bg-base-100/95 border border-base-content/15 shadow-2xl rounded-2xl p-6 max-w-md w-full relative text-base-content max-h-[90vh] overflow-y-auto animate-scaleIn">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-base-content/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-error/15 text-error flex items-center justify-center border border-error/20 shadow-inner">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-base-content leading-snug">Create New Account</h3>
+              <p className="text-xs text-base-content/60">Add a custom account for tracking</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-sm btn-circle btn-ghost text-base-content/60 hover:text-base-content hover:bg-base-200 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Account Name */}
           <div className="form-control">
             <label className="label py-1">
-              <span className="label-text text-xs">Account Name</span>
+              <span className="label-text text-xs font-semibold flex items-center gap-1.5 text-base-content/80">
+                <Wallet className="w-3.5 h-3.5 text-error" />
+                Account Name
+              </span>
             </label>
             <input
               type="text"
-              className="input input-bordered input-sm w-full text-xs font-semibold"
+              className="input input-bordered focus:input-error focus:outline-none focus:ring-2 focus:ring-error/20 rounded-xl bg-base-200/50 text-sm font-medium transition-all"
               value={newAccName}
               onChange={(e) => setNewAccName(e.target.value)}
-              placeholder="e.g. My Cash, Maybank Visa Credit Card..."
+              placeholder="e.g. My Cash, Maybank Credit Card..."
               required
               autoFocus
             />
           </div>
 
+          {/* Account Type */}
           <div className="form-control">
             <label className="label py-1">
-              <span className="label-text text-xs">Account Type</span>
+              <span className="label-text text-xs font-semibold flex items-center gap-1.5 text-base-content/80">
+                <Layers className="w-3.5 h-3.5 text-error" />
+                Account Type
+              </span>
             </label>
             <select
               value={newAccType}
               onChange={(e) => setNewAccType(e.target.value)}
-              className="select select-bordered select-sm w-full text-xs font-semibold text-base-content"
+              className="select select-bordered focus:select-error focus:outline-none focus:ring-2 focus:ring-error/20 rounded-xl bg-base-200/50 text-sm font-medium text-base-content transition-all"
             >
               <option className="bg-base-100 text-base-content" value="CASH">Cash</option>
               <option className="bg-base-100 text-base-content" value="CREDIT_CARD">Credit Card</option>
@@ -79,17 +107,26 @@ export default function AddAccountModal({
               <option className="bg-base-100 text-base-content" value="SAVINGS">Savings Account</option>
               <option className="bg-base-100 text-base-content" value="INVESTMENT">Investment Account</option>
               <option className="bg-base-100 text-base-content" value="CRYPTO">Crypto Wallet</option>
+              <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
             </select>
           </div>
 
+          {/* Balance */}
           <div className="form-control">
             <label className="label py-1">
-              <span className="label-text text-xs">{newAccType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : 'Initial Balance'}</span>
+              <span className="label-text text-xs font-semibold flex items-center gap-1.5 text-base-content/80">
+                {newAccType === 'CREDIT_CARD' ? (
+                  <CreditCard className="w-3.5 h-3.5 text-error" />
+                ) : (
+                  <DollarSign className="w-3.5 h-3.5 text-error" />
+                )}
+                {newAccType === 'CREDIT_CARD' ? 'Outstanding Balance (Owed)' : 'Initial Balance'}
+              </span>
             </label>
             <input
               type="number"
               step="0.01"
-              className="input input-bordered input-sm w-full text-xs font-semibold"
+              className="input input-bordered focus:input-error focus:outline-none focus:ring-2 focus:ring-error/20 rounded-xl bg-base-200/50 text-sm font-medium transition-all"
               value={newAccBalance}
               onChange={(e) => setNewAccBalance(e.target.value)}
               placeholder="0.00"
@@ -97,85 +134,100 @@ export default function AddAccountModal({
             />
           </div>
 
+          {/* Credit Card Specific Options */}
           {newAccType === 'CREDIT_CARD' && (
-            <div className="bg-base-300 p-3 rounded-xl space-y-3 border border-base-content/10">
-              <div className="text-[11px] font-bold text-primary uppercase tracking-wider">Credit Card Details</div>
+            <div className="bg-error/5 border border-error/20 p-4 rounded-2xl space-y-3.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-error uppercase tracking-wider">
+                <CreditCard className="w-4 h-4 text-error" />
+                <span>Credit Card Details</span>
+              </div>
               <div className="form-control">
-                <label className="label py-0 mb-1">
-                  <span className="label-text-alt text-xs font-semibold">Total Credit Limit</span>
+                <label className="label py-0.5">
+                  <span className="label-text-alt font-semibold text-base-content/80">Total Credit Limit</span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
-                  className="input input-bordered input-xs w-full text-xs font-semibold"
+                  className="input input-sm input-bordered focus:input-error rounded-xl bg-base-100 text-xs font-medium"
                   value={newAccCreditLimit}
                   onChange={(e) => setNewAccCreditLimit(e.target.value)}
                   placeholder="e.g. 5000.00"
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="form-control">
-                  <label className="label py-0 mb-1">
-                    <span className="label-text-alt text-[10px]">Statement Day (1-31)</span>
+                  <label className="label py-0.5">
+                    <span className="label-text-alt font-semibold text-base-content/80 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-error/80" /> Statement Day
+                    </span>
                   </label>
                   <input
                     type="number"
                     min="1"
                     max="31"
-                    className="input input-bordered input-xs w-full text-xs"
+                    className="input input-sm input-bordered focus:input-error rounded-xl bg-base-100 text-xs font-medium"
                     value={newAccStatementDate}
                     onChange={(e) => setNewAccStatementDate(e.target.value)}
-                    placeholder="e.g. 15"
+                    placeholder="e.g. 15 (1-31)"
                   />
                 </div>
                 <div className="form-control">
-                  <label className="label py-0 mb-1">
-                    <span className="label-text-alt text-[10px]">Due Day (1-31)</span>
+                  <label className="label py-0.5">
+                    <span className="label-text-alt font-semibold text-base-content/80 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-error/80" /> Due Day
+                    </span>
                   </label>
                   <input
                     type="number"
                     min="1"
                     max="31"
-                    className="input input-bordered input-xs w-full text-xs"
+                    className="input input-sm input-bordered focus:input-error rounded-xl bg-base-100 text-xs font-medium"
                     value={newAccDueDate}
                     onChange={(e) => setNewAccDueDate(e.target.value)}
-                    placeholder="e.g. 5"
+                    placeholder="e.g. 5 (1-31)"
                   />
                 </div>
               </div>
             </div>
           )}
 
+          {/* Currency */}
           <div className="form-control">
             <label className="label py-1">
-              <span className="label-text text-xs">Account Currency</span>
+              <span className="label-text text-xs font-semibold flex items-center gap-1.5 text-base-content/80">
+                <Globe className="w-3.5 h-3.5 text-error" />
+                Account Currency
+              </span>
             </label>
             <select
               value={newAccCurrency}
               onChange={(e) => setNewAccCurrency(e.target.value)}
-              className="select select-bordered select-sm w-full text-xs font-semibold text-base-content"
+              className="select select-bordered focus:select-error focus:outline-none focus:ring-2 focus:ring-error/20 rounded-xl bg-base-200/50 text-sm font-medium text-base-content transition-all"
             >
-              <option className="bg-base-100 text-base-content" value="MYR">MYR (RM)</option>
-              <option className="bg-base-100 text-base-content" value="USD">USD ($)</option>
-              <option className="bg-base-100 text-base-content" value="EUR">EUR (€)</option>
-              <option className="bg-base-100 text-base-content" value="SGD">SGD (S$)</option>
+              {getPreferredCurrencies(user, newAccCurrency).map((c) => (
+                <option key={c.code} className="bg-base-100 text-base-content" value={c.code}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-2">
+          {/* Modal Actions */}
+          <div className="pt-3 border-t border-base-content/10 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-ghost btn-sm text-xs font-semibold px-4"
+              className="btn btn-ghost hover:bg-base-200 text-base-content/70 rounded-xl px-5 text-sm transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!newAccName.trim()}
-              className="btn btn-primary btn-sm text-xs font-bold text-white px-4 shadow-md hover:shadow-lg transition-all"
+              className="btn btn-error text-white font-semibold shadow-lg shadow-error/25 hover:shadow-error/40 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl px-6 text-sm flex items-center gap-2"
             >
+              <Check className="w-4 h-4" />
               Create Account
             </button>
           </div>
