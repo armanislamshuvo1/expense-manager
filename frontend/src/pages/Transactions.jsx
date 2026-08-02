@@ -369,7 +369,7 @@ export default function Transactions() {
       {/* Floating Add Action Button */}
       <button
         onClick={() => handleOpenAddModal()}
-        className="btn btn-error btn-circle fixed bottom-20 right-6 shadow-xl z-40 text-white animate-bounce"
+        className="btn btn-error btn-circle fixed bottom-28 right-6 shadow-xl z-40 text-white animate-bounce"
       >
         <Plus className="w-6 h-6" />
       </button>
