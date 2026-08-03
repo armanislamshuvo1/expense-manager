@@ -8,6 +8,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { 
   getMergedTransactions, 
+  getMergedAccounts,
+  getMergedCategories,
   setCache, 
   getAccountsCache,
   setAccountsCache,

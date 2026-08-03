@@ -148,6 +148,7 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data.data);
           localStorage.setItem('user_cache', JSON.stringify(response.data.data));
           setIsAuthenticated(true);
+          cacheInitialUserData(token, response.data.data);
         } else {
           logout();
         }
@@ -198,6 +199,8 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     setIsAuthenticated(true);
     setIsUnlocked(true); // Start unlocked so user doesn't have to enter passcode immediately after login
+    setLoading(false);
+    cacheInitialUserData(jwtToken, userData);
   };
 
   const updateToken = (newToken) => {

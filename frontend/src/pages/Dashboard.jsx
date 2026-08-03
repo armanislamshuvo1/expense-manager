@@ -10,6 +10,8 @@ import { Sparkles, Camera, AlertTriangle, Loader2, Check, X, MessageSquare, Plus
 import { 
   getQueue, 
   getMergedTransactions, 
+  getMergedAccounts,
+  getMergedCategories,
   setCache, 
   getAccountsCache,
   setAccountsCache,
