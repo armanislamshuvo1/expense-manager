@@ -199,6 +199,13 @@ export function useTransactionsForm(transactions = []) {
   }, [queryClient]);
 
   const handleDeleteTransaction = useCallback(async (id) => {
+    const modalEl = document.getElementById('add_transaction_modal');
+    const wasModalOpen = Boolean(modalEl && modalEl.open);
+
+    if (wasModalOpen) {
+      modalEl.close();
+    }
+
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: 'Delete this transaction?',
@@ -238,6 +245,9 @@ export function useTransactionsForm(transactions = []) {
       } finally {
         setLoading(false);
       }
+    } else if (wasModalOpen && modalEl) {
+      // Re-open form modal ONLY if it was open before the delete prompt
+      modalEl.showModal();
     }
     return false;
   }, [deleteMutation]);
