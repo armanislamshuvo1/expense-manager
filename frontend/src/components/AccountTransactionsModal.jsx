@@ -19,7 +19,7 @@ import {
 import { useAccountModal } from '../context/AccountModalContext';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosSecure } from '../hooks/useApi';
-import { getMergedTransactions, subscribeToSync } from '../utils/syncManager';
+import { getMergedTransactions, setCache, getAccountsCache, setAccountsCache, subscribeToSync } from '../utils/syncManager';
 
 export default function AccountTransactionsModal() {
   const { selectedAccount, isOpen, closeAccountModal } = useAccountModal();
@@ -65,8 +65,16 @@ export default function AccountTransactionsModal() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/accounts');
-      return res.data.success ? res.data.data : [];
+      try {
+        const res = await axiosSecure.get('/api/accounts');
+        if (res.data?.success) {
+          setAccountsCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch accounts online, using cache');
+      }
+      return getAccountsCache();
     },
     enabled: isOpen
   });
@@ -75,8 +83,16 @@ export default function AccountTransactionsModal() {
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/transactions');
-      return res.data.success ? res.data.data : [];
+      try {
+        const res = await axiosSecure.get('/api/transactions');
+        if (res.data?.success) {
+          setCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch transactions online, using cache');
+      }
+      return [];
     },
     enabled: isOpen
   });

@@ -120,12 +120,41 @@ export const AuthProvider = ({ children }) => {
         });
         if (response.data.success) {
           setUser(response.data.data);
+          localStorage.setItem('user_cache', JSON.stringify(response.data.data));
           setIsAuthenticated(true);
         } else {
           logout();
         }
       } catch (err) {
-        logout();
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          try {
+            const refreshRes = await publicApi.post('/api/auth/refresh', { token });
+            if (refreshRes.data?.success) {
+              const newToken = refreshRes.data.data.token;
+              updateToken(newToken);
+              if (refreshRes.data.data.user) {
+                setUser(refreshRes.data.data.user);
+                localStorage.setItem('user_cache', JSON.stringify(refreshRes.data.data.user));
+              }
+              setIsAuthenticated(true);
+              return;
+            }
+          } catch (rErr) {
+            logout();
+            return;
+          }
+          logout();
+        } else {
+          // Offline / Network Error: Restore session from cache
+          const cachedUserStr = localStorage.getItem('user_cache');
+          if (cachedUserStr) {
+            try {
+              const cachedUser = JSON.parse(cachedUserStr);
+              setUser(cachedUser);
+            } catch (e) {}
+          }
+          setIsAuthenticated(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -136,6 +165,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = (jwtToken, userData) => {
     localStorage.setItem('token', jwtToken);
+    if (userData) {
+      localStorage.setItem('user_cache', JSON.stringify(userData));
+    }
     setToken(jwtToken);
     setUser(userData);
     setIsAuthenticated(true);
@@ -149,8 +181,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user_cache');
     localStorage.removeItem('tx_cache');
     localStorage.removeItem('tx_sync_queue');
+    localStorage.removeItem('accounts_cache');
+    localStorage.removeItem('categories_cache');
     sessionStorage.clear();
     setToken('');
     setUser(null);

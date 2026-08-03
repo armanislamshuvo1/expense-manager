@@ -26,8 +26,9 @@ export const useAxiosSecure = () => {
   useEffect(() => {
     const requestIntercept = secureApi.interceptors.request.use(
       (config) => {
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        const currentToken = localStorage.getItem('token') || token;
+        if (currentToken) {
+          config.headers.Authorization = `Bearer ${currentToken}`;
         }
         return config;
       },
@@ -55,8 +56,14 @@ export const useAxiosSecure = () => {
           isRefreshing = true;
 
           try {
-            const response = await publicApi.post('/api/auth/refresh', { token });
-            if (response.data.success) {
+            const tokenToRefresh = localStorage.getItem('token') || token;
+            if (!tokenToRefresh) {
+              logout();
+              return Promise.reject(error);
+            }
+
+            const response = await publicApi.post('/api/auth/refresh', { token: tokenToRefresh });
+            if (response.data?.success) {
               const newToken = response.data.data.token;
               updateToken(newToken);
               processQueue(null, newToken);
@@ -65,7 +72,11 @@ export const useAxiosSecure = () => {
             }
           } catch (refreshError) {
             processQueue(refreshError, null);
-            logout();
+            // ONLY log out if backend explicitly rejected with 401 or 403 auth errors.
+            // NEVER log out on network errors (e.g. offline mode)!
+            if (refreshError.response && (refreshError.response.status === 401 || refreshError.response.status === 403)) {
+              logout();
+            }
             return Promise.reject(refreshError);
           } finally {
             isRefreshing = false;

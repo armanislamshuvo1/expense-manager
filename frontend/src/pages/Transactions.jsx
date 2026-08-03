@@ -9,6 +9,10 @@ import { Plus } from 'lucide-react';
 import { 
   getMergedTransactions, 
   setCache, 
+  getAccountsCache,
+  setAccountsCache,
+  getCategoriesCache,
+  setCategoriesCache,
   subscribeToSync
 } from '../utils/syncManager';
 import { useTransactionsForm } from '../hooks/useTransactionsForm';
@@ -53,11 +57,16 @@ export default function Transactions() {
   const { data: rawTransactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/transactions');
-      if (res.data.success) {
-        setCache(res.data.data);
+      try {
+        const res = await axiosSecure.get('/api/transactions');
+        if (res.data?.success) {
+          setCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch transactions online, using cache');
       }
-      return res.data.success ? res.data.data : [];
+      return [];
     }
   });
 
@@ -68,16 +77,32 @@ export default function Transactions() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/accounts');
-      return res.data.success ? res.data.data : [];
+      try {
+        const res = await axiosSecure.get('/api/accounts');
+        if (res.data?.success) {
+          setAccountsCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch accounts online, using cache');
+      }
+      return getAccountsCache();
     }
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/categories');
-      return res.data.success ? res.data.data : [];
+      try {
+        const res = await axiosSecure.get('/api/categories');
+        if (res.data?.success) {
+          setCategoriesCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch categories online, using cache');
+      }
+      return getCategoriesCache();
     }
   });
 

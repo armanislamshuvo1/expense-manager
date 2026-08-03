@@ -41,6 +41,34 @@ export const setCache = (transactions) => {
   localStorage.setItem('tx_cache', JSON.stringify(transactions));
 };
 
+export const getAccountsCache = () => {
+  try {
+    return JSON.parse(localStorage.getItem('accounts_cache')) || [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const setAccountsCache = (accounts) => {
+  if (Array.isArray(accounts) && accounts.length > 0) {
+    localStorage.setItem('accounts_cache', JSON.stringify(accounts));
+  }
+};
+
+export const getCategoriesCache = () => {
+  try {
+    return JSON.parse(localStorage.getItem('categories_cache')) || [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const setCategoriesCache = (categories) => {
+  if (Array.isArray(categories) && categories.length > 0) {
+    localStorage.setItem('categories_cache', JSON.stringify(categories));
+  }
+};
+
 // Register listener for sync status
 export const subscribeToSync = (callback) => {
   listeners.add(callback);
