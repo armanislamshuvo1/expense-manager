@@ -4,95 +4,205 @@ let isSyncing = false;
 const listeners = new Set();
 let syncStatus = 'synced'; // 'synced' | 'syncing' | 'offline' | 'error'
 
-// Helper to notify listeners of status changes
-const notify = () => {
-  // Update offline status dynamically if navigator status changes
-  const currentStatus = !navigator.onLine ? 'offline' : syncStatus;
-  listeners.forEach(cb => cb(currentStatus, getQueue().length));
-};
-
-// Generate simple client UUID
-export const generateUUID = () => {
-  return 'tx_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-};
-
-export const getQueue = () => {
+// Helper to get active User ID for cache scoping
+export const getCurrentUserId = () => {
   try {
-    return JSON.parse(localStorage.getItem('tx_sync_queue')) || [];
+    const cachedUser = JSON.parse(localStorage.getItem('user_cache'));
+    return cachedUser?._id || cachedUser?.id || 'guest';
+  } catch (e) {
+    return 'guest';
+  }
+};
+
+// Default System Fallback Categories if no user categories exist in cache or server
+export const DEFAULT_CATEGORIES = [
+  { _id: 'cat_def_food', name: 'Food & Dining', emoji: '🍔', color: '#ef4444', type: 'EXPENSE' },
+  { _id: 'cat_def_transport', name: 'Transportation', emoji: '🚗', color: '#3b82f6', type: 'EXPENSE' },
+  { _id: 'cat_def_shopping', name: 'Shopping', emoji: '🛍️', color: '#ec4899', type: 'EXPENSE' },
+  { _id: 'cat_def_entertainment', name: 'Entertainment', emoji: '🎬', color: '#8b5cf6', type: 'EXPENSE' },
+  { _id: 'cat_def_utilities', name: 'Bills & Utilities', emoji: '💡', color: '#f59e0b', type: 'EXPENSE' },
+  { _id: 'cat_def_medical', name: 'Health & Medical', emoji: '🏥', color: '#10b981', type: 'EXPENSE' },
+  { _id: 'cat_def_salary', name: 'Salary', emoji: '💰', color: '#10b981', type: 'INCOME' },
+  { _id: 'cat_def_freelance', name: 'Freelance', emoji: '💻', color: '#8b5cf6', type: 'INCOME' },
+  { _id: 'cat_def_investments', name: 'Investments', emoji: '📈', color: '#06b6d4', type: 'INCOME' },
+];
+
+export const DEFAULT_ACCOUNTS = [
+  { _id: 'acc_def_cash', name: 'Cash', type: 'CASH', balance: 0.0, currency: 'MYR' }
+];
+
+// Helper to notify listeners of status changes
+export const getTotalPendingCount = (userId = getCurrentUserId()) => {
+  return getQueue(userId).length + getCategoryQueue(userId).length + getAccountQueue(userId).length;
+};
+
+const notify = () => {
+  const currentStatus = !navigator.onLine ? 'offline' : syncStatus;
+  const pendingCount = getTotalPendingCount();
+  listeners.forEach(cb => cb(currentStatus, pendingCount));
+};
+
+// Generate UUID for offline client items
+export const generateUUID = (prefix = 'tx') => {
+  return `${prefix}_` + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+};
+
+/* ==================== TRANSACTIONS CACHE & QUEUE ==================== */
+export const getQueue = (userId = getCurrentUserId()) => {
+  try {
+    return JSON.parse(localStorage.getItem(`tx_sync_queue_${userId}`)) || [];
   } catch (e) {
     return [];
   }
 };
 
-const saveQueue = (queue) => {
-  localStorage.setItem('tx_sync_queue', JSON.stringify(queue));
+const saveQueue = (queue, userId = getCurrentUserId()) => {
+  localStorage.setItem(`tx_sync_queue_${userId}`, JSON.stringify(queue));
   notify();
 };
 
-export const getCache = () => {
+export const getCache = (userId = getCurrentUserId()) => {
   try {
-    return JSON.parse(localStorage.getItem('tx_cache')) || [];
+    return JSON.parse(localStorage.getItem(`tx_cache_${userId}`)) || [];
   } catch (e) {
     return [];
   }
 };
 
-export const setCache = (transactions) => {
-  localStorage.setItem('tx_cache', JSON.stringify(transactions));
+export const setCache = (transactions, userId = getCurrentUserId()) => {
+  localStorage.setItem(`tx_cache_${userId}`, JSON.stringify(transactions));
 };
 
-export const getAccountsCache = () => {
+/* ==================== ACCOUNTS CACHE & QUEUE ==================== */
+export const getAccountQueue = (userId = getCurrentUserId()) => {
   try {
-    return JSON.parse(localStorage.getItem('accounts_cache')) || [];
+    return JSON.parse(localStorage.getItem(`acc_sync_queue_${userId}`)) || [];
   } catch (e) {
     return [];
   }
 };
 
-export const setAccountsCache = (accounts) => {
+const saveAccountQueue = (queue, userId = getCurrentUserId()) => {
+  localStorage.setItem(`acc_sync_queue_${userId}`, JSON.stringify(queue));
+  notify();
+};
+
+export const getAccountsCache = (userId = getCurrentUserId()) => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(`accounts_cache_${userId}`));
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+  } catch (e) {}
+  return DEFAULT_ACCOUNTS;
+};
+
+export const setAccountsCache = (accounts, userId = getCurrentUserId()) => {
   if (Array.isArray(accounts) && accounts.length > 0) {
-    localStorage.setItem('accounts_cache', JSON.stringify(accounts));
+    localStorage.setItem(`accounts_cache_${userId}`, JSON.stringify(accounts));
   }
 };
 
-export const getCategoriesCache = () => {
+/* ==================== CATEGORIES CACHE & QUEUE ==================== */
+export const getCategoryQueue = (userId = getCurrentUserId()) => {
   try {
-    return JSON.parse(localStorage.getItem('categories_cache')) || [];
+    return JSON.parse(localStorage.getItem(`cat_sync_queue_${userId}`)) || [];
   } catch (e) {
     return [];
   }
 };
 
-export const setCategoriesCache = (categories) => {
+const saveCategoryQueue = (queue, userId = getCurrentUserId()) => {
+  localStorage.setItem(`cat_sync_queue_${userId}`, JSON.stringify(queue));
+  notify();
+};
+
+export const getCategoriesCache = (userId = getCurrentUserId()) => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(`categories_cache_${userId}`));
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+  } catch (e) {}
+  return DEFAULT_CATEGORIES;
+};
+
+export const setCategoriesCache = (categories, userId = getCurrentUserId()) => {
   if (Array.isArray(categories) && categories.length > 0) {
-    localStorage.setItem('categories_cache', JSON.stringify(categories));
+    localStorage.setItem(`categories_cache_${userId}`, JSON.stringify(categories));
   }
 };
 
-// Register listener for sync status
+// Listener Registration
 export const subscribeToSync = (callback) => {
   listeners.add(callback);
-  // Initial notification
-  callback(!navigator.onLine ? 'offline' : syncStatus, getQueue().length);
+  callback(!navigator.onLine ? 'offline' : syncStatus, getTotalPendingCount());
   return () => {
     listeners.delete(callback);
   };
 };
 
-// Merge local cache with the pending operations queue for instant UI response
-export const getMergedTransactions = () => {
-  const cache = getCache();
-  const queue = getQueue();
-  
+/* ==================== MERGED DATA ACCESSORS FOR UI ==================== */
+export const getMergedCategories = (userId = getCurrentUserId()) => {
+  const cache = getCategoriesCache(userId);
+  const queue = getCategoryQueue(userId);
   let merged = [...cache];
 
-  // Process queue sequential logic
   queue.forEach(op => {
     if (op.type === 'CREATE') {
-      // Avoid duplicate display if it somehow ended up in cache already
+      if (!merged.some(c => c.clientCatId === op.clientCatId || c._id === op.clientCatId)) {
+        merged.push({
+          _id: op.clientCatId,
+          clientCatId: op.clientCatId,
+          ...op.data,
+          isPending: true
+        });
+      }
+    } else if (op.type === 'UPDATE') {
+      const idx = merged.findIndex(c => c._id === op.id || c.clientCatId === op.clientCatId);
+      if (idx !== -1) {
+        merged[idx] = { ...merged[idx], ...op.data, isPending: true };
+      }
+    } else if (op.type === 'DELETE') {
+      merged = merged.filter(c => c._id !== op.id && c.clientCatId !== op.clientCatId);
+    }
+  });
+
+  return merged;
+};
+
+export const getMergedAccounts = (userId = getCurrentUserId()) => {
+  const cache = getAccountsCache(userId);
+  const queue = getAccountQueue(userId);
+  let merged = [...cache];
+
+  queue.forEach(op => {
+    if (op.type === 'CREATE') {
+      if (!merged.some(a => a.clientAccId === op.clientAccId || a._id === op.clientAccId)) {
+        merged.push({
+          _id: op.clientAccId,
+          clientAccId: op.clientAccId,
+          ...op.data,
+          isPending: true
+        });
+      }
+    } else if (op.type === 'UPDATE') {
+      const idx = merged.findIndex(a => a._id === op.id || a.clientAccId === op.clientAccId);
+      if (idx !== -1) {
+        merged[idx] = { ...merged[idx], ...op.data, isPending: true };
+      }
+    } else if (op.type === 'DELETE') {
+      merged = merged.filter(a => a._id !== op.id && a.clientAccId !== op.clientAccId);
+    }
+  });
+
+  return merged;
+};
+
+export const getMergedTransactions = (userId = getCurrentUserId()) => {
+  const cache = getCache(userId);
+  const queue = getQueue(userId);
+  let merged = [...cache];
+
+  queue.forEach(op => {
+    if (op.type === 'CREATE') {
       if (!merged.some(t => t.clientTxId === op.clientTxId || t._id === op.clientTxId)) {
-        // Prefill accounts and category name if objects aren't populated yet,
-        // we can store pre-populated helper labels in op.data for client display
         merged.unshift({
           _id: op.clientTxId,
           clientTxId: op.clientTxId,
@@ -123,19 +233,15 @@ export const getMergedTransactions = () => {
   return merged;
 };
 
-// Queue a new operation
-export const queueOperation = (type, clientTxId, id, data) => {
-  const queue = getQueue();
-  
-  // Create unique client reference
-  const actualClientTxId = clientTxId || generateUUID();
+/* ==================== QUEUE OPERATORS ==================== */
+export const queueOperation = (type, clientTxId, id, data, userId = getCurrentUserId()) => {
+  const queue = getQueue(userId);
+  const actualClientTxId = clientTxId || generateUUID('tx');
 
-  // Optimized Queue Compaction:
-  // If we delete an item that was created offline and not yet synced, we can just remove the CREATE operation
   if (type === 'DELETE' && actualClientTxId.startsWith('tx_')) {
     const filteredQueue = queue.filter(op => op.clientTxId !== actualClientTxId);
     if (filteredQueue.length < queue.length) {
-      saveQueue(filteredQueue);
+      saveQueue(filteredQueue, userId);
       return actualClientTxId;
     }
   }
@@ -148,12 +254,72 @@ export const queueOperation = (type, clientTxId, id, data) => {
     timestamp: Date.now()
   });
 
-  saveQueue(queue);
+  saveQueue(queue, userId);
   triggerSync();
   return actualClientTxId;
 };
 
-// Main Sync Routine
+export const queueCategoryOperation = (type, clientCatId, id, data, userId = getCurrentUserId()) => {
+  const queue = getCategoryQueue(userId);
+  const actualClientCatId = clientCatId || generateUUID('cat');
+
+  if (type === 'DELETE' && actualClientCatId.startsWith('cat_')) {
+    const filteredQueue = queue.filter(op => op.clientCatId !== actualClientCatId);
+    if (filteredQueue.length < queue.length) {
+      saveCategoryQueue(filteredQueue, userId);
+      return actualClientCatId;
+    }
+  }
+
+  queue.push({
+    type,
+    clientCatId: actualClientCatId,
+    id,
+    data,
+    timestamp: Date.now()
+  });
+
+  saveCategoryQueue(queue, userId);
+
+  // Update local cache optimistically
+  const currentMerged = getMergedCategories(userId);
+  setCategoriesCache(currentMerged, userId);
+
+  triggerSync();
+  return actualClientCatId;
+};
+
+export const queueAccountOperation = (type, clientAccId, id, data, userId = getCurrentUserId()) => {
+  const queue = getAccountQueue(userId);
+  const actualClientAccId = clientAccId || generateUUID('acc');
+
+  if (type === 'DELETE' && actualClientAccId.startsWith('acc_')) {
+    const filteredQueue = queue.filter(op => op.clientAccId !== actualClientAccId);
+    if (filteredQueue.length < queue.length) {
+      saveAccountQueue(filteredQueue, userId);
+      return actualClientAccId;
+    }
+  }
+
+  queue.push({
+    type,
+    clientAccId: actualClientAccId,
+    id,
+    data,
+    timestamp: Date.now()
+  });
+
+  saveAccountQueue(queue, userId);
+
+  // Update local cache optimistically
+  const currentMerged = getMergedAccounts(userId);
+  setAccountsCache(currentMerged, userId);
+
+  triggerSync();
+  return actualClientAccId;
+};
+
+/* ==================== SEQUENTIAL AUTO-SYNC ENGINE ==================== */
 export const triggerSync = async () => {
   if (isSyncing) return;
   if (!navigator.onLine) {
@@ -161,63 +327,119 @@ export const triggerSync = async () => {
     return;
   }
 
-  let queue = getQueue();
-  if (queue.length === 0) {
+  const userId = getCurrentUserId();
+  let catQueue = getCategoryQueue(userId);
+  let accQueue = getAccountQueue(userId);
+  let txQueue = getQueue(userId);
+
+  if (catQueue.length === 0 && accQueue.length === 0 && txQueue.length === 0) {
     syncStatus = 'synced';
     notify();
     return;
-  }
-
-  // Sanitize queue: prune any CREATE TRANSFER operations that are missing toAccountId to prevent queue blocking
-  const validQueue = queue.filter(op => {
-    if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
-      console.warn('Pruning invalid transfer sync operation (missing destination account):', op);
-      return false;
-    }
-    return true;
-  });
-
-  if (validQueue.length !== queue.length) {
-    queue = validQueue;
-    saveQueue(queue);
-    if (queue.length === 0) {
-      syncStatus = 'synced';
-      notify();
-      return;
-    }
   }
 
   isSyncing = true;
   syncStatus = 'syncing';
   notify();
 
-  try {
-    const token = localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    
-    const response = await secureApi.post('/api/sync/transactions', { ops: queue }, { headers });
-    
-    if (response.data.success) {
-      const { idMap } = response.data;
-      
-      // Update local cache transactions with the new server IDs
-      const cache = getCache();
-      const updatedCache = cache.map(tx => {
-        if (tx.clientTxId && idMap[tx.clientTxId]) {
-          return { ...tx, _id: idMap[tx.clientTxId] };
-        }
-        return tx;
-      });
-      setCache(updatedCache);
+  const token = localStorage.getItem('token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Clear synced items
-      saveQueue([]);
-      syncStatus = 'synced';
-    } else {
-      syncStatus = 'error';
+  try {
+    // 1. SYNC CATEGORIES FIRST
+    if (catQueue.length > 0) {
+      const catRes = await secureApi.post('/api/sync/categories', { ops: catQueue }, { headers });
+      if (catRes.data?.success) {
+        const { idMap } = catRes.data;
+
+        // Update local category cache with real Mongo IDs
+        const catCache = getCategoriesCache(userId);
+        const updatedCatCache = catCache.map(c => {
+          if (c.clientCatId && idMap[c.clientCatId]) {
+            return { ...c, _id: idMap[c.clientCatId] };
+          }
+          return c;
+        });
+        setCategoriesCache(updatedCatCache, userId);
+
+        // TRANSLATE CATEGORY CLIENT IDs IN TRANSACTION QUEUE
+        txQueue = txQueue.map(op => {
+          if (op.data?.categoryId && idMap[op.data.categoryId]) {
+            return {
+              ...op,
+              data: { ...op.data, categoryId: idMap[op.data.categoryId] }
+            };
+          }
+          return op;
+        });
+        saveQueue(txQueue, userId);
+        saveCategoryQueue([], userId);
+      }
     }
+
+    // 2. SYNC ACCOUNTS SECOND
+    if (accQueue.length > 0) {
+      const accRes = await secureApi.post('/api/sync/accounts', { ops: accQueue }, { headers });
+      if (accRes.data?.success) {
+        const { idMap } = accRes.data;
+
+        // Update local accounts cache with real Mongo IDs
+        const accCache = getAccountsCache(userId);
+        const updatedAccCache = accCache.map(a => {
+          if (a.clientAccId && idMap[a.clientAccId]) {
+            return { ...a, _id: idMap[a.clientAccId] };
+          }
+          return a;
+        });
+        setAccountsCache(updatedAccCache, userId);
+
+        // TRANSLATE ACCOUNT CLIENT IDs IN TRANSACTION QUEUE
+        txQueue = txQueue.map(op => {
+          let updatedData = { ...op.data };
+          if (updatedData.accountId && idMap[updatedData.accountId]) {
+            updatedData.accountId = idMap[updatedData.accountId];
+          }
+          if (updatedData.toAccountId && idMap[updatedData.toAccountId]) {
+            updatedData.toAccountId = idMap[updatedData.toAccountId];
+          }
+          return { ...op, data: updatedData };
+        });
+        saveQueue(txQueue, userId);
+        saveAccountQueue([], userId);
+      }
+    }
+
+    // 3. SYNC TRANSACTIONS THIRD
+    if (txQueue.length > 0) {
+      const validTxQueue = txQueue.filter(op => {
+        if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
+          return false;
+        }
+        return true;
+      });
+
+      if (validTxQueue.length > 0) {
+        const txRes = await secureApi.post('/api/sync/transactions', { ops: validTxQueue }, { headers });
+        if (txRes.data?.success) {
+          const { idMap } = txRes.data;
+          const txCache = getCache(userId);
+          const updatedTxCache = txCache.map(tx => {
+            if (tx.clientTxId && idMap[tx.clientTxId]) {
+              return { ...tx, _id: idMap[tx.clientTxId] };
+            }
+            return tx;
+          });
+          setCache(updatedTxCache, userId);
+          saveQueue([], userId);
+        }
+      } else {
+        saveQueue([], userId);
+      }
+    }
+
+    syncStatus = 'synced';
   } catch (err) {
-    console.error('Batch sync failed:', err);
+    console.error('Batch sync error:', err);
     syncStatus = 'error';
   } finally {
     isSyncing = false;
@@ -225,7 +447,7 @@ export const triggerSync = async () => {
   }
 };
 
-// Set up event listeners for network and lifecycle triggers
+/* ==================== LIFECYCLE LISTENERS ==================== */
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     syncStatus = 'synced';

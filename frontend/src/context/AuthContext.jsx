@@ -2,6 +2,32 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { publicApi } from '../utils/apiConfig';
 import { Lock, Delete, LogOut } from 'lucide-react';
+import { setCategoriesCache, setAccountsCache, setCache, triggerSync } from '../utils/syncManager';
+
+const cacheInitialUserData = async (authToken, userData) => {
+  if (!navigator.onLine || !authToken) return;
+  try {
+    const uId = userData?._id || userData?.id;
+    const headers = { Authorization: `Bearer ${authToken}` };
+    const [catRes, accRes, txRes] = await Promise.allSettled([
+      publicApi.get('/api/categories', { headers }),
+      publicApi.get('/api/accounts', { headers }),
+      publicApi.get('/api/transactions', { headers })
+    ]);
+    if (catRes.status === 'fulfilled' && catRes.value.data?.success) {
+      setCategoriesCache(catRes.value.data.data, uId);
+    }
+    if (accRes.status === 'fulfilled' && accRes.value.data?.success) {
+      setAccountsCache(accRes.value.data.data, uId);
+    }
+    if (txRes.status === 'fulfilled' && txRes.value.data?.success) {
+      setCache(txRes.value.data.data, uId);
+    }
+    triggerSync();
+  } catch (e) {
+    console.warn('Initial data caching warning:', e);
+  }
+};
 
 const AuthContext = createContext(null);
 
