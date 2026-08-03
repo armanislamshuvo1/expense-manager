@@ -21,6 +21,7 @@ import AccountsSetting from './pages/AccountsSetting';
 import SharedDashboard from './pages/SharedDashboard';
 import WealthBuddy from './pages/WealthBuddy';
 import ScrollToTop from './components/ScrollToTop';
+import SyncStatusBanner from './components/SyncStatusBanner';
 import { AccountModalProvider } from './context/AccountModalContext';
 import PublicLayout from './components/PublicLayout';
 
@@ -39,6 +40,7 @@ function App() {
       <AuthProvider>
         <ThemeProvider>
           <AccountModalProvider>
+            <SyncStatusBanner />
             <Routes>
             {/* Public Layout Routes (Includes Global Promo Banner & Navbar) */}
             <Route element={<PublicLayout />}>
