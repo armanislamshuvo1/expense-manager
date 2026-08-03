@@ -137,7 +137,7 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
               </div>
               <div className="text-right">
                 <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {acc.currency || 'MYR'} {(Number(acc.balance) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

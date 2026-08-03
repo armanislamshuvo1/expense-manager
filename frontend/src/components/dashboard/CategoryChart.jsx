@@ -205,7 +205,7 @@ const CategoryChart = React.memo(({
                 </span>
               </div>
               <span className={`font-mono text-sm font-bold ${isDark ? 'text-white/80' : 'text-slate-700'}`}>
-                {baseCurrency} {item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {baseCurrency} {(Number(item.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
           );
