@@ -226,7 +226,11 @@ export const getMergedTransactions = (userId = getCurrentUserId()) => {
         };
       }
     } else if (op.type === 'DELETE') {
-      merged = merged.filter(t => t._id !== op.id && t.clientTxId !== op.clientTxId);
+      const targetId = String(op.id || op.clientTxId || '');
+      merged = merged.filter(t => 
+        String(t._id || '') !== targetId && 
+        String(t.clientTxId || '') !== targetId
+      );
     }
   });
 
@@ -236,15 +240,30 @@ export const getMergedTransactions = (userId = getCurrentUserId()) => {
 /* ==================== QUEUE OPERATORS ==================== */
 export const queueOperation = (type, clientTxId, id, data, userId = getCurrentUserId()) => {
   const queue = getQueue(userId);
-  const actualClientTxId = clientTxId || generateUUID('tx');
+  const targetId = id || clientTxId;
 
-  if (type === 'DELETE' && actualClientTxId.startsWith('tx_')) {
-    const filteredQueue = queue.filter(op => op.clientTxId !== actualClientTxId);
+  if (type === 'DELETE' && targetId) {
+    // 1. Remove from local tx_cache immediately
+    const cache = getCache(userId);
+    const updatedCache = cache.filter(t => 
+      String(t._id || '') !== String(targetId) && 
+      String(t.clientTxId || '') !== String(targetId)
+    );
+    setCache(updatedCache, userId);
+
+    // 2. If deleting an un-synced client item, remove its CREATE op from queue
+    const filteredQueue = queue.filter(op => 
+      String(op.clientTxId || '') !== String(targetId) && 
+      String(op.id || '') !== String(targetId)
+    );
     if (filteredQueue.length < queue.length) {
       saveQueue(filteredQueue, userId);
-      return actualClientTxId;
+      notify();
+      return targetId;
     }
   }
+
+  const actualClientTxId = clientTxId || (id && String(id).startsWith('tx_') ? id : generateUUID('tx'));
 
   queue.push({
     type,
@@ -255,7 +274,13 @@ export const queueOperation = (type, clientTxId, id, data, userId = getCurrentUs
   });
 
   saveQueue(queue, userId);
+
+  // Update local cache optimistically
+  const currentMerged = getMergedTransactions(userId);
+  setCache(currentMerged, userId);
+
   triggerSync();
+  notify();
   return actualClientTxId;
 };
 
