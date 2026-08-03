@@ -6,13 +6,14 @@ import { useAccountModal } from '../context/AccountModalContext';
 import { BottomNav } from '../components/BottomNav';
 import { CreditCard, Plus, Trash2, X, Wallet, DollarSign, Globe, Layers, Calendar, Check, AlertCircle } from 'lucide-react';
 import { ALL_CURRENCIES, getPreferredCurrencies } from '../utils/currencies';
+import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOperation, generateUUID } from '../utils/syncManager';
 import Swal from 'sweetalert2';
 
 export default function Accounts() {
-  const { openAccountModal } = useAccountModal();
   const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+  const { openAccountModal } = useAccountModal();
 
   const [name, setName] = useState('');
   const [type, setType] = useState('CASH');
@@ -24,20 +25,33 @@ export default function Accounts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: accounts = [], isLoading: fetching } = useQuery({
+  const { data: rawAccounts = [], isLoading: fetching } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/accounts');
-      return res.data.success ? res.data.data : [];
+      try {
+        const res = await axiosSecure.get('/api/accounts');
+        if (res.data.success) {
+          setAccountsCache(res.data.data);
+          return res.data.data;
+        }
+      } catch (err) {
+        console.warn('Using cached accounts offline');
+      }
+      return getAccountsCache();
     }
   });
+
+  const accounts = useMemo(() => {
+    return getMergedAccounts();
+  }, [rawAccounts]);
 
   const handleAddAccount = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const response = await axiosSecure.post('/api/accounts', {
+      const clientAccId = generateUUID('acc');
+      queueAccountOperation('CREATE', clientAccId, null, {
         name,
         type,
         balance: parseFloat(balance) || 0,
@@ -46,18 +60,17 @@ export default function Accounts() {
         dueDate: type === 'CREDIT_CARD' && dueDate ? parseInt(dueDate, 10) : undefined,
         currency
       });
-      if (response.data.success) {
-        setName('');
-        setBalance('');
-        setCreditLimit('');
-        setStatementDate('');
-        setDueDate('');
-        queryClient.invalidateQueries({ queryKey: ['accounts'] });
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        document.getElementById('add_account_modal').close();
-      }
+
+      setName('');
+      setBalance('');
+      setCreditLimit('');
+      setStatementDate('');
+      setDueDate('');
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      document.getElementById('add_account_modal').close();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add account.');
+      setError('Failed to add account.');
     } finally {
       setLoading(false);
     }
@@ -78,11 +91,9 @@ export default function Accounts() {
     });
     if (!result.isConfirmed) return;
     try {
-      const response = await axiosSecure.delete(`/api/accounts/${id}`);
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ['accounts'] });
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      }
+      queueAccountOperation('DELETE', null, id, null);
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     } catch (err) {
       console.error(err);
     }

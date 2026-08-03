@@ -36,8 +36,11 @@ import ReviewQuickLogModal from '../components/dashboard/ReviewQuickLogModal';
 
 
 export default function Dashboard() {
+  const { user, logout } = useAuth();
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const [syncStatus, setSyncStatus] = useState('synced');
   const [syncQueueLength, setSyncQueueLength] = useState(0);
@@ -53,7 +56,7 @@ export default function Dashboard() {
     });
   }, [queryClient]);
 
-  const { data: accounts = [] } = useQuery({
+  const { data: rawAccounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
       try {
@@ -68,6 +71,10 @@ export default function Dashboard() {
       return getAccountsCache();
     }
   });
+
+  const accounts = useMemo(() => {
+    return getMergedAccounts();
+  }, [rawAccounts, syncQueueLength]);
 
   const { data: rawTransactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions'],
@@ -89,7 +96,7 @@ export default function Dashboard() {
     return getMergedTransactions();
   }, [rawTransactions, syncQueueLength]);
 
-  const { data: categories = [] } = useQuery({
+  const { data: rawCategories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
@@ -104,6 +111,10 @@ export default function Dashboard() {
       return getCategoriesCache();
     }
   });
+
+  const categories = useMemo(() => {
+    return getMergedCategories();
+  }, [rawCategories, syncQueueLength]);
 
   const { data: aiInsights = { digest: '', anomalies: [] }, refetch: refetchInsights } = useQuery({
     queryKey: ['aiInsights'],
@@ -136,11 +147,8 @@ export default function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(false);
 
 
-  const { user, logout } = useAuth();
-  const { theme } = useTheme();
   const isDark = theme === 'dark';
   const baseCurrency = user?.baseCurrency || 'MYR';
-  const navigate = useNavigate();
 
   // Use the custom hook for dashboard metrics and period selections
   const dashboardProps = useDashboardData(accounts, transactions);

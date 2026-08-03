@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { useAxiosSecure } from './useApi';
 import { useAuth } from '../context/AuthContext';
-import { queueOperation, generateUUID } from '../utils/syncManager';
+import { queueOperation, queueCategoryOperation, queueAccountOperation, generateUUID } from '../utils/syncManager';
 
 export function useTransactionsForm(transactions = []) {
   const axiosSecure = useAxiosSecure();
@@ -33,7 +33,7 @@ export function useTransactionsForm(transactions = []) {
 
   const createMutation = useMutation({
     mutationFn: async (txData) => {
-      const clientTxId = generateUUID();
+      const clientTxId = generateUUID('tx');
       queueOperation('CREATE', clientTxId, null, txData);
       return { success: true, data: { _id: clientTxId, ...txData } };
     },
@@ -59,13 +59,6 @@ export function useTransactionsForm(transactions = []) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    }
-  });
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (catData) => axiosSecure.post('/api/categories', catData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
     }
   });
 
@@ -183,26 +176,27 @@ export function useTransactionsForm(transactions = []) {
 
   const handleCreateCategory = useCallback(async (catName, emoji) => {
     try {
-      await createCategoryMutation.mutateAsync({
+      const clientCatId = generateUUID('cat');
+      queueCategoryOperation('CREATE', clientCatId, null, {
         name: catName,
         emoji: emoji || '',
         type: type === 'INCOME' ? 'INCOME' : 'EXPENSE'
       });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     } catch (err) {
       console.error(err);
     }
-  }, [createCategoryMutation, type]);
+  }, [queryClient, type]);
 
   const handleSaveCustomAccount = useCallback(async (accountData) => {
     try {
-      const response = await axiosSecure.post('/api/accounts', accountData);
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      }
+      const clientAccId = generateUUID('acc');
+      queueAccountOperation('CREATE', clientAccId, null, accountData);
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     } catch (err) {
       console.error(err);
     }
-  }, [axiosSecure, queryClient]);
+  }, [queryClient]);
 
   const handleDeleteTransaction = useCallback(async (id) => {
     const result = await Swal.fire({

@@ -5,6 +5,8 @@ import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
+import { getMergedCategories, setCategoriesCache, queueCategoryOperation, generateUUID } from '../utils/syncManager';
+
 export default function IncomeCategoriesSetting() {
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState('');
@@ -18,15 +20,18 @@ export default function IncomeCategoriesSetting() {
   const navigate = useNavigate();
 
   const fetchCategories = async () => {
-    try {
-      const response = await axiosSecure.get('/api/categories');
-      if (response.data.success) {
-        const incomeCats = response.data.data.filter((cat) => cat.type === 'INCOME');
-        setCategories(incomeCats);
+    if (navigator.onLine) {
+      try {
+        const response = await axiosSecure.get('/api/categories');
+        if (response.data.success) {
+          setCategoriesCache(response.data.data);
+        }
+      } catch (err) {
+        console.warn('Using cached categories offline');
       }
-    } catch (err) {
-      console.error(err);
     }
+    const merged = getMergedCategories().filter((cat) => cat.type === 'INCOME');
+    setCategories(merged);
   };
 
   useEffect(() => {
@@ -41,46 +46,39 @@ export default function IncomeCategoriesSetting() {
 
     try {
       if (editingId) {
-        const response = await axiosSecure.put(`/api/categories/${editingId}`, {
+        queueCategoryOperation('UPDATE', null, editingId, {
           name,
           emoji,
           color,
-          type: 'INCOME',
+          type: 'INCOME'
         });
-        if (response.data.success) {
-          setEditingId(null);
-          setName('');
-          setEmoji('💰');
-          setColor('#10b981');
-          queryClient.invalidateQueries({ queryKey: ['categories'] });
-          fetchCategories();
-          document.getElementById('category_modal').close();
-        }
       } else {
-        const response = await axiosSecure.post('/api/categories', {
+        const clientCatId = generateUUID('cat');
+        queueCategoryOperation('CREATE', clientCatId, null, {
           name,
           emoji,
           color,
-          type: 'INCOME',
+          type: 'INCOME'
         });
-        if (response.data.success) {
-          setName('');
-          setEmoji('💰');
-          setColor('#10b981');
-          queryClient.invalidateQueries({ queryKey: ['categories'] });
-          fetchCategories();
-          document.getElementById('category_modal').close();
-        }
       }
+
+      setEditingId(null);
+      setName('');
+      setEmoji('💰');
+      setColor('#10b981');
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      fetchCategories();
+      const modal = document.getElementById('category_modal');
+      if (modal) modal.close();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save category.');
+      setError('Failed to save category.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEditClick = (cat) => {
-    setEditingId(cat._id);
+    setEditingId(cat._id || cat.clientCatId);
     setName(cat.name);
     setEmoji(cat.emoji || '💰');
     setColor(cat.color || '#10b981');
@@ -102,11 +100,9 @@ export default function IncomeCategoriesSetting() {
     });
     if (!result.isConfirmed) return;
     try {
-      const response = await axiosSecure.delete(`/api/categories/${id}`);
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
-        fetchCategories();
-      }
+      queueCategoryOperation('DELETE', null, id, null);
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      fetchCategories();
     } catch (err) {
       console.error(err);
     }

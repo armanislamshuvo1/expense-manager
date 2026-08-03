@@ -74,7 +74,7 @@ export default function Transactions() {
     return getMergedTransactions();
   }, [rawTransactions, syncQueueLength]);
 
-  const { data: accounts = [] } = useQuery({
+  const { data: rawAccounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
       try {
@@ -90,7 +90,11 @@ export default function Transactions() {
     }
   });
 
-  const { data: categories = [] } = useQuery({
+  const accounts = useMemo(() => {
+    return getMergedAccounts();
+  }, [rawAccounts, syncQueueLength]);
+
+  const { data: rawCategories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
@@ -105,6 +109,10 @@ export default function Transactions() {
       return getCategoriesCache();
     }
   });
+
+  const categories = useMemo(() => {
+    return getMergedCategories();
+  }, [rawCategories, syncQueueLength]);
 
   const formProps = useTransactionsForm(transactions);
   const {
