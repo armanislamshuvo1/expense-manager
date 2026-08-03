@@ -12,28 +12,28 @@ const TransactionRow = React.memo(({
   const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
-    <div className="group flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors">
+    <div className="group flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors gap-2">
       <div 
         onClick={() => handleOpenEditModal(tx)}
-        className="flex-1 flex justify-between items-center cursor-pointer"
+        className="flex-1 flex justify-between items-center cursor-pointer min-w-0 pr-2"
       >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-2xl shrink-0">
             {tx.type === 'TRANSFER' ? '🔄' : (tx.categoryId?.emoji || '🏷️')}
           </span>
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm">
+          <div className="flex flex-col min-w-0">
+            <span className="font-semibold text-sm truncate">
               {tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized')}
             </span>
             {tx.note && (
-              <span className="text-xs text-base-content/80 font-medium py-0.5">
+              <span className="text-xs text-base-content/80 font-medium py-0.5 truncate">
                 {tx.note}
               </span>
             )}
-            <span className="text-[10px] opacity-50 flex items-center gap-1.5">
+            <span className="text-[10px] opacity-50 flex items-center gap-1.5 truncate">
               <span>{txTime}</span>
               <span>•</span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 truncate">
                 {tx.type === 'TRANSFER' ? (
                   <>
                     <span 
@@ -41,7 +41,7 @@ const TransactionRow = React.memo(({
                         e.stopPropagation();
                         if (tx.accountId) openAccountModal(tx.accountId);
                       }}
-                      className="hover:underline hover:text-primary font-semibold transition-colors"
+                      className="hover:underline hover:text-primary font-semibold transition-colors truncate"
                     >
                       {tx.accountId?.name || 'Unknown'}
                     </span>
@@ -51,7 +51,7 @@ const TransactionRow = React.memo(({
                         e.stopPropagation();
                         if (tx.toAccountId) openAccountModal(tx.toAccountId);
                       }}
-                      className="hover:underline hover:text-primary font-semibold transition-colors"
+                      className="hover:underline hover:text-primary font-semibold transition-colors truncate"
                     >
                       {tx.toAccountId?.name || '?'}
                     </span>
@@ -62,7 +62,7 @@ const TransactionRow = React.memo(({
                       e.stopPropagation();
                       if (tx.accountId) openAccountModal(tx.accountId);
                     }}
-                    className="hover:underline hover:text-primary font-semibold transition-colors"
+                    className="hover:underline hover:text-primary font-semibold transition-colors truncate"
                   >
                     {tx.accountId?.name || 'Unknown'}
                   </span>
@@ -71,7 +71,7 @@ const TransactionRow = React.memo(({
             </span>
           </div>
         </div>
-        <div className="text-right mr-3">
+        <div className="text-right shrink-0">
           <div className={`font-bold text-sm ${
             tx.type === 'INCOME' ? 'text-primary' : tx.type === 'EXPENSE' ? 'text-error' : 'text-warning'
           }`}>
@@ -85,13 +85,18 @@ const TransactionRow = React.memo(({
         </div>
       </div>
       <button
+        type="button"
+        title="Delete Transaction"
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           handleDeleteTransaction(tx._id);
         }}
-        className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100"
+        className="w-8 h-8 rounded-xl bg-error/10 border border-error/20 text-error hover:bg-error/20 flex items-center justify-center shrink-0 z-20 cursor-pointer active:scale-90 transition-all"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4 text-error" />
       </button>
     </div>
   );
@@ -171,7 +176,7 @@ const List = React.memo(({
             {/* Styled Clickable Date Bar */}
             <div 
               onClick={() => handleOpenAddModal(formattedHeader.dateObj)}
-              className="flex justify-between items-center bg-base-200/90 hover:bg-base-200 cursor-pointer p-3 rounded-xl border border-base-content/10 transition-colors shadow-sm active:scale-[0.99]"
+              className="flex justify-between items-center bg-base-200/90 hover:bg-base-200 cursor-pointer p-3 rounded-xl border border-base-content/10 transition-colors shadow-sm"
               title="Click to add transaction for this day"
             >
               <div className="flex items-center gap-2">
@@ -195,7 +200,7 @@ const List = React.memo(({
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-md interactive-scale">
+            <div className="card bg-base-100 shadow-md">
               <div className="card-body p-2">
                 <div className="divide-y divide-base-200">
                   {dayTransactions.map((tx) => (
