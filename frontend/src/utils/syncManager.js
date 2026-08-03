@@ -438,6 +438,9 @@ export const triggerSync = async () => {
     }
 
     syncStatus = 'synced';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('nexus_sync_completed'));
+    }
   } catch (err) {
     console.error('Batch sync error:', err);
     syncStatus = 'error';

@@ -6,6 +6,7 @@ import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
 import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Sun, Moon, Share2, Link, Copy, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 // Import modularized components
 
@@ -276,8 +277,34 @@ export default function More() {
           setSuccess={setSuccess}
           ALL_CURRENCIES={ALL_CURRENCIES}
           onOpenDeviceSync={() => setDeviceSyncModalOpen(true)}
-          onOpenWipeData={() => setWipeDataModalOpen(true)}
-          onOpenDeleteAccount={() => setAccountDeleteModalOpen(true)}
+          onOpenWipeData={() => {
+            if (!navigator.onLine) {
+              Swal.fire({
+                title: 'Internet Required',
+                text: 'Please connect to the internet to wipe your financial data.',
+                icon: 'warning',
+                confirmButtonColor: '#ef4444',
+                background: '#1e1e24',
+                color: '#ffffff'
+              });
+              return;
+            }
+            setWipeDataModalOpen(true);
+          }}
+          onOpenDeleteAccount={() => {
+            if (!navigator.onLine) {
+              Swal.fire({
+                title: 'Internet Required',
+                text: 'Please connect to the internet to delete your account.',
+                icon: 'warning',
+                confirmButtonColor: '#ef4444',
+                background: '#1e1e24',
+                color: '#ffffff'
+              });
+              return;
+            }
+            setAccountDeleteModalOpen(true);
+          }}
         />
       </div>
 
