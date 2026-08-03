@@ -8,9 +8,9 @@ export function useDashboardData(accounts = [], transactions = []) {
 
   const { netWorthData, cashFlowData, categoryData } = useMemo(() => {
     const txList = transactions || [];
-    const currentAssets = (accounts || []).reduce((sum, acc) => sum + acc.balance, 0);
+    const currentAssets = (accounts || []).reduce((sum, acc) => sum + (Number(acc?.balance) || 0), 0);
     const period = periodType;
-    const refDate = selectedDate;
+    const refDate = selectedDate || new Date();
     const currentTab = activeTab;
 
     let filteredTx = [...txList];
@@ -31,6 +31,7 @@ export function useDashboardData(accounts = [], transactions = []) {
         end = new Date(refDate.getFullYear() + 1, 0, 1);
       }
       filteredTx = txList.filter(tx => {
+        if (!tx || !tx.date) return false;
         const txDate = new Date(tx.date);
         return txDate >= start && txDate < end;
       });
@@ -38,7 +39,7 @@ export function useDashboardData(accounts = [], transactions = []) {
 
     // 1. Net Worth Pacing Chart (Assets vs Liabilities / Cumulative)
     let runningTotal = currentAssets;
-    const sortedTx = [...txList].sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
+    const sortedTx = [...txList].filter(t => t && t.date).sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
 
     // Create a time series for net worth tracking
     const pacingMap = {};
@@ -47,19 +48,23 @@ export function useDashboardData(accounts = [], transactions = []) {
 
     sortedTx.forEach(tx => {
       const dateKey = new Date(tx.date).toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
+      const amt = Number(tx.convertedAmount || tx.amount) || 0;
       if (tx.type === 'INCOME') {
-        runningTotal -= tx.convertedAmount || tx.amount;
+        runningTotal -= amt;
       } else if (tx.type === 'EXPENSE') {
-        runningTotal += tx.convertedAmount || tx.amount;
+        runningTotal += amt;
       }
       pacingMap[dateKey] = runningTotal;
     });
 
-    const netWorthChartValues = Object.keys(pacingMap).map(key => ({
-      name: key,
-      Assets: Number(pacingMap[key].toFixed(2)),
-      Liabilities: Number((pacingMap[key] * 0.15).toFixed(2))
-    })).reverse();
+    const netWorthChartValues = Object.keys(pacingMap).map(key => {
+      const val = Number(pacingMap[key]) || 0;
+      return {
+        name: key,
+        Assets: Number(val.toFixed(2)),
+        Liabilities: Number((val * 0.15).toFixed(2))
+      };
+    }).reverse();
 
     // 2. Cash Flow Chart (Income vs Expense by Month)
     const monthlyData = {};

@@ -119,8 +119,12 @@ export default function Dashboard() {
   const { data: aiInsights = { digest: '', anomalies: [] }, refetch: refetchInsights } = useQuery({
     queryKey: ['aiInsights'],
     queryFn: async () => {
-      const res = await axiosSecure.get('/api/ai/insights');
-      return res.data.success ? res.data.data : { digest: '', anomalies: [] };
+      try {
+        const res = await axiosSecure.get('/api/ai/insights');
+        return res.data?.success ? res.data.data : { digest: '', anomalies: [] };
+      } catch (err) {
+        return { digest: '', anomalies: [] };
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes cache validity
     refetchOnWindowFocus: false, // Prevent query on window focus
