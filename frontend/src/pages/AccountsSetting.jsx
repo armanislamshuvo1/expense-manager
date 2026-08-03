@@ -105,6 +105,18 @@ export default function AccountsSetting() {
   };
 
   const handleDeleteAccount = async (id) => {
+    if (!navigator.onLine) {
+      Swal.fire({
+        title: 'Internet Required',
+        text: 'Please connect to the internet to delete an account or financial data.',
+        icon: 'warning',
+        confirmButtonColor: '#ef4444',
+        background: '#1e1e24',
+        color: '#ffffff'
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: 'Delete this account and all linked transactions?',

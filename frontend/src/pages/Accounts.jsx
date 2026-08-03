@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -77,6 +77,18 @@ export default function Accounts() {
   };
 
   const handleDeleteAccount = async (id) => {
+    if (!navigator.onLine) {
+      Swal.fire({
+        title: 'Internet Required',
+        text: 'Please connect to the internet to delete an account or financial data.',
+        icon: 'warning',
+        confirmButtonColor: '#ef4444',
+        background: '#1e1e24',
+        color: '#ffffff'
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: 'Delete this account and all linked transactions?',
@@ -91,9 +103,11 @@ export default function Accounts() {
     });
     if (!result.isConfirmed) return;
     try {
-      queueAccountOperation('DELETE', null, id, null);
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      const response = await axiosSecure.delete(`/api/accounts/${id}`);
+      if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      }
     } catch (err) {
       console.error(err);
     }
