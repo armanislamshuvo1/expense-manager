@@ -30,6 +30,11 @@ const categorySchema = new mongoose.Schema({
     enum: ['INCOME', 'EXPENSE'],
     required: true,
     default: 'EXPENSE'
+  },
+  clientCatId: {
+    type: String,
+    index: true,
+    sparse: true
   }
 }, { timestamps: true });
 

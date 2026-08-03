@@ -38,6 +38,11 @@ const accountSchema = new mongoose.Schema({
   currency: { 
     type: String, 
     default: 'MYR' 
+  },
+  clientAccId: {
+    type: String,
+    index: true,
+    sparse: true
   }
 }, { timestamps: true });
 
