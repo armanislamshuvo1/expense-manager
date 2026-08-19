@@ -85,17 +85,31 @@ export function useTransactionsForm(transactions = []) {
   }, [user?.baseCurrency]);
 
   const handleOpenEditModal = useCallback((tx) => {
+    if (!tx) return;
     setEditMode(true);
     setEditingId(tx._id);
     setType(tx.type || 'EXPENSE');
-    setAmount(tx.amount.toString());
+    setAmount(tx.amount !== undefined ? tx.amount.toString() : '');
     setCurrency(tx.currency || 'MYR');
-    setAccountId(tx.accountId?._id || '');
-    setAccountName(tx.accountId?.name || 'Select Account');
-    setToAccountId(tx.toAccountId?._id || '');
-    setToAccountName(tx.toAccountId?.name || 'Select Account');
-    setCategoryId(tx.categoryId?._id || '');
-    setCategoryName(tx.categoryId?.name || 'Select Category');
+
+    const accObj = typeof tx.accountId === 'object' ? tx.accountId : null;
+    const accId = accObj?._id || (typeof tx.accountId === 'string' ? tx.accountId : '');
+    const accName = accObj?.name || 'Select Account';
+
+    const toAccObj = typeof tx.toAccountId === 'object' ? tx.toAccountId : null;
+    const toAccId = toAccObj?._id || (typeof tx.toAccountId === 'string' ? tx.toAccountId : '');
+    const toAccName = toAccObj?.name || 'Select Account';
+
+    const catObj = typeof tx.categoryId === 'object' ? tx.categoryId : null;
+    const catId = catObj?._id || (typeof tx.categoryId === 'string' ? tx.categoryId : '');
+    const catName = catObj?.name || 'Select Category';
+
+    setAccountId(accId);
+    setAccountName(accName);
+    setToAccountId(toAccId);
+    setToAccountName(toAccName);
+    setCategoryId(catId);
+    setCategoryName(catName);
     setNote(tx.note || '');
     setDescription(tx.description || '');
     setShouldConvert(tx.shouldConvert !== undefined ? tx.shouldConvert : true);

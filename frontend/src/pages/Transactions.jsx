@@ -163,14 +163,23 @@ export default function Transactions() {
   const [returnPath, setReturnPath] = useState(null);
 
   useEffect(() => {
-    if (location.state?.openAddModal) {
+    if (location.state?.editTx || location.state?.editTxId) {
+      if (location.state?.returnTo) {
+        setReturnPath(location.state.returnTo);
+      }
+      const targetTx = location.state.editTx || transactions.find(t => String(t._id) === String(location.state.editTxId));
+      if (targetTx) {
+        handleOpenEditModal(targetTx);
+      }
+      navigate(location.pathname, { replace: true, state: {} });
+    } else if (location.state?.openAddModal) {
       if (location.state?.returnTo) {
         setReturnPath(location.state.returnTo);
       }
       handleOpenAddModal();
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state?.openAddModal, location.state?.returnTo, handleOpenAddModal, navigate, location.pathname]);
+  }, [location.state, transactions, handleOpenAddModal, handleOpenEditModal, navigate, location.pathname]);
 
   useEffect(() => {
     const modal = document.getElementById('add_transaction_modal');

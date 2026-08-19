@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   X, 
@@ -22,6 +23,7 @@ import { useAxiosSecure } from '../hooks/useApi';
 import { getMergedTransactions, setCache, getAccountsCache, setAccountsCache, subscribeToSync } from '../utils/syncManager';
 
 export default function AccountTransactionsModal() {
+  const navigate = useNavigate();
   const { selectedAccount, isOpen, closeAccountModal } = useAccountModal();
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
@@ -399,7 +401,18 @@ export default function AccountTransactionsModal() {
                     return (
                       <div 
                         key={tx._id || tx.clientTxId} 
-                        className="p-3.5 flex items-center justify-between hover:bg-base-200/30 transition-colors"
+                        onClick={() => {
+                          closeAccountModal();
+                          navigate('/transactions', {
+                            state: {
+                              editTx: tx,
+                              editTxId: tx._id,
+                              returnTo: window.location.pathname
+                            }
+                          });
+                        }}
+                        className="p-3.5 flex items-center justify-between hover:bg-base-200/60 cursor-pointer transition-colors group"
+                        title="Click to edit transaction"
                       >
                         <div className="flex items-center gap-3.5">
                           {/* Transaction Icon Badge */}

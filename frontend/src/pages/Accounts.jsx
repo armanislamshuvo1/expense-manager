@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +11,7 @@ import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOper
 import Swal from 'sweetalert2';
 
 export default function Accounts() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -148,8 +150,17 @@ export default function Accounts() {
       {/* Top Net Worth Header */}
       <div className="bg-base-200 p-6 rounded-b-3xl shadow-lg border-b border-base-200">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-extrabold">Accounts</h1>
-          <span className="badge badge-error gap-1 font-bold">LIVE</span>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-extrabold">Accounts</h1>
+            <span className="badge badge-error gap-1 font-bold">LIVE</span>
+          </div>
+          <button
+            onClick={() => document.getElementById('add_account_modal').showModal()}
+            className="btn btn-sm btn-error btn-outline rounded-xl flex items-center gap-1 text-xs font-bold"
+          >
+            <Plus className="w-4 h-4" />
+            Add Account
+          </button>
         </div>
         <div className="flex justify-around text-center mt-2">
           <div>
@@ -281,10 +292,11 @@ export default function Accounts() {
         )}
       </div>
 
-      {/* Floating Add Account Action Button */}
+      {/* Floating Add Transaction Action Button */}
       <button
-        onClick={() => document.getElementById('add_account_modal').showModal()}
-        className="btn btn-error btn-circle fixed bottom-28 right-6 shadow-xl z-40 text-white"
+        onClick={() => navigate('/transactions', { state: { openAddModal: true, returnTo: '/accounts' } })}
+        className="btn btn-error btn-circle fixed bottom-28 right-6 shadow-xl z-40 text-white hover:scale-105 active:scale-95 transition-all"
+        title="Add Transaction"
       >
         <Plus className="w-6 h-6" />
       </button>
