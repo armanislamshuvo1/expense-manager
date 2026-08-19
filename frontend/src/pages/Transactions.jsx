@@ -346,7 +346,7 @@ export default function Transactions() {
   };
 
   return (
-    <div className="min-h-screen bg-base-300 pb-24 text-base-content font-sans">
+    <div className="min-h-screen bg-base-300 pb-32 text-base-content font-sans">
       {/* Date / Month Header Row & Filters Bar */}
       <Filters
         searchQuery={searchQuery}

@@ -146,7 +146,7 @@ export default function Accounts() {
   };
 
   return (
-    <div className="min-h-screen bg-base-300 pb-20 text-base-content font-sans">
+    <div className="min-h-screen bg-base-300 pb-32 text-base-content font-sans">
       {/* Top Net Worth Header */}
       <div className="bg-base-200 p-6 rounded-b-3xl shadow-lg border-b border-base-200">
         <div className="flex justify-between items-center mb-4">

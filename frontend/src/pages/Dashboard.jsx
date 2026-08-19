@@ -317,7 +317,7 @@ export default function Dashboard() {
   const [showAdvancedCharts, setShowAdvancedCharts] = useState(false);
 
   return (
-    <div className={`min-h-screen font-sans pb-24 transition-colors duration-300 ${
+    <div className={`min-h-screen font-sans pb-32 transition-colors duration-300 ${
       isDark ? 'bg-[#070b13] text-[#e0e6f2]' : 'bg-[#f1f5f9] text-[#475569]'
     }`}>
       {/* Container with Left Sidebar on Desktop */}

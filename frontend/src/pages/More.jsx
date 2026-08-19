@@ -192,7 +192,7 @@ export default function More() {
   const themeLabel = theme.charAt(0).toUpperCase() + theme.slice(1);
 
   return (
-    <div className="min-h-screen bg-base-200 text-base-content pb-28 font-sans">
+    <div className="min-h-screen bg-base-200 text-base-content pb-32 font-sans">
       {/* Header */}
       <div className="bg-base-300 p-4 flex items-center gap-4 border-b border-base-content/10">
         <button onClick={() => navigate('/dashboard')} className="btn btn-ghost btn-circle text-base-content/60 hover:text-base-content">
