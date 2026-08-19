@@ -99,3 +99,49 @@ dialog[open] {
   backdrop-filter: blur(12px);
 }
 
+/* Fallback solid colors for browsers without oklch() / color-mix() support (Chrome < 111) */
+body {
+  background-color: #15191e;
+  color: #a6adbb;
+}
+
+.modal-box,
+dialog[open] .modal-box {
+  background-color: #1d232a !important;
+  color: #a6adbb !important;
+  opacity: 1 !important;
+}
+
+[data-theme="light"] body {
+  background-color: #f2f2f2;
+  color: #1f2937;
+}
+
+[data-theme="light"] .modal-box,
+[data-theme="light"] dialog[open] .modal-box {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  opacity: 1 !important;
+}
+
+.bg-base-100 {
+  background-color: #1d232a;
+}
+.bg-base-200 {
+  background-color: #191e24;
+}
+.bg-base-300 {
+  background-color: #15191e;
+}
+
+[data-theme="light"] .bg-base-100 {
+  background-color: #ffffff;
+}
+[data-theme="light"] .bg-base-200 {
+  background-color: #f2f2f2;
+}
+[data-theme="light"] .bg-base-300 {
+  background-color: #e5e6e6;
+}
+
+

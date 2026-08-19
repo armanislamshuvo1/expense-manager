@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexuswealth-cache-v7';
+const CACHE_NAME = 'nexuswealth-cache-v8';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
