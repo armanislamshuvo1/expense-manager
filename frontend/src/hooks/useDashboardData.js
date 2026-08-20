@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 
-export function useDashboardData(accounts = [], transactions = []) {
+export function useDashboardData(accounts = [], transactions = [], categories = []) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [periodType, setPeriodType] = useState('Monthly'); // 'Weekly' | 'Monthly' | 'Yearly' | 'All'
   const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
@@ -89,9 +89,31 @@ export function useDashboardData(accounts = [], transactions = []) {
     const categoriesMap = {};
     const categoriesEmojiMap = {};
     filteredTx.filter(tx => tx.type === currentTab).forEach(tx => {
-      const catName = tx.categoryId ? tx.categoryId.name : (tx.type === 'TRANSFER' ? 'Transfer' : 'Other');
-      const emoji = tx.categoryId ? tx.categoryId.emoji : (tx.type === 'TRANSFER' ? '🔄' : '🏷️');
-      categoriesMap[catName] = (categoriesMap[catName] || 0) + (tx.convertedAmount || tx.amount);
+      let catName = 'Other';
+      let emoji = '🏷️';
+
+      if (tx.type === 'TRANSFER') {
+        catName = 'Transfer';
+        emoji = '🔄';
+      } else if (typeof tx.categoryId === 'object' && tx.categoryId?.name) {
+        catName = tx.categoryId.name;
+        emoji = tx.categoryId.emoji || '🏷️';
+      } else {
+        const catIdStr = typeof tx.categoryId === 'string' ? tx.categoryId : String(tx.categoryId?._id || tx.categoryId?.clientCatId || '');
+        const matched = (categories || []).find(c => 
+          String(c._id || '').toLowerCase() === catIdStr.toLowerCase() || 
+          String(c.clientCatId || '').toLowerCase() === catIdStr.toLowerCase()
+        );
+        if (matched) {
+          catName = matched.name;
+          emoji = matched.emoji || '🏷️';
+        } else if (tx.categoryName) {
+          catName = tx.categoryName;
+        }
+      }
+
+      const amt = Number(tx.convertedAmount || tx.amount) || 0;
+      categoriesMap[catName] = (categoriesMap[catName] || 0) + amt;
       categoriesEmojiMap[catName] = emoji;
     });
 
@@ -106,7 +128,7 @@ export function useDashboardData(accounts = [], transactions = []) {
       cashFlowData: sortedCashFlow,
       categoryData: categoryPieData
     };
-  }, [accounts, transactions, periodType, selectedDate, activeTab]);
+  }, [accounts, transactions, categories, periodType, selectedDate, activeTab]);
 
   const formatPeriodLabel = () => {
     if (periodType === 'All') return 'All Time';

@@ -6,9 +6,7 @@ import { BottomNav } from '../components/BottomNav';
 import { useNavigate } from 'react-router-dom';
 import { isPwaMode } from '../utils/pwaUtils';
 import { useTheme } from '../context/ThemeContext';
-import { Sparkles, Camera, AlertTriangle, Loader2, Check, X, MessageSquare, Plus } from 'lucide-react';
 import { 
-  getQueue, 
   getMergedTransactions, 
   getMergedAccounts,
   getMergedCategories,
@@ -157,7 +155,7 @@ export default function Dashboard() {
   const baseCurrency = user?.baseCurrency || 'MYR';
 
   // Use the custom hook for dashboard metrics and period selections
-  const dashboardProps = useDashboardData(accounts, transactions);
+  const dashboardProps = useDashboardData(accounts, transactions, categories);
   const {
     netWorthData,
     cashFlowData,
@@ -279,9 +277,31 @@ export default function Dashboard() {
   };
 
   const handleCategoryClick = React.useCallback((categoryName) => {
+    if (!categoryName) return;
+    const targetNameStr = String(categoryName).trim().toLowerCase();
+
     const catTx = transactions.filter(tx => {
-      const isCat = (tx.categoryId?.name || (tx.type === 'TRANSFER' ? 'Transfer' : 'Other')) === categoryName;
+      let catName = 'Other';
+      if (tx.type === 'TRANSFER') {
+        catName = 'Transfer';
+      } else if (typeof tx.categoryId === 'object' && tx.categoryId?.name) {
+        catName = tx.categoryId.name;
+      } else {
+        const catIdStr = typeof tx.categoryId === 'string' ? tx.categoryId : String(tx.categoryId?._id || tx.categoryId?.clientCatId || '');
+        const matched = (categories || []).find(c => 
+          String(c._id || '').toLowerCase() === catIdStr.toLowerCase() || 
+          String(c.clientCatId || '').toLowerCase() === catIdStr.toLowerCase()
+        );
+        if (matched) {
+          catName = matched.name;
+        } else if (tx.categoryName) {
+          catName = tx.categoryName;
+        }
+      }
+
+      const isCat = catName.trim().toLowerCase() === targetNameStr;
       const isType = tx.type === activeTab;
+
       if (periodType !== 'All') {
         let start, end;
         if (periodType === 'Weekly') {
@@ -298,16 +318,20 @@ export default function Dashboard() {
           end = new Date(selectedDate.getFullYear() + 1, 0, 1);
         }
         const txDate = new Date(tx.date);
-        return isCat && isType && txDate >= start && txDate < end;
+        return isCat && isType && !isNaN(txDate.getTime()) && txDate >= start && txDate < end;
       }
       return isCat && isType;
     });
 
+    const matchedCat = (categories || []).find(c => String(c.name || '').trim().toLowerCase() === targetNameStr);
+
     setSelectedCategoryTransactions({
       categoryName,
+      categoryId: matchedCat ? String(matchedCat._id || matchedCat.clientCatId) : categoryName,
+      type: activeTab,
       transactions: catTx
     });
-  }, [transactions, activeTab, periodType, selectedDate]);
+  }, [categories, transactions, activeTab, periodType, selectedDate, setSelectedCategoryTransactions]);
 
   const totalForActiveTab = useMemo(() => categoryData.reduce((sum, item) => sum + item.value, 0), [categoryData]);
   const totalIncome = useMemo(() => cashFlowData.reduce((sum, item) => sum + item.Income, 0), [cashFlowData]);
