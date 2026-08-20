@@ -238,14 +238,91 @@ export const getMergedTransactions = (userId = getCurrentUserId()) => {
 };
 
 /* ==================== QUEUE OPERATORS ==================== */
+const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
+  if (!data && !oldData) return;
+  try {
+    const accCache = getAccountsCache(userId);
+    if (!accCache || accCache.length === 0) return;
+
+    let updatedAccs = [...accCache];
+
+    // Helper to extract id string
+    const getAccIdStr = (accField) => {
+      if (!accField) return '';
+      if (typeof accField === 'object') return String(accField._id || accField.clientAccId || '');
+      return String(accField);
+    };
+
+    // Helper to calculate effect
+    const calcEffect = (txObj) => {
+      if (!txObj) return { sourceId: '', destId: '', effect: 0, txType: '' };
+      const amt = Number(txObj.amount) || 0;
+      const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
+      const effect = amt * rate;
+      return {
+        sourceId: getAccIdStr(txObj.accountId),
+        destId: getAccIdStr(txObj.toAccountId),
+        effect,
+        txType: txObj.type
+      };
+    };
+
+    // Revert old transaction effect if updating or deleting
+    if ((opType === 'UPDATE' || opType === 'DELETE') && oldData) {
+      const { sourceId, destId, effect, txType } = calcEffect(oldData);
+      updatedAccs = updatedAccs.map(acc => {
+        const accId = String(acc._id || acc.clientAccId || '');
+        let bal = Number(acc.balance) || 0;
+        if (txType === 'INCOME' && accId === sourceId) bal -= effect;
+        else if (txType === 'EXPENSE' && accId === sourceId) bal += effect;
+        else if (txType === 'TRANSFER') {
+          if (accId === sourceId) bal += effect;
+          if (accId === destId) bal -= effect;
+        }
+        return { ...acc, balance: bal };
+      });
+    }
+
+    // Apply new transaction effect if creating or updating
+    if ((opType === 'CREATE' || opType === 'UPDATE') && data) {
+      const { sourceId, destId, effect, txType } = calcEffect(data);
+      updatedAccs = updatedAccs.map(acc => {
+        const accId = String(acc._id || acc.clientAccId || '');
+        let bal = Number(acc.balance) || 0;
+        if (txType === 'INCOME' && accId === sourceId) bal += effect;
+        else if (txType === 'EXPENSE' && accId === sourceId) bal -= effect;
+        else if (txType === 'TRANSFER') {
+          if (accId === sourceId) bal -= effect;
+          if (accId === destId) bal += effect;
+        }
+        return { ...acc, balance: bal };
+      });
+    }
+
+    setAccountsCache(updatedAccs, userId);
+  } catch (err) {
+    console.warn('Failed to update optimistic account balance:', err);
+  }
+};
+
 export const queueOperation = (type, clientTxId, id, data, userId = getCurrentUserId()) => {
   const queue = getQueue(userId);
   const targetId = id || clientTxId;
+  const currentCache = getCache(userId);
+
+  let targetTx = null;
+  if (targetId) {
+    targetTx = currentCache.find(t => String(t._id || '') === String(targetId) || String(t.clientTxId || '') === String(targetId));
+  }
 
   if (type === 'DELETE' && targetId) {
+    // Optimistically reverse deleted transaction balance on accounts
+    if (targetTx) {
+      updateAccountBalancesOptimistically('DELETE', null, targetTx, userId);
+    }
+
     // 1. Remove from local tx_cache immediately
-    const cache = getCache(userId);
-    const updatedCache = cache.filter(t => 
+    const updatedCache = currentCache.filter(t => 
       String(t._id || '') !== String(targetId) && 
       String(t.clientTxId || '') !== String(targetId)
     );
@@ -264,6 +341,13 @@ export const queueOperation = (type, clientTxId, id, data, userId = getCurrentUs
   }
 
   const actualClientTxId = clientTxId || (id && String(id).startsWith('tx_') ? id : generateUUID('tx'));
+
+  // Optimistically update account balance for CREATE / UPDATE
+  if (type === 'CREATE') {
+    updateAccountBalancesOptimistically('CREATE', data, null, userId);
+  } else if (type === 'UPDATE') {
+    updateAccountBalancesOptimistically('UPDATE', data, targetTx, userId);
+  }
 
   queue.push({
     type,

@@ -39,6 +39,7 @@ export function useTransactionsForm(transactions = []) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
@@ -49,6 +50,7 @@ export function useTransactionsForm(transactions = []) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
@@ -59,6 +61,7 @@ export function useTransactionsForm(transactions = []) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
   });
 
