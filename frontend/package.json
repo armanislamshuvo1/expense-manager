@@ -27,7 +27,6 @@
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
-    "@csstools/postcss-cascade-layers": "^6.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
