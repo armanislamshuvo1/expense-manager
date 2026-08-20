@@ -22,6 +22,18 @@ export default function Filters({
   accounts,
   handleInstallApp
 }) {
+  const selectedCategoryValue = React.useMemo(() => {
+    if (!filterCategory || filterCategory === 'ALL') return 'ALL';
+    const filterStr = String(filterCategory).toLowerCase();
+    const matched = (categories || []).find(c => 
+      String(c._id || '').toLowerCase() === filterStr ||
+      String(c.clientCatId || '').toLowerCase() === filterStr ||
+      String(c.name || '').toLowerCase() === filterStr
+    );
+    if (matched) return String(matched._id || matched.clientCatId || matched.name);
+    return String(filterCategory);
+  }, [categories, filterCategory]);
+
   return (
     <>
       {/* Date / Month Header Row */}
@@ -96,14 +108,39 @@ export default function Filters({
             <div className="flex flex-col gap-1">
               <label className="opacity-50 text-[10px] font-bold uppercase tracking-wider pl-1">Category</label>
               <select
-                value={filterCategory}
+                value={selectedCategoryValue}
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="select select-sm select-bordered bg-base-100 border-base-content/15 text-xs w-full"
               >
                 <option value="ALL">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>{cat.emoji} {cat.name}</option>
-                ))}
+                {filterType === 'INCOME' && (
+                  categories.filter(c => c.type === 'INCOME').map((cat) => {
+                    const val = String(cat._id || cat.clientCatId || cat.name);
+                    return <option key={val} value={val}>{cat.emoji} {cat.name}</option>;
+                  })
+                )}
+                {filterType === 'EXPENSE' && (
+                  categories.filter(c => c.type === 'EXPENSE').map((cat) => {
+                    const val = String(cat._id || cat.clientCatId || cat.name);
+                    return <option key={val} value={val}>{cat.emoji} {cat.name}</option>;
+                  })
+                )}
+                {(filterType === 'ALL' || filterType === 'TRANSFER') && (
+                  <>
+                    <optgroup label="Income Categories">
+                      {categories.filter(c => c.type === 'INCOME').map((cat) => {
+                        const val = String(cat._id || cat.clientCatId || cat.name);
+                        return <option key={val} value={val}>{cat.emoji} {cat.name}</option>;
+                      })}
+                    </optgroup>
+                    <optgroup label="Expense Categories">
+                      {categories.filter(c => c.type === 'EXPENSE').map((cat) => {
+                        const val = String(cat._id || cat.clientCatId || cat.name);
+                        return <option key={val} value={val}>{cat.emoji} {cat.name}</option>;
+                      })}
+                    </optgroup>
+                  </>
+                )}
               </select>
             </div>
 

@@ -6,11 +6,14 @@ const TransactionRow = React.memo(({
   tx,
   user,
   handleOpenEditModal,
-  handleDeleteTransaction
+  handleDeleteTransaction,
+  onCategoryClick
 }) => {
   const { openAccountModal } = useAccountModal();
   const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
+  const catName = tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized');
+  const catId = typeof tx.categoryId === 'object' ? (tx.categoryId?._id || tx.categoryId?.clientCatId) : tx.categoryId;
+
   return (
     <div className="group flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors gap-2">
       <div 
@@ -18,12 +21,30 @@ const TransactionRow = React.memo(({
         className="flex-1 flex justify-between items-center cursor-pointer min-w-0 pr-2"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl shrink-0">
+          <span 
+            className="text-2xl shrink-0 cursor-pointer hover:scale-110 transition-transform"
+            title="Click to filter by category"
+            onClick={(e) => {
+              if (onCategoryClick && catId) {
+                e.stopPropagation();
+                onCategoryClick(catId, tx.type);
+              }
+            }}
+          >
             {tx.type === 'TRANSFER' ? '🔄' : (tx.categoryId?.emoji || '🏷️')}
           </span>
           <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-sm truncate">
-              {tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized')}
+            <span 
+              className="font-semibold text-sm truncate hover:underline hover:text-primary transition-colors cursor-pointer"
+              title="Click to filter by category"
+              onClick={(e) => {
+                if (onCategoryClick && (catId || catName)) {
+                  e.stopPropagation();
+                  onCategoryClick(catId || catName, tx.type);
+                }
+              }}
+            >
+              {catName}
             </span>
             {tx.note && (
               <span className="text-xs text-base-content/80 font-medium py-0.5 truncate">
@@ -115,7 +136,8 @@ const List = React.memo(({
   formatDateHeader,
   handleOpenAddModal,
   handleOpenEditModal,
-  handleDeleteTransaction
+  handleDeleteTransaction,
+  onCategoryClick
 }) => {
   if (isTransactionsLoading) {
     return (
@@ -210,6 +232,7 @@ const List = React.memo(({
                       user={user}
                       handleOpenEditModal={handleOpenEditModal}
                       handleDeleteTransaction={handleDeleteTransaction}
+                      onCategoryClick={onCategoryClick}
                     />
                   ))}
                 </div>

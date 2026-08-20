@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
-import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit2, ListFilter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
@@ -156,16 +156,26 @@ export default function IncomeCategoriesSetting() {
                     <span className="text-[10px] text-base-content/50" style={{ color: cat.color }}>{cat.color}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => navigate('/transactions', { state: { filterCategory: cat._id || cat.clientCatId || cat.name, filterType: 'INCOME' } })}
+                    className="btn btn-ghost btn-xs text-xs gap-1 text-base-content/60 hover:text-error cursor-pointer"
+                    title="View category transactions"
+                  >
+                    <ListFilter className="w-4 h-4" />
+                    <span className="hidden sm:inline text-[11px]">Txns</span>
+                  </button>
                   <button
                     onClick={() => handleEditClick(cat)}
                     className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-base-content"
+                    title="Edit category"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(cat._id)}
                     className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-error"
+                    title="Delete category"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

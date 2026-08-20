@@ -163,20 +163,40 @@ export default function Transactions() {
   const [returnPath, setReturnPath] = useState(null);
 
   useEffect(() => {
-    if (location.state?.editTx || location.state?.editTxId) {
-      if (location.state?.returnTo) {
+    if (!location.state) return;
+    let shouldClearState = false;
+
+    if (location.state.filterCategory) {
+      const catVal = typeof location.state.filterCategory === 'object'
+        ? String(location.state.filterCategory._id || location.state.filterCategory.clientCatId || location.state.filterCategory.name || '')
+        : String(location.state.filterCategory);
+      setFilterCategory(catVal);
+      setShowFilters(true);
+      shouldClearState = true;
+    }
+    if (location.state.filterType) {
+      setFilterType(location.state.filterType);
+      setShowFilters(true);
+      shouldClearState = true;
+    }
+    if (location.state.editTx || location.state.editTxId) {
+      if (location.state.returnTo) {
         setReturnPath(location.state.returnTo);
       }
       const targetTx = location.state.editTx || transactions.find(t => String(t._id) === String(location.state.editTxId));
       if (targetTx) {
         handleOpenEditModal(targetTx);
       }
-      navigate(location.pathname, { replace: true, state: {} });
-    } else if (location.state?.openAddModal) {
-      if (location.state?.returnTo) {
+      shouldClearState = true;
+    } else if (location.state.openAddModal) {
+      if (location.state.returnTo) {
         setReturnPath(location.state.returnTo);
       }
       handleOpenAddModal();
+      shouldClearState = true;
+    }
+
+    if (shouldClearState) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, transactions, handleOpenAddModal, handleOpenEditModal, navigate, location.pathname]);
@@ -242,7 +262,15 @@ export default function Transactions() {
       if (filterType !== 'ALL' && tx.type !== filterType) return false;
 
       // 3. Category filter
-      if (filterCategory !== 'ALL' && tx.categoryId?._id !== filterCategory) return false;
+      if (filterCategory !== 'ALL') {
+        const catId = typeof tx.categoryId === 'object' ? (tx.categoryId?._id || tx.categoryId?.clientCatId) : tx.categoryId;
+        const txCategoryName = typeof tx.categoryId === 'object' ? tx.categoryId?.name : tx.categoryName;
+        const target = String(filterCategory).toLowerCase();
+
+        const isMatch = (catId && String(catId).toLowerCase() === target) || 
+                        (txCategoryName && String(txCategoryName).toLowerCase() === target);
+        if (!isMatch) return false;
+      }
 
       // 4. Account filter
       if (filterAccount !== 'ALL' && tx.accountId?._id !== filterAccount && tx.toAccountId?._id !== filterAccount) return false;
@@ -407,15 +435,21 @@ export default function Transactions() {
           handleOpenAddModal={handleOpenAddModal}
           handleOpenEditModal={handleOpenEditModal}
           handleDeleteTransaction={handleDeleteTransaction}
+          onCategoryClick={(catId, txType) => {
+            setFilterCategory(catId);
+            if (txType) setFilterType(txType);
+            setShowFilters(true);
+          }}
         />
       </div>
 
       {/* Floating Add Action Button */}
       <button
         onClick={() => handleOpenAddModal()}
-        className="btn btn-error btn-circle fixed bottom-28 right-6 shadow-xl z-40 text-white animate-bounce"
+        className="btn btn-error btn-circle w-14 h-14 min-h-[3.5rem] fixed bottom-28 right-6 shadow-2xl z-40 text-white animate-bounce flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
+        title="Add Transaction"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-8 h-8 stroke-[2.5]" />
       </button>
 
       {/* Form Dialog Component */}
