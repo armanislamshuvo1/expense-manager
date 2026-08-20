@@ -1,9 +1,9 @@
 import rateLimit from 'express-rate-limit';
 
-// General API Limiter: Max 80 requests per 15 minutes per IP (reduced for local-first sync batching)
+// General API Limiter: Max 300 requests per 15 minutes per IP
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 80, // Limit each IP to 80 requests per window
+  max: 300, // Limit each IP to 300 requests per window
   standardHeaders: true, // Return rate limit info in the RateLimit-* headers
   legacyHeaders: false, // Disable the X-RateLimit-* headers
   message: {
@@ -36,10 +36,10 @@ export const aiLimiter = rateLimit({
   }
 });
 
-// Local-first Sync Limiter: Max 30 requests per 15 minutes per IP for heavy DB write sync batches
+// Local-first Sync Limiter: Max 100 requests per 15 minutes per IP for heavy DB write sync batches
 export const syncLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 sync requests per window
+  max: 100, // Limit each IP to 100 sync requests per window
   standardHeaders: true,
   legacyHeaders: false,
   message: {

@@ -638,12 +638,12 @@ export const commitImportData = async (req, res, next) => {
           _id: '$accountId',
           totalIncome: {
             $sum: {
-              $cond: [{ $eq: ['$type', 'INCOME'] }, '$amount', 0]
+              $cond: [{ $eq: ['$type', 'INCOME'] }, { $ifNull: ['$convertedAmount', '$amount'] }, 0]
             }
           },
           totalExpense: {
             $sum: {
-              $cond: [{ $in: ['$type', ['EXPENSE', 'TRANSFER']] }, '$amount', 0]
+              $cond: [{ $in: ['$type', ['EXPENSE', 'TRANSFER']] }, { $ifNull: ['$convertedAmount', '$amount'] }, 0]
             }
           }
         }
@@ -655,7 +655,7 @@ export const commitImportData = async (req, res, next) => {
       {
         $group: {
           _id: '$toAccountId',
-          totalTransferIn: { $sum: '$amount' }
+          totalTransferIn: { $sum: { $ifNull: ['$convertedAmount', '$amount'] } }
         }
       }
     ]).session(session);
