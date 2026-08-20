@@ -210,10 +210,15 @@ export const googleLogin = async (req, res, next) => {
       const payload = ticket.getPayload();
       email = payload.email;
       name = payload.name;
-    } else {
-      // Fallback/mock behavior when not configured or testing
+    } else if (process.env.NODE_ENV !== 'production' && bodyEmail === 'googleuser@mockauth.com') {
+      // Allowed fallback/mock behavior ONLY in non-production environments for demo testing
       email = bodyEmail;
-      name = bodyName;
+      name = bodyName || 'Alex Mercer';
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Google Sign-In is not configured or invalid OAuth credential provided.'
+      });
     }
 
     if (!email) {
