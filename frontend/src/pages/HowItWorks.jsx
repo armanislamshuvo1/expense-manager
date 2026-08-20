@@ -4,7 +4,6 @@ import { useTheme } from '../context/ThemeContext';
 import { 
   TrendingUp, 
   HelpCircle,
-  Keyboard,
   Sliders,
   Smartphone,
   CheckCircle2,
@@ -14,8 +13,7 @@ import {
   Share2,
   Camera,
   Download,
-  Globe,
-  ArrowRight
+  Globe
 } from 'lucide-react';
 
 export default function HowItWorks() {

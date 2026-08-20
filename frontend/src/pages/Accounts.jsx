@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAccountModal } from '../context/AccountModalContext';
 import { BottomNav } from '../components/BottomNav';
 import { CreditCard, Plus, Trash2, X, Wallet, DollarSign, Globe, Layers, Calendar, Check, AlertCircle } from 'lucide-react';
-import { ALL_CURRENCIES, getPreferredCurrencies } from '../utils/currencies';
+import { getPreferredCurrencies } from '../utils/currencies';
 import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOperation, generateUUID } from '../utils/syncManager';
 import Swal from 'sweetalert2';
 

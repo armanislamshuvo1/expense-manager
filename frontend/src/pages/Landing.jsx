@@ -4,10 +4,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { 
   TrendingUp, 
-  Shield, 
   Sparkles, 
   ArrowRight, 
-  PieChart as PieIcon, 
   Wallet, 
   Camera,
   Share2, 
@@ -16,11 +14,7 @@ import {
   Globe,
   Smartphone,
   CheckCircle2,
-  Lock,
-  Zap,
   CreditCard,
-  FileText,
-  BarChart3,
   HelpCircle
 } from 'lucide-react';
 

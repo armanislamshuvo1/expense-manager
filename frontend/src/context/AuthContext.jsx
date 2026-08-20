@@ -42,7 +42,7 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
     setError(false);
 
     if (newCode.length === 4) {
-      if (newCode === passcodeValue) {
+      if (String(newCode) === String(passcodeValue)) {
         onUnlock();
       } else {
         setTimeout(() => {
