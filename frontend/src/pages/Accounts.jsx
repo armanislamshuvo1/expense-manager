@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
@@ -7,7 +7,7 @@ import { useAccountModal } from '../context/AccountModalContext';
 import { BottomNav } from '../components/BottomNav';
 import { CreditCard, Plus, Trash2, X, Wallet, DollarSign, Globe, Layers, Calendar, Check, AlertCircle } from 'lucide-react';
 import { getPreferredCurrencies } from '../utils/currencies';
-import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOperation, generateUUID } from '../utils/syncManager';
+import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOperation, generateUUID, subscribeToSync } from '../utils/syncManager';
 import Swal from 'sweetalert2';
 
 export default function Accounts() {
@@ -27,6 +27,19 @@ export default function Accounts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [syncStatus, setSyncStatus] = useState('synced');
+  const [syncQueueLength, setSyncQueueLength] = useState(0);
+
+  useEffect(() => {
+    return subscribeToSync((status, qLength) => {
+      setSyncStatus(status);
+      setSyncQueueLength(qLength);
+      if (status === 'synced' && qLength === 0) {
+        queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      }
+    });
+  }, [queryClient]);
+
   const { data: rawAccounts = [], isLoading: fetching } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -45,7 +58,7 @@ export default function Accounts() {
 
   const accounts = useMemo(() => {
     return getMergedAccounts();
-  }, [rawAccounts]);
+  }, [rawAccounts, syncQueueLength]);
 
   const handleAddAccount = async (e) => {
     e.preventDefault();

@@ -253,12 +253,18 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
       return String(accField);
     };
 
-    // Helper to calculate effect
-    const calcEffect = (txObj) => {
+    // Helper to calculate effect matching backend currency conversion logic
+    const calcEffect = (txObj, accCurrency) => {
       if (!txObj) return { sourceId: '', destId: '', effect: 0, txType: '' };
       const amt = Number(txObj.amount) || 0;
-      const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
-      const effect = amt * rate;
+      let effect = amt;
+      if (accCurrency && txObj.currency && accCurrency !== txObj.currency) {
+        const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
+        effect = amt * rate;
+      } else if (!accCurrency) {
+        const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
+        effect = amt * rate;
+      }
       return {
         sourceId: getAccIdStr(txObj.accountId),
         destId: getAccIdStr(txObj.toAccountId),
@@ -269,9 +275,9 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
 
     // Revert old transaction effect if updating or deleting
     if ((opType === 'UPDATE' || opType === 'DELETE') && oldData) {
-      const { sourceId, destId, effect, txType } = calcEffect(oldData);
       updatedAccs = updatedAccs.map(acc => {
         const accId = String(acc._id || acc.clientAccId || '');
+        const { sourceId, destId, effect, txType } = calcEffect(oldData, acc.currency);
         let bal = Number(acc.balance) || 0;
         if (txType === 'INCOME' && accId === sourceId) bal -= effect;
         else if (txType === 'EXPENSE' && accId === sourceId) bal += effect;
@@ -279,15 +285,15 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
           if (accId === sourceId) bal += effect;
           if (accId === destId) bal -= effect;
         }
-        return { ...acc, balance: bal };
+        return { ...acc, balance: Number(bal.toFixed(2)) };
       });
     }
 
     // Apply new transaction effect if creating or updating
     if ((opType === 'CREATE' || opType === 'UPDATE') && data) {
-      const { sourceId, destId, effect, txType } = calcEffect(data);
       updatedAccs = updatedAccs.map(acc => {
         const accId = String(acc._id || acc.clientAccId || '');
+        const { sourceId, destId, effect, txType } = calcEffect(data, acc.currency);
         let bal = Number(acc.balance) || 0;
         if (txType === 'INCOME' && accId === sourceId) bal += effect;
         else if (txType === 'EXPENSE' && accId === sourceId) bal -= effect;
@@ -295,7 +301,7 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
           if (accId === sourceId) bal -= effect;
           if (accId === destId) bal += effect;
         }
-        return { ...acc, balance: bal };
+        return { ...acc, balance: Number(bal.toFixed(2)) };
       });
     }
 
@@ -429,134 +435,150 @@ export const queueAccountOperation = (type, clientAccId, id, data, userId = getC
 };
 
 /* ==================== SEQUENTIAL AUTO-SYNC ENGINE ==================== */
+let activeSyncPromise = null;
+
 export const triggerSync = async () => {
-  if (isSyncing) return;
-  if (!navigator.onLine) {
-    notify();
-    return;
+  if (activeSyncPromise) {
+    return activeSyncPromise;
   }
 
-  const userId = getCurrentUserId();
-  let catQueue = getCategoryQueue(userId);
-  let accQueue = getAccountQueue(userId);
-  let txQueue = getQueue(userId);
+  activeSyncPromise = (async () => {
+    if (!navigator.onLine) {
+      notify();
+      return;
+    }
 
-  if (catQueue.length === 0 && accQueue.length === 0 && txQueue.length === 0) {
-    syncStatus = 'synced';
+    isSyncing = true;
+    syncStatus = 'syncing';
     notify();
-    return;
-  }
 
-  isSyncing = true;
-  syncStatus = 'syncing';
-  notify();
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const token = localStorage.getItem('token');
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    try {
+      while (true) {
+        const userId = getCurrentUserId();
+        let catQueue = getCategoryQueue(userId);
+        let accQueue = getAccountQueue(userId);
+        let txQueue = getQueue(userId);
 
-  try {
-    // 1. SYNC CATEGORIES FIRST
-    if (catQueue.length > 0) {
-      const catRes = await secureApi.post('/api/sync/categories', { ops: catQueue }, { headers });
-      if (catRes.data?.success) {
-        const { idMap } = catRes.data;
-
-        // Update local category cache with real Mongo IDs
-        const catCache = getCategoriesCache(userId);
-        const updatedCatCache = catCache.map(c => {
-          if (c.clientCatId && idMap[c.clientCatId]) {
-            return { ...c, _id: idMap[c.clientCatId] };
-          }
-          return c;
-        });
-        setCategoriesCache(updatedCatCache, userId);
-
-        // TRANSLATE CATEGORY CLIENT IDs IN TRANSACTION QUEUE
-        txQueue = txQueue.map(op => {
-          if (op.data?.categoryId && idMap[op.data.categoryId]) {
-            return {
-              ...op,
-              data: { ...op.data, categoryId: idMap[op.data.categoryId] }
-            };
-          }
-          return op;
-        });
-        saveQueue(txQueue, userId);
-        saveCategoryQueue([], userId);
-      }
-    }
-
-    // 2. SYNC ACCOUNTS SECOND
-    if (accQueue.length > 0) {
-      const accRes = await secureApi.post('/api/sync/accounts', { ops: accQueue }, { headers });
-      if (accRes.data?.success) {
-        const { idMap } = accRes.data;
-
-        // Update local accounts cache with real Mongo IDs
-        const accCache = getAccountsCache(userId);
-        const updatedAccCache = accCache.map(a => {
-          if (a.clientAccId && idMap[a.clientAccId]) {
-            return { ...a, _id: idMap[a.clientAccId] };
-          }
-          return a;
-        });
-        setAccountsCache(updatedAccCache, userId);
-
-        // TRANSLATE ACCOUNT CLIENT IDs IN TRANSACTION QUEUE
-        txQueue = txQueue.map(op => {
-          let updatedData = { ...op.data };
-          if (updatedData.accountId && idMap[updatedData.accountId]) {
-            updatedData.accountId = idMap[updatedData.accountId];
-          }
-          if (updatedData.toAccountId && idMap[updatedData.toAccountId]) {
-            updatedData.toAccountId = idMap[updatedData.toAccountId];
-          }
-          return { ...op, data: updatedData };
-        });
-        saveQueue(txQueue, userId);
-        saveAccountQueue([], userId);
-      }
-    }
-
-    // 3. SYNC TRANSACTIONS THIRD
-    if (txQueue.length > 0) {
-      const validTxQueue = txQueue.filter(op => {
-        if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
-          return false;
+        if (catQueue.length === 0 && accQueue.length === 0 && txQueue.length === 0) {
+          break;
         }
-        return true;
-      });
 
-      if (validTxQueue.length > 0) {
-        const txRes = await secureApi.post('/api/sync/transactions', { ops: validTxQueue }, { headers });
-        if (txRes.data?.success) {
-          const { idMap } = txRes.data;
-          const txCache = getCache(userId);
-          const updatedTxCache = txCache.map(tx => {
-            if (tx.clientTxId && idMap[tx.clientTxId]) {
-              return { ...tx, _id: idMap[tx.clientTxId] };
+        // 1. SYNC CATEGORIES FIRST
+        if (catQueue.length > 0) {
+          const catRes = await secureApi.post('/api/sync/categories', { ops: catQueue }, { headers });
+          if (catRes.data?.success) {
+            const { idMap } = catRes.data;
+
+            // Update local category cache with real Mongo IDs
+            const catCache = getCategoriesCache(userId);
+            const updatedCatCache = catCache.map(c => {
+              if (c.clientCatId && idMap[c.clientCatId]) {
+                return { ...c, _id: idMap[c.clientCatId] };
+              }
+              return c;
+            });
+            setCategoriesCache(updatedCatCache, userId);
+
+            // TRANSLATE CATEGORY CLIENT IDs IN TRANSACTION QUEUE
+            txQueue = txQueue.map(op => {
+              if (op.data?.categoryId && idMap[op.data.categoryId]) {
+                return {
+                  ...op,
+                  data: { ...op.data, categoryId: idMap[op.data.categoryId] }
+                };
+              }
+              return op;
+            });
+            saveQueue(txQueue, userId);
+            saveCategoryQueue([], userId);
+          }
+        }
+
+        // 2. SYNC ACCOUNTS SECOND
+        if (accQueue.length > 0) {
+          const accRes = await secureApi.post('/api/sync/accounts', { ops: accQueue }, { headers });
+          if (accRes.data?.success) {
+            const { idMap } = accRes.data;
+
+            // Update local accounts cache with real Mongo IDs
+            const accCache = getAccountsCache(userId);
+            const updatedAccCache = accCache.map(a => {
+              if (a.clientAccId && idMap[a.clientAccId]) {
+                return { ...a, _id: idMap[a.clientAccId] };
+              }
+              return a;
+            });
+            setAccountsCache(updatedAccCache, userId);
+
+            // TRANSLATE ACCOUNT CLIENT IDs IN TRANSACTION QUEUE
+            txQueue = txQueue.map(op => {
+              let updatedData = { ...op.data };
+              if (updatedData.accountId && idMap[updatedData.accountId]) {
+                updatedData.accountId = idMap[updatedData.accountId];
+              }
+              if (updatedData.toAccountId && idMap[updatedData.toAccountId]) {
+                updatedData.toAccountId = idMap[updatedData.toAccountId];
+              }
+              return { ...op, data: updatedData };
+            });
+            saveQueue(txQueue, userId);
+            saveAccountQueue([], userId);
+          }
+        }
+
+        // 3. SYNC TRANSACTIONS THIRD
+        if (txQueue.length > 0) {
+          const validTxQueue = txQueue.filter(op => {
+            if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
+              return false;
             }
-            return tx;
+            return true;
           });
-          setCache(updatedTxCache, userId);
-          saveQueue([], userId);
-        }
-      } else {
-        saveQueue([], userId);
-      }
-    }
 
-    syncStatus = 'synced';
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('nexus_sync_completed'));
+          if (validTxQueue.length > 0) {
+            const txRes = await secureApi.post('/api/sync/transactions', { ops: validTxQueue }, { headers });
+            if (txRes.data?.success) {
+              const { idMap, accounts: serverAccounts } = txRes.data;
+              const txCache = getCache(userId);
+              const updatedTxCache = txCache.map(tx => {
+                if (tx.clientTxId && idMap[tx.clientTxId]) {
+                  return { ...tx, _id: idMap[tx.clientTxId] };
+                }
+                return tx;
+              });
+              setCache(updatedTxCache, userId);
+
+              // Update local accounts cache with authoritative server-calculated balances
+              if (Array.isArray(serverAccounts) && serverAccounts.length > 0) {
+                setAccountsCache(serverAccounts, userId);
+              }
+
+              saveQueue([], userId);
+            }
+          } else {
+            saveQueue([], userId);
+          }
+        }
+      }
+
+      syncStatus = 'synced';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('nexus_sync_completed'));
+      }
+    } catch (err) {
+      console.error('Batch sync error:', err);
+      syncStatus = 'error';
+    } finally {
+      isSyncing = false;
+      activeSyncPromise = null;
+      notify();
     }
-  } catch (err) {
-    console.error('Batch sync error:', err);
-    syncStatus = 'error';
-  } finally {
-    isSyncing = false;
-    notify();
-  }
+  })();
+
+  return activeSyncPromise;
 };
 
 /* ==================== LIFECYCLE LISTENERS ==================== */

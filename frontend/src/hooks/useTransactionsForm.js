@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { useAxiosSecure } from './useApi';
 import { useAuth } from '../context/AuthContext';
-import { queueOperation, queueCategoryOperation, queueAccountOperation, generateUUID } from '../utils/syncManager';
+import { queueOperation, queueCategoryOperation, queueAccountOperation, generateUUID, triggerSync } from '../utils/syncManager';
 
 export function useTransactionsForm(transactions = []) {
   const axiosSecure = useAxiosSecure();
@@ -35,6 +35,7 @@ export function useTransactionsForm(transactions = []) {
     mutationFn: async (txData) => {
       const clientTxId = generateUUID('tx');
       queueOperation('CREATE', clientTxId, null, txData);
+      await triggerSync();
       return { success: true, data: { _id: clientTxId, ...txData } };
     },
     onSuccess: () => {
@@ -46,6 +47,7 @@ export function useTransactionsForm(transactions = []) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, txData }) => {
       queueOperation('UPDATE', null, id, txData);
+      await triggerSync();
       return { success: true };
     },
     onSuccess: () => {
@@ -57,6 +59,7 @@ export function useTransactionsForm(transactions = []) {
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       queueOperation('DELETE', null, id, null);
+      await triggerSync();
       return { success: true };
     },
     onSuccess: () => {

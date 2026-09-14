@@ -23,26 +23,33 @@ export const syncTransactions = async (req, res, next) => {
   const idMap = {};
   const processedOps = [];
 
-  // We attempt a database transaction if supported, else run sequentially
+  // We attempt a database transaction if supported (replica set), else run sequentially
   let session = null;
+  let useTransaction = false;
   try {
     session = await mongoose.startSession();
+    session.startTransaction();
+    useTransaction = true;
   } catch (e) {
-    session = null;
+    if (session) {
+      try { await session.endSession(); } catch (_) {}
+      session = null;
+    }
+    useTransaction = false;
   }
 
-  try {
-    if (session) {
-      session.startTransaction();
-    }
+  const sessionOpt = session ? { session } : {};
 
+  try {
     for (const op of ops) {
       const { type, clientTxId, id, data } = op;
 
       if (type === 'CREATE') {
         if (!clientTxId) continue;
         
-        let existingTx = await Transaction.findOne({ clientTxId, userId }).session(session);
+        let existingTx = session 
+          ? await Transaction.findOne({ clientTxId, userId }).session(session)
+          : await Transaction.findOne({ clientTxId, userId });
         if (existingTx) {
           idMap[clientTxId] = existingTx._id;
           processedOps.push({ clientTxId, status: 'SKIPPED_DUPLICATE', id: existingTx._id });
@@ -63,12 +70,16 @@ export const syncTransactions = async (req, res, next) => {
           description
         } = data;
 
-        const account = await Account.findOne({ _id: accountId, userId }).session(session);
+        const account = session 
+          ? await Account.findOne({ _id: accountId, userId }).session(session)
+          : await Account.findOne({ _id: accountId, userId });
         if (!account) throw new Error(`Source account not found for sync operation CREATE.`);
 
         let toAccount = null;
         if (txType === 'TRANSFER') {
-          toAccount = await Account.findOne({ _id: toAccountId, userId }).session(session);
+          toAccount = session
+            ? await Account.findOne({ _id: toAccountId, userId }).session(session)
+            : await Account.findOne({ _id: toAccountId, userId });
           if (!toAccount) throw new Error(`Destination account not found for sync operation CREATE.`);
         }
 
@@ -94,23 +105,23 @@ export const syncTransactions = async (req, res, next) => {
           transaction.convertedAmount = transaction.amount;
         }
 
-        await transaction.save({ session });
+        await transaction.save(sessionOpt);
 
         if (txType === 'INCOME') {
           const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
           account.balance += effect;
-          await account.save({ session });
+          await account.save(sessionOpt);
         } else if (txType === 'EXPENSE') {
           const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
           account.balance -= effect;
-          await account.save({ session });
+          await account.save(sessionOpt);
         } else if (txType === 'TRANSFER') {
           const fromEffect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
           const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, baseCurrency);
           account.balance -= fromEffect;
           toAccount.balance += toEffect;
-          await account.save({ session });
-          await toAccount.save({ session });
+          await account.save(sessionOpt);
+          await toAccount.save(sessionOpt);
         }
 
         idMap[clientTxId] = transaction._id;
@@ -120,7 +131,9 @@ export const syncTransactions = async (req, res, next) => {
         const query = (id && mongoose.Types.ObjectId.isValid(id)) 
           ? { _id: id, userId } 
           : { clientTxId: id || clientTxId, userId };
-        const transaction = await Transaction.findOne(query).session(session);
+        const transaction = session
+          ? await Transaction.findOne(query).session(session)
+          : await Transaction.findOne(query);
         if (!transaction) continue;
 
         const {
@@ -137,7 +150,9 @@ export const syncTransactions = async (req, res, next) => {
           description
         } = data;
 
-        const oldSourceAccount = await Account.findOne({ _id: transaction.accountId, userId }).session(session);
+        const oldSourceAccount = session
+          ? await Account.findOne({ _id: transaction.accountId, userId }).session(session)
+          : await Account.findOne({ _id: transaction.accountId, userId });
         if (oldSourceAccount) {
           const oldFromEffect = getBalanceEffectForAccount(transaction, oldSourceAccount.currency, baseCurrency);
           if (transaction.type === 'INCOME') {
@@ -146,17 +161,21 @@ export const syncTransactions = async (req, res, next) => {
             oldSourceAccount.balance += oldFromEffect;
           } else if (transaction.type === 'TRANSFER') {
             oldSourceAccount.balance += oldFromEffect;
-            const oldDestAccount = await Account.findOne({ _id: transaction.toAccountId, userId }).session(session);
+            const oldDestAccount = session
+              ? await Account.findOne({ _id: transaction.toAccountId, userId }).session(session)
+              : await Account.findOne({ _id: transaction.toAccountId, userId });
             if (oldDestAccount) {
               const oldToEffect = getBalanceEffectForAccount(transaction, oldDestAccount.currency, baseCurrency);
               oldDestAccount.balance -= oldToEffect;
-              await oldDestAccount.save({ session });
+              await oldDestAccount.save(sessionOpt);
             }
           }
-          await oldSourceAccount.save({ session });
+          await oldSourceAccount.save(sessionOpt);
         }
 
-        const newSourceAccount = await Account.findOne({ _id: accountId, userId }).session(session);
+        const newSourceAccount = session
+          ? await Account.findOne({ _id: accountId, userId }).session(session)
+          : await Account.findOne({ _id: accountId, userId });
         if (!newSourceAccount) throw new Error(`Source account not found for sync operation UPDATE.`);
 
         const tempTx = {
@@ -169,13 +188,15 @@ export const syncTransactions = async (req, res, next) => {
         if (txType === 'INCOME') {
           const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
           newSourceAccount.balance += newEffect;
-          await newSourceAccount.save({ session });
+          await newSourceAccount.save(sessionOpt);
         } else if (txType === 'EXPENSE') {
           const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
           newSourceAccount.balance -= newEffect;
-          await newSourceAccount.save({ session });
+          await newSourceAccount.save(sessionOpt);
         } else if (txType === 'TRANSFER') {
-          const newDestAccount = await Account.findOne({ _id: toAccountId, userId }).session(session);
+          const newDestAccount = session
+            ? await Account.findOne({ _id: toAccountId, userId }).session(session)
+            : await Account.findOne({ _id: toAccountId, userId });
           if (!newDestAccount) throw new Error(`Destination account not found for sync operation UPDATE.`);
           
           const newFromEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
@@ -184,8 +205,8 @@ export const syncTransactions = async (req, res, next) => {
           newSourceAccount.balance -= newFromEffect;
           newDestAccount.balance += newToEffect;
           
-          await newSourceAccount.save({ session });
-          await newDestAccount.save({ session });
+          await newSourceAccount.save(sessionOpt);
+          await newDestAccount.save(sessionOpt);
         }
 
         transaction.accountId = accountId;
@@ -206,55 +227,71 @@ export const syncTransactions = async (req, res, next) => {
           transaction.convertedAmount = transaction.amount;
         }
 
-        await transaction.save({ session });
+        await transaction.save(sessionOpt);
         processedOps.push({ clientTxId, status: 'UPDATED', id: transaction._id });
 
       } else if (type === 'DELETE') {
         const query = (id && mongoose.Types.ObjectId.isValid(id)) 
           ? { _id: id, userId } 
           : { clientTxId: id || clientTxId, userId };
-        const transaction = await Transaction.findOne(query).session(session);
+        const transaction = session
+          ? await Transaction.findOne(query).session(session)
+          : await Transaction.findOne(query);
         if (!transaction) continue;
 
-        const account = await Account.findOne({ _id: transaction.accountId, userId }).session(session);
+        const account = session
+          ? await Account.findOne({ _id: transaction.accountId, userId }).session(session)
+          : await Account.findOne({ _id: transaction.accountId, userId });
         if (account) {
           if (transaction.type === 'INCOME') {
             const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
             account.balance -= effect;
-            await account.save({ session });
+            await account.save(sessionOpt);
           } else if (transaction.type === 'EXPENSE') {
             const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
             account.balance += effect;
-            await account.save({ session });
+            await account.save(sessionOpt);
           } else if (transaction.type === 'TRANSFER') {
             const fromEffect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
             account.balance += fromEffect;
-            await account.save({ session });
+            await account.save(sessionOpt);
 
-            const toAccount = await Account.findOne({ _id: transaction.toAccountId, userId }).session(session);
+            const toAccount = session
+              ? await Account.findOne({ _id: transaction.toAccountId, userId }).session(session)
+              : await Account.findOne({ _id: transaction.toAccountId, userId });
             if (toAccount) {
               const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, baseCurrency);
               toAccount.balance -= toEffect;
-              await toAccount.save({ session });
+              await toAccount.save(sessionOpt);
             }
           }
         }
 
-        await transaction.deleteOne({ session });
+        await transaction.deleteOne(sessionOpt);
         processedOps.push({ clientTxId, status: 'DELETED', id: transaction._id });
       }
     }
 
-    if (session) {
+    if (useTransaction && session) {
       await session.commitTransaction();
+      session.endSession();
+    } else if (session) {
       session.endSession();
     }
 
-    res.status(200).json({ success: true, idMap, processedOps });
+    // Fetch and return the latest account states so clients receive updated balances immediately
+    const updatedAccounts = await Account.find({ userId });
+    res.status(200).json({ success: true, idMap, processedOps, accounts: updatedAccounts });
   } catch (error) {
-    if (session) {
-      await session.abortTransaction();
-      session.endSession();
+    if (useTransaction && session) {
+      try {
+        await session.abortTransaction();
+        session.endSession();
+      } catch (_) {}
+    } else if (session) {
+      try {
+        session.endSession();
+      } catch (_) {}
     }
     next(error);
   }
