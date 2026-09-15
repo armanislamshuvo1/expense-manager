@@ -456,7 +456,11 @@ export const triggerSync = async () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
-      while (true) {
+      let iteration = 0;
+      const maxIterations = 10;
+
+      while (iteration < maxIterations) {
+        iteration++;
         const userId = getCurrentUserId();
         let catQueue = getCategoryQueue(userId);
         let accQueue = getAccountQueue(userId);
@@ -470,13 +474,14 @@ export const triggerSync = async () => {
         if (catQueue.length > 0) {
           const catRes = await secureApi.post('/api/sync/categories', { ops: catQueue }, { headers });
           if (catRes.data?.success) {
-            const { idMap } = catRes.data;
+            const { idMap = {} } = catRes.data;
 
-            // Update local category cache with real Mongo IDs
+            // Update local category cache with real Mongo IDs and clear isPending
             const catCache = getCategoriesCache(userId);
             const updatedCatCache = catCache.map(c => {
               if (c.clientCatId && idMap[c.clientCatId]) {
-                return { ...c, _id: idMap[c.clientCatId] };
+                const { isPending, ...cleanC } = c;
+                return { ...cleanC, _id: idMap[c.clientCatId], isPending: false };
               }
               return c;
             });
@@ -494,6 +499,9 @@ export const triggerSync = async () => {
             });
             saveQueue(txQueue, userId);
             saveCategoryQueue([], userId);
+          } else {
+            console.warn('Category sync failed:', catRes.data?.message);
+            break;
           }
         }
 
@@ -501,13 +509,14 @@ export const triggerSync = async () => {
         if (accQueue.length > 0) {
           const accRes = await secureApi.post('/api/sync/accounts', { ops: accQueue }, { headers });
           if (accRes.data?.success) {
-            const { idMap } = accRes.data;
+            const { idMap = {} } = accRes.data;
 
-            // Update local accounts cache with real Mongo IDs
+            // Update local accounts cache with real Mongo IDs and clear isPending
             const accCache = getAccountsCache(userId);
             const updatedAccCache = accCache.map(a => {
               if (a.clientAccId && idMap[a.clientAccId]) {
-                return { ...a, _id: idMap[a.clientAccId] };
+                const { isPending, ...cleanA } = a;
+                return { ...cleanA, _id: idMap[a.clientAccId], isPending: false };
               }
               return a;
             });
@@ -526,6 +535,9 @@ export const triggerSync = async () => {
             });
             saveQueue(txQueue, userId);
             saveAccountQueue([], userId);
+          } else {
+            console.warn('Account sync failed:', accRes.data?.message);
+            break;
           }
         }
 
@@ -541,11 +553,12 @@ export const triggerSync = async () => {
           if (validTxQueue.length > 0) {
             const txRes = await secureApi.post('/api/sync/transactions', { ops: validTxQueue }, { headers });
             if (txRes.data?.success) {
-              const { idMap, accounts: serverAccounts } = txRes.data;
+              const { idMap = {}, accounts: serverAccounts } = txRes.data;
               const txCache = getCache(userId);
               const updatedTxCache = txCache.map(tx => {
                 if (tx.clientTxId && idMap[tx.clientTxId]) {
-                  return { ...tx, _id: idMap[tx.clientTxId] };
+                  const { isPending, ...cleanTx } = tx;
+                  return { ...cleanTx, _id: idMap[tx.clientTxId], isPending: false };
                 }
                 return tx;
               });
@@ -557,6 +570,9 @@ export const triggerSync = async () => {
               }
 
               saveQueue([], userId);
+            } else {
+              console.warn('Transaction sync failed:', txRes.data?.message);
+              break;
             }
           } else {
             saveQueue([], userId);
@@ -564,9 +580,12 @@ export const triggerSync = async () => {
         }
       }
 
-      syncStatus = 'synced';
+      const finalPending = getTotalPendingCount();
+      syncStatus = finalPending === 0 ? 'synced' : 'error';
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('nexus_sync_completed'));
+        window.dispatchEvent(new CustomEvent('nexus_sync_completed', {
+          detail: { status: syncStatus, pendingCount: finalPending }
+        }));
       }
     } catch (err) {
       console.error('Batch sync error:', err);

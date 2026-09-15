@@ -10,6 +10,7 @@ import {
   getMergedTransactions, 
   getMergedAccounts,
   getMergedCategories,
+  getCache,
   setCache, 
   getAccountsCache,
   setAccountsCache,
@@ -45,7 +46,13 @@ export default function Transactions() {
   const [syncQueueLength, setSyncQueueLength] = useState(0);
 
   useEffect(() => {
-    return subscribeToSync((status, qLength) => {
+    const handleSyncDone = () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    };
+    window.addEventListener('nexus_sync_completed', handleSyncDone);
+
+    const unsubscribe = subscribeToSync((status, qLength) => {
       setSyncStatus(status);
       setSyncQueueLength(qLength);
       if (status === 'synced' && qLength === 0) {
@@ -53,6 +60,11 @@ export default function Transactions() {
         queryClient.invalidateQueries({ queryKey: ['accounts'] });
       }
     });
+
+    return () => {
+      window.removeEventListener('nexus_sync_completed', handleSyncDone);
+      unsubscribe();
+    };
   }, [queryClient]);
 
   // Queries using TanStack Query
@@ -68,7 +80,7 @@ export default function Transactions() {
       } catch (err) {
         console.warn('Failed to fetch transactions online, using cache');
       }
-      return [];
+      return getCache();
     }
   });
 

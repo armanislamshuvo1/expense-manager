@@ -15,3 +15,16 @@ export const secureApi = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Automatically attach authorization token to secureApi calls if token exists
+secureApi.interceptors.request.use(
+  (config) => {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+

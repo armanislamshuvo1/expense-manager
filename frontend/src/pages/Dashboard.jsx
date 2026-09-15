@@ -10,6 +10,7 @@ import {
   getMergedTransactions, 
   getMergedAccounts,
   getMergedCategories,
+  getCache,
   setCache, 
   getAccountsCache,
   setAccountsCache,
@@ -17,7 +18,8 @@ import {
   setCategoriesCache,
   queueOperation, 
   subscribeToSync, 
-  generateUUID 
+  generateUUID,
+  triggerSync 
 } from '../utils/syncManager';
 
 import Swal from 'sweetalert2';
@@ -46,7 +48,13 @@ export default function Dashboard() {
   const [syncQueueLength, setSyncQueueLength] = useState(0);
 
   useEffect(() => {
-    return subscribeToSync((status, qLength) => {
+    const handleSyncDone = () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    };
+    window.addEventListener('nexus_sync_completed', handleSyncDone);
+
+    const unsubscribe = subscribeToSync((status, qLength) => {
       setSyncStatus(status);
       setSyncQueueLength(qLength);
       if (status === 'synced' && qLength === 0) {
@@ -54,6 +62,11 @@ export default function Dashboard() {
         queryClient.invalidateQueries({ queryKey: ['accounts'] });
       }
     });
+
+    return () => {
+      window.removeEventListener('nexus_sync_completed', handleSyncDone);
+      unsubscribe();
+    };
   }, [queryClient]);
 
   const { data: rawAccounts = [] } = useQuery({
@@ -88,7 +101,7 @@ export default function Dashboard() {
       } catch (err) {
         console.warn('Failed to fetch transactions online, using cache');
       }
-      return [];
+      return getCache();
     }
   });
 
@@ -252,6 +265,7 @@ export default function Dashboard() {
 
       const clientTxId = generateUUID();
       queueOperation('CREATE', clientTxId, null, payload);
+      await triggerSync();
 
       Swal.fire({
         icon: 'success',
@@ -261,7 +275,8 @@ export default function Dashboard() {
         showConfirmButton: false
       });
       setReviewTransaction(null);
-      queryClient.invalidateQueries(['transactions']);
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
       refetchInsights();
     } catch (err) {
       console.error(err);
@@ -461,8 +476,8 @@ export default function Dashboard() {
         isOpen={receiptModalOpen}
         onClose={() => setReceiptModalOpen(false)}
         onTransactionApproved={() => {
-          queryClient.invalidateQueries(['transactions']);
-          queryClient.invalidateQueries(['accounts']);
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          queryClient.invalidateQueries({ queryKey: ['accounts'] });
           refetchInsights();
         }}
       />

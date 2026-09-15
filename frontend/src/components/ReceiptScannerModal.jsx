@@ -3,7 +3,7 @@ import { useAxiosSecure } from '../hooks/useApi';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Camera, Upload, AlertCircle, Loader2, X, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { queueOperation, generateUUID } from '../utils/syncManager';
+import { queueOperation, generateUUID, triggerSync } from '../utils/syncManager';
 import { ReceiptCameraView } from './receipt/ReceiptCameraView';
 import { ReceiptReviewForm } from './receipt/ReceiptReviewForm';
 
@@ -309,6 +309,7 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
 
       const clientTxId = generateUUID();
       queueOperation('CREATE', clientTxId, null, payload);
+      await triggerSync();
 
       Swal.fire({
         icon: 'success',
@@ -318,7 +319,8 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
         showConfirmButton: false,
         customClass: { popup: 'rounded-3xl bg-base-100 text-base-content border border-base-content/10' }
       });
-      queryClient.invalidateQueries(['transactions']);
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
       handleClose();
       if (onTransactionApproved) onTransactionApproved();
     } catch (err) {
