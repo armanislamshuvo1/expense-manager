@@ -471,15 +471,18 @@ const postWithAuthRetry = async (url, data) => {
   }
 };
 
-export const triggerSync = async () => {
-  if (activeSyncPromise) {
+export const triggerSync = async (force = false) => {
+  if (force) {
+    activeSyncPromise = null;
+    isSyncing = false;
+  } else if (activeSyncPromise) {
     return activeSyncPromise;
   }
 
-  activeSyncPromise = (async () => {
+  const syncWorker = (async () => {
     if (!navigator.onLine) {
       notify();
-      return;
+      return { success: false, reason: 'offline' };
     }
 
     isSyncing = true;
@@ -628,9 +631,11 @@ export const triggerSync = async () => {
           detail: { status: syncStatus, pendingCount: finalPending }
         }));
       }
+      return { success: finalPending === 0, pendingCount: finalPending };
     } catch (err) {
       console.error('Batch sync error:', err);
       syncStatus = 'error';
+      throw err;
     } finally {
       isSyncing = false;
       activeSyncPromise = null;
@@ -638,7 +643,34 @@ export const triggerSync = async () => {
     }
   })();
 
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Sync operation timed out after 12s.')), 12000);
+  });
+
+  activeSyncPromise = Promise.race([syncWorker, timeoutPromise])
+    .catch(err => {
+      isSyncing = false;
+      activeSyncPromise = null;
+      notify();
+      throw err;
+    });
+
   return activeSyncPromise;
+};
+
+export const clearSyncQueue = (userId = getCurrentUserId()) => {
+  saveQueue([], userId);
+  saveCategoryQueue([], userId);
+  saveAccountQueue([], userId);
+  syncStatus = 'synced';
+  isSyncing = false;
+  activeSyncPromise = null;
+  notify();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexus_sync_completed', {
+      detail: { status: 'synced', pendingCount: 0 }
+    }));
+  }
 };
 
 /* ==================== LIFECYCLE LISTENERS & AUTO-SYNC ==================== */
