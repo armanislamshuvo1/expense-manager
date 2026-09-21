@@ -83,11 +83,25 @@ export const syncTransactions = async (req, res, next) => {
           if (!toAccount) throw new Error(`Destination account not found for sync operation CREATE.`);
         }
 
+        let resolvedCategoryId = categoryId;
+        if (txType !== 'TRANSFER' && resolvedCategoryId) {
+          if (!mongoose.Types.ObjectId.isValid(resolvedCategoryId)) {
+            const cat = await Category.findOne({
+              userId,
+              $or: [
+                { clientCatId: resolvedCategoryId },
+                { name: resolvedCategoryId }
+              ]
+            });
+            resolvedCategoryId = cat ? cat._id : undefined;
+          }
+        }
+
         const transaction = new Transaction({
           userId,
           accountId,
           toAccountId: txType === 'TRANSFER' ? toAccountId : undefined,
-          categoryId: txType !== 'TRANSFER' ? categoryId : undefined,
+          categoryId: txType !== 'TRANSFER' ? resolvedCategoryId : undefined,
           type: txType,
           amount,
           currency,
@@ -209,9 +223,23 @@ export const syncTransactions = async (req, res, next) => {
           await newDestAccount.save(sessionOpt);
         }
 
+        let resolvedUpdateCatId = categoryId;
+        if (txType !== 'TRANSFER' && resolvedUpdateCatId) {
+          if (!mongoose.Types.ObjectId.isValid(resolvedUpdateCatId)) {
+            const cat = await Category.findOne({
+              userId,
+              $or: [
+                { clientCatId: resolvedUpdateCatId },
+                { name: resolvedUpdateCatId }
+              ]
+            });
+            resolvedUpdateCatId = cat ? cat._id : undefined;
+          }
+        }
+
         transaction.accountId = accountId;
         transaction.toAccountId = txType === 'TRANSFER' ? toAccountId : undefined;
-        transaction.categoryId = txType !== 'TRANSFER' ? categoryId : undefined;
+        transaction.categoryId = txType !== 'TRANSFER' ? resolvedUpdateCatId : undefined;
         transaction.type = txType;
         transaction.amount = Number(amount);
         transaction.currency = currency;

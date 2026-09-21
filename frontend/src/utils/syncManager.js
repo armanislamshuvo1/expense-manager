@@ -1,4 +1,4 @@
-import { secureApi } from './apiConfig';
+import { publicApi, secureApi } from './apiConfig';
 
 let isSyncing = false;
 const listeners = new Set();
@@ -437,6 +437,40 @@ export const queueAccountOperation = (type, clientAccId, id, data, userId = getC
 /* ==================== SEQUENTIAL AUTO-SYNC ENGINE ==================== */
 let activeSyncPromise = null;
 
+// Helper to attempt token refresh if request fails with 401
+const attemptTokenRefresh = async () => {
+  const currentToken = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!currentToken) return null;
+  try {
+    const res = await publicApi.post('/api/auth/refresh', { token: currentToken });
+    if (res.data?.success && res.data.data?.token) {
+      const newToken = res.data.data.token;
+      localStorage.setItem('token', newToken);
+      return newToken;
+    }
+  } catch (err) {
+    console.warn('Failed to refresh token during sync:', err);
+  }
+  return null;
+};
+
+const postWithAuthRetry = async (url, data) => {
+  let token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  let headers = token ? { Authorization: `Bearer ${token}` } : {};
+  try {
+    return await secureApi.post(url, data, { headers });
+  } catch (err) {
+    if (err.response?.status === 401) {
+      const newToken = await attemptTokenRefresh();
+      if (newToken) {
+        headers = { Authorization: `Bearer ${newToken}` };
+        return await secureApi.post(url, data, { headers });
+      }
+    }
+    throw err;
+  }
+};
+
 export const triggerSync = async () => {
   if (activeSyncPromise) {
     return activeSyncPromise;
@@ -451,9 +485,6 @@ export const triggerSync = async () => {
     isSyncing = true;
     syncStatus = 'syncing';
     notify();
-
-    const token = localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
       let iteration = 0;
@@ -472,7 +503,7 @@ export const triggerSync = async () => {
 
         // 1. SYNC CATEGORIES FIRST
         if (catQueue.length > 0) {
-          const catRes = await secureApi.post('/api/sync/categories', { ops: catQueue }, { headers });
+          const catRes = await postWithAuthRetry('/api/sync/categories', { ops: catQueue });
           if (catRes.data?.success) {
             const { idMap = {} } = catRes.data;
 
@@ -507,7 +538,7 @@ export const triggerSync = async () => {
 
         // 2. SYNC ACCOUNTS SECOND
         if (accQueue.length > 0) {
-          const accRes = await secureApi.post('/api/sync/accounts', { ops: accQueue }, { headers });
+          const accRes = await postWithAuthRetry('/api/sync/accounts', { ops: accQueue });
           if (accRes.data?.success) {
             const { idMap = {} } = accRes.data;
 
@@ -543,15 +574,25 @@ export const triggerSync = async () => {
 
         // 3. SYNC TRANSACTIONS THIRD
         if (txQueue.length > 0) {
+          const catCache = getCategoriesCache(userId);
           const validTxQueue = txQueue.filter(op => {
             if (op.type === 'CREATE' && op.data?.type === 'TRANSFER' && !op.data?.toAccountId) {
               return false;
             }
             return true;
+          }).map(op => {
+            // If categoryId is still a clientCatId or default id string, map it to real Mongo ID if available in cache
+            if (op.data?.categoryId && typeof op.data.categoryId === 'string' && op.data.categoryId.startsWith('cat_')) {
+              const matched = catCache.find(c => c.clientCatId === op.data.categoryId || c._id === op.data.categoryId || (op.data.categoryName && c.name === op.data.categoryName));
+              if (matched && matched._id && !matched._id.startsWith('cat_')) {
+                return { ...op, data: { ...op.data, categoryId: matched._id } };
+              }
+            }
+            return op;
           });
 
           if (validTxQueue.length > 0) {
-            const txRes = await secureApi.post('/api/sync/transactions', { ops: validTxQueue }, { headers });
+            const txRes = await postWithAuthRetry('/api/sync/transactions', { ops: validTxQueue });
             if (txRes.data?.success) {
               const { idMap = {}, accounts: serverAccounts } = txRes.data;
               const txCache = getCache(userId);
@@ -600,8 +641,21 @@ export const triggerSync = async () => {
   return activeSyncPromise;
 };
 
-/* ==================== LIFECYCLE LISTENERS ==================== */
+/* ==================== LIFECYCLE LISTENERS & AUTO-SYNC ==================== */
+let syncIntervalId = null;
+
+export const startAutoSyncInterval = () => {
+  if (typeof window === 'undefined' || syncIntervalId) return;
+  syncIntervalId = setInterval(() => {
+    if (navigator.onLine && getTotalPendingCount() > 0 && !isSyncing) {
+      triggerSync();
+    }
+  }, 15000); // Automatically retry sync every 15s if pending items exist
+};
+
 if (typeof window !== 'undefined') {
+  startAutoSyncInterval();
+
   window.addEventListener('online', () => {
     syncStatus = 'synced';
     triggerSync();
@@ -609,9 +663,15 @@ if (typeof window !== 'undefined') {
   window.addEventListener('offline', () => {
     notify();
   });
-  window.addEventListener('focus', triggerSync);
+  window.addEventListener('focus', () => {
+    if (getTotalPendingCount() > 0) {
+      triggerSync();
+    }
+  });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
+    if (document.visibilityState === 'visible' && getTotalPendingCount() > 0) {
+      triggerSync();
+    } else if (document.visibilityState === 'hidden' && getTotalPendingCount() > 0) {
       triggerSync();
     }
   });

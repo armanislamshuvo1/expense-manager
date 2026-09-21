@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { WifiOff, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
-import { subscribeToSync, triggerSync } from '../utils/syncManager';
+import { subscribeToSync, triggerSync, getTotalPendingCount } from '../utils/syncManager';
 
 export default function SyncStatusBanner() {
   const [status, setStatus] = useState('synced');
@@ -11,6 +11,11 @@ export default function SyncStatusBanner() {
       setStatus(newStatus);
       setPendingCount(count);
     });
+
+    if (navigator.onLine && getTotalPendingCount() > 0) {
+      triggerSync();
+    }
+
     return () => unsubscribe();
   }, []);
 
