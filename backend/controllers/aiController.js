@@ -54,10 +54,27 @@ export const parseTransaction = async (req, res, next) => {
 
     const prompt = `<user_input>${text}</user_input>`;
 
-    const response = await generateContentWithFallback([systemInstruction, prompt]);
+    const generationConfig = {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          amount: { type: 'NUMBER' },
+          type: { type: 'STRING', enum: ['INCOME', 'EXPENSE', 'TRANSFER'] },
+          date: { type: 'STRING' },
+          description: { type: 'STRING' },
+          note: { type: 'STRING' },
+          accountId: { type: 'STRING' },
+          toAccountId: { type: 'STRING', nullable: true },
+          categoryId: { type: 'STRING', nullable: true }
+        },
+        required: ['amount', 'type', 'date', 'accountId']
+      }
+    };
 
-    const cleanJson = response.response.text().trim().replace(/```json/g, '').replace(/```/g, '').trim();
-    
+    const response = await generateContentWithFallback([systemInstruction, prompt], generationConfig);
+
+    const cleanJson = response.response.text().trim();
     const parsedData = JSON.parse(cleanJson);
 
     res.status(200).json({ success: true, data: parsedData });

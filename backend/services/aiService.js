@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export const generateContentWithFallback = async (generateArgs) => {
+export const generateContentWithFallback = async (generateArgs, generationConfig = {}) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY environment variable is not configured');
   }
@@ -24,7 +24,7 @@ export const generateContentWithFallback = async (generateArgs) => {
   for (const modelName of uniqueModels) {
     try {
       console.log(`[AI] Attempting call with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({ model: modelName, generationConfig });
       const result = await model.generateContent(generateArgs);
       return result;
     } catch (err) {
