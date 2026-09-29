@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
@@ -39,7 +40,7 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password.' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
@@ -49,7 +50,7 @@ export const register = async (req, res, next) => {
 
     const newUser = await User.create({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       passwordHash,
       provider: 'custom',
       baseCurrency: baseCurrency || 'USD'
@@ -58,7 +59,7 @@ export const register = async (req, res, next) => {
     await prePopulateDefaults(newUser._id, newUser.baseCurrency);
 
     const token = jwt.sign(
-      { id: newUser._id, email: newUser.email, role: newUser.role, status: newUser.status },
+      { id: newUser._id, email: newUser.email, role: newUser.role, status: newUser.status, baseCurrency: newUser.baseCurrency || 'MYR' },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '1d' }
     );
@@ -116,7 +117,7 @@ export const login = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status },
+      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '1d' }
     );
@@ -251,7 +252,7 @@ export const googleLogin = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status },
+      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '1d' }
     );
@@ -282,16 +283,27 @@ export const googleLogin = async (req, res, next) => {
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide your email address.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(404).json({ success: false, message: 'No user registered with this email.' });
     }
-    
-    // For demo/offline, return success and return a mock recovery link
+
+    // Generate secure random 32-byte token and hash it for database storage
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes validity
+    await user.save();
+
     res.status(200).json({
       success: true,
-      message: 'Password reset link sent to your email (Mock token generated).',
-      resetToken: 'mock_reset_token_key'
+      message: 'Password reset token generated successfully. Valid for 15 minutes.',
+      resetToken
     });
   } catch (error) {
     next(error);
@@ -300,17 +312,43 @@ export const forgotPassword = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    const { email, newPassword } = req.body;
-    const user = await User.findOne({ email });
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please provide email, reset token, and new password.' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired password reset token. Please request a new one.' 
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
     user.passwordHash = await bcrypt.hash(newPassword, salt);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
     await user.save();
 
-    res.status(200).json({ success: true, message: 'Password reset successfully.' });
+    res.status(200).json({ success: true, message: 'Password reset successfully. You can now log in.' });
   } catch (error) {
     next(error);
   }
@@ -346,7 +384,7 @@ export const refreshToken = async (req, res, next) => {
     }
 
     const newToken = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status },
+      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '1d' }
     );

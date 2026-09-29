@@ -28,7 +28,8 @@ export const requireAuth = (req, res, next) => {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
-      status: decoded.status
+      status: decoded.status,
+      baseCurrency: decoded.baseCurrency || 'MYR'
     };
     next();
   } catch (error) {
