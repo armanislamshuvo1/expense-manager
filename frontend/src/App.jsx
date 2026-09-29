@@ -9,23 +9,40 @@ import SyncStatusBanner from './components/SyncStatusBanner';
 import { AccountModalProvider } from './context/AccountModalContext';
 import PublicLayout from './components/PublicLayout';
 
-// Route-based code splitting with React.lazy
-const Landing = lazy(() => import('./pages/Landing'));
-const About = lazy(() => import('./pages/About'));
-const HowItWorks = lazy(() => import('./pages/HowItWorks'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Transactions = lazy(() => import('./pages/Transactions'));
-const Accounts = lazy(() => import('./pages/Accounts'));
-const More = lazy(() => import('./pages/More'));
-const Profile = lazy(() => import('./pages/Profile'));
-const AdminConsole = lazy(() => import('./pages/AdminConsole'));
-const IncomeCategoriesSetting = lazy(() => import('./pages/IncomeCategoriesSetting'));
-const ExpenseCategoriesSetting = lazy(() => import('./pages/ExpenseCategoriesSetting'));
-const AccountsSetting = lazy(() => import('./pages/AccountsSetting'));
-const SharedDashboard = lazy(() => import('./pages/SharedDashboard'));
-const WealthBuddy = lazy(() => import('./pages/WealthBuddy'));
+// Robust lazy import with automatic retry on chunk update / cache refresh
+function lazyWithRetry(componentImport) {
+  return lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      const refreshed = sessionStorage.getItem('pwa_chunk_refreshed');
+      if (!refreshed) {
+        sessionStorage.setItem('pwa_chunk_refreshed', 'true');
+        window.location.reload();
+        return { default: () => null };
+      }
+      sessionStorage.removeItem('pwa_chunk_refreshed');
+      throw error;
+    }
+  });
+}
+
+const Landing = lazyWithRetry(() => import('./pages/Landing'));
+const About = lazyWithRetry(() => import('./pages/About'));
+const HowItWorks = lazyWithRetry(() => import('./pages/HowItWorks'));
+const Login = lazyWithRetry(() => import('./pages/Login'));
+const Register = lazyWithRetry(() => import('./pages/Register'));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
+const Transactions = lazyWithRetry(() => import('./pages/Transactions'));
+const Accounts = lazyWithRetry(() => import('./pages/Accounts'));
+const More = lazyWithRetry(() => import('./pages/More'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const AdminConsole = lazyWithRetry(() => import('./pages/AdminConsole'));
+const IncomeCategoriesSetting = lazyWithRetry(() => import('./pages/IncomeCategoriesSetting'));
+const ExpenseCategoriesSetting = lazyWithRetry(() => import('./pages/ExpenseCategoriesSetting'));
+const AccountsSetting = lazyWithRetry(() => import('./pages/AccountsSetting'));
+const SharedDashboard = lazyWithRetry(() => import('./pages/SharedDashboard'));
+const WealthBuddy = lazyWithRetry(() => import('./pages/WealthBuddy'));
 
 function PageLoadingFallback() {
   return (

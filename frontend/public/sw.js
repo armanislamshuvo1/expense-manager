@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexuswealth-cache-v9';
+const CACHE_NAME = 'nexuswealth-cache-v10';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -24,12 +24,19 @@ self.addEventListener('activate', (event) => {
       Promise.all(
         names.map((name) => {
           if (name !== CACHE_NAME) {
+            console.log('[SW] Purging outdated cache:', name);
             return caches.delete(name);
           }
         })
       )
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -55,7 +62,10 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response && response.status === 200) {
             const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+              cache.put('/index.html', response.clone());
+            });
           }
           return response;
         })
