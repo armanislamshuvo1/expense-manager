@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { useAxiosSecure } from './useApi';
@@ -33,9 +33,19 @@ export function useTransactionsForm(transactions = []) {
 
   const createMutation = useMutation({
     mutationFn: async (txData) => {
+      if (navigator.onLine) {
+        try {
+          const res = await axiosSecure.post('/api/transactions', txData);
+          if (res.data?.success) {
+            return res.data;
+          }
+        } catch (netErr) {
+          console.warn('Direct transaction post failed, falling back to offline queue:', netErr);
+        }
+      }
       const clientTxId = generateUUID('tx');
       queueOperation('CREATE', clientTxId, null, txData);
-      await triggerSync();
+      triggerSync();
       return { success: true, data: { _id: clientTxId, ...txData } };
     },
     onSuccess: () => {
@@ -46,8 +56,18 @@ export function useTransactionsForm(transactions = []) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, txData }) => {
+      if (navigator.onLine && id && !String(id).startsWith('tx_')) {
+        try {
+          const res = await axiosSecure.put(`/api/transactions/${id}`, txData);
+          if (res.data?.success) {
+            return res.data;
+          }
+        } catch (netErr) {
+          console.warn('Direct transaction update failed, falling back to offline queue:', netErr);
+        }
+      }
       queueOperation('UPDATE', null, id, txData);
-      await triggerSync();
+      triggerSync();
       return { success: true };
     },
     onSuccess: () => {
@@ -58,8 +78,18 @@ export function useTransactionsForm(transactions = []) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
+      if (navigator.onLine && id && !String(id).startsWith('tx_')) {
+        try {
+          const res = await axiosSecure.delete(`/api/transactions/${id}`);
+          if (res.data?.success) {
+            return res.data;
+          }
+        } catch (netErr) {
+          console.warn('Direct transaction delete failed, falling back to offline queue:', netErr);
+        }
+      }
       queueOperation('DELETE', null, id, null);
-      await triggerSync();
+      triggerSync();
       return { success: true };
     },
     onSuccess: () => {

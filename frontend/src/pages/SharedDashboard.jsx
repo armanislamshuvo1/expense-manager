@@ -7,9 +7,7 @@ import {
   PieChart, Pie, Cell, 
   XAxis, YAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
-import { 
-  TrendingUp, Calendar, CreditCard, Wallet, Activity, ShieldCheck 
-} from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { API_BASE_URL } from '../utils/apiConfig';
 
 export default function SharedDashboard() {

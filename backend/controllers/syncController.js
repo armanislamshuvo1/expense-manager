@@ -12,6 +12,38 @@ const getBalanceEffectForAccount = (transaction, accountCurrency, baseCurrency) 
     : transaction.amount;
 };
 
+// Defensive helper to resolve an Account by Mongo ObjectId, clientAccId, or Name
+const resolveAccount = async (accIdentifier, userId) => {
+  if (!accIdentifier) return null;
+  if (mongoose.Types.ObjectId.isValid(accIdentifier)) {
+    const acc = await Account.findOne({ _id: accIdentifier, userId });
+    if (acc) return acc;
+  }
+  return await Account.findOne({
+    userId,
+    $or: [
+      { clientAccId: accIdentifier },
+      { name: accIdentifier }
+    ]
+  });
+};
+
+// Defensive helper to resolve a Category by Mongo ObjectId, clientCatId, or Name
+const resolveCategory = async (catIdentifier, userId) => {
+  if (!catIdentifier) return null;
+  if (mongoose.Types.ObjectId.isValid(catIdentifier)) {
+    const cat = await Category.findOne({ _id: catIdentifier, userId });
+    if (cat) return cat;
+  }
+  return await Category.findOne({
+    userId,
+    $or: [
+      { clientCatId: catIdentifier },
+      { name: catIdentifier }
+    ]
+  });
+};
+
 export const syncTransactions = async (req, res, next) => {
   const { ops } = req.body;
   if (!ops || !Array.isArray(ops)) {
@@ -51,33 +83,25 @@ export const syncTransactions = async (req, res, next) => {
           description
         } = data;
 
-        const account = await Account.findOne({ _id: accountId, userId });
+        const account = await resolveAccount(accountId, userId);
         if (!account) throw new Error(`Source account not found for sync operation CREATE.`);
 
         let toAccount = null;
         if (txType === 'TRANSFER') {
-          toAccount = await Account.findOne({ _id: toAccountId, userId });
+          toAccount = await resolveAccount(toAccountId, userId);
           if (!toAccount) throw new Error(`Destination account not found for sync operation CREATE.`);
         }
 
-        let resolvedCategoryId = categoryId;
-        if (txType !== 'TRANSFER' && resolvedCategoryId) {
-          if (!mongoose.Types.ObjectId.isValid(resolvedCategoryId)) {
-            const cat = await Category.findOne({
-              userId,
-              $or: [
-                { clientCatId: resolvedCategoryId },
-                { name: resolvedCategoryId }
-              ]
-            });
-            resolvedCategoryId = cat ? cat._id : undefined;
-          }
+        let resolvedCategoryId = undefined;
+        if (txType !== 'TRANSFER' && categoryId) {
+          const cat = await resolveCategory(categoryId, userId);
+          resolvedCategoryId = cat ? cat._id : undefined;
         }
 
         const transaction = new Transaction({
           userId,
-          accountId,
-          toAccountId: txType === 'TRANSFER' ? toAccountId : undefined,
+          accountId: account._id,
+          toAccountId: txType === 'TRANSFER' && toAccount ? toAccount._id : undefined,
           categoryId: txType !== 'TRANSFER' ? resolvedCategoryId : undefined,
           type: txType,
           amount,
@@ -152,7 +176,7 @@ export const syncTransactions = async (req, res, next) => {
           }
         }
 
-        const newSourceAccount = await Account.findOne({ _id: accountId, userId });
+        const newSourceAccount = await resolveAccount(accountId, userId);
         if (!newSourceAccount) throw new Error(`Source account not found for sync operation UPDATE.`);
 
         const tempTx = {
@@ -162,6 +186,7 @@ export const syncTransactions = async (req, res, next) => {
           exchangeRate: exchangeRate !== undefined ? Number(exchangeRate) : 1.0
         };
 
+        let newDestAccount = null;
         if (txType === 'INCOME') {
           const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
           await Account.updateOne({ _id: newSourceAccount._id }, { $inc: { balance: newEffect } });
@@ -169,7 +194,7 @@ export const syncTransactions = async (req, res, next) => {
           const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
           await Account.updateOne({ _id: newSourceAccount._id }, { $inc: { balance: -newEffect } });
         } else if (txType === 'TRANSFER') {
-          const newDestAccount = await Account.findOne({ _id: toAccountId, userId });
+          newDestAccount = await resolveAccount(toAccountId, userId);
           if (!newDestAccount) throw new Error(`Destination account not found for sync operation UPDATE.`);
           
           const newFromEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
@@ -179,22 +204,14 @@ export const syncTransactions = async (req, res, next) => {
           await Account.updateOne({ _id: newDestAccount._id }, { $inc: { balance: newToEffect } });
         }
 
-        let resolvedUpdateCatId = categoryId;
-        if (txType !== 'TRANSFER' && resolvedUpdateCatId) {
-          if (!mongoose.Types.ObjectId.isValid(resolvedUpdateCatId)) {
-            const cat = await Category.findOne({
-              userId,
-              $or: [
-                { clientCatId: resolvedUpdateCatId },
-                { name: resolvedUpdateCatId }
-              ]
-            });
-            resolvedUpdateCatId = cat ? cat._id : undefined;
-          }
+        let resolvedUpdateCatId = undefined;
+        if (txType !== 'TRANSFER' && categoryId) {
+          const cat = await resolveCategory(categoryId, userId);
+          resolvedUpdateCatId = cat ? cat._id : undefined;
         }
 
-        transaction.accountId = accountId;
-        transaction.toAccountId = txType === 'TRANSFER' ? toAccountId : undefined;
+        transaction.accountId = newSourceAccount._id;
+        transaction.toAccountId = txType === 'TRANSFER' && newDestAccount ? newDestAccount._id : undefined;
         transaction.categoryId = txType !== 'TRANSFER' ? resolvedUpdateCatId : undefined;
         transaction.type = txType;
         transaction.amount = Number(amount);

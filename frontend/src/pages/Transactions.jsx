@@ -42,7 +42,6 @@ export default function Transactions() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [syncStatus, setSyncStatus] = useState('synced');
   const [syncQueueLength, setSyncQueueLength] = useState(0);
 
   useEffect(() => {
@@ -53,7 +52,6 @@ export default function Transactions() {
     window.addEventListener('nexus_sync_completed', handleSyncDone);
 
     const unsubscribe = subscribeToSync((status, qLength) => {
-      setSyncStatus(status);
       setSyncQueueLength(qLength);
       if (status === 'synced' && qLength === 0) {
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -77,7 +75,7 @@ export default function Transactions() {
           setCache(res.data.data);
           return res.data.data;
         }
-      } catch (err) {
+      } catch (_err) {
         console.warn('Failed to fetch transactions online, using cache');
       }
       return getCache();
@@ -85,6 +83,8 @@ export default function Transactions() {
   });
 
   const transactions = useMemo(() => {
+    void rawTransactions;
+    void syncQueueLength;
     return getMergedTransactions();
   }, [rawTransactions, syncQueueLength]);
 
@@ -97,7 +97,7 @@ export default function Transactions() {
           setAccountsCache(res.data.data);
           return res.data.data;
         }
-      } catch (err) {
+      } catch (_err) {
         console.warn('Failed to fetch accounts online, using cache');
       }
       return getAccountsCache();
@@ -105,6 +105,8 @@ export default function Transactions() {
   });
 
   const accounts = useMemo(() => {
+    void rawAccounts;
+    void syncQueueLength;
     return getMergedAccounts();
   }, [rawAccounts, syncQueueLength]);
 
@@ -117,7 +119,7 @@ export default function Transactions() {
           setCategoriesCache(res.data.data);
           return res.data.data;
         }
-      } catch (err) {
+      } catch (_err) {
         console.warn('Failed to fetch categories online, using cache');
       }
       return getCategoriesCache();
@@ -125,6 +127,8 @@ export default function Transactions() {
   });
 
   const categories = useMemo(() => {
+    void rawCategories;
+    void syncQueueLength;
     return getMergedCategories();
   }, [rawCategories, syncQueueLength]);
 

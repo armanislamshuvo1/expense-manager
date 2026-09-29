@@ -263,9 +263,19 @@ export default function Dashboard() {
         categoryName: matchedCategory ? matchedCategory.name : 'Category'
       };
 
-      const clientTxId = generateUUID();
-      queueOperation('CREATE', clientTxId, null, payload);
-      await triggerSync();
+      if (navigator.onLine) {
+        try {
+          await axiosSecure.post('/api/transactions', payload);
+        } catch (netErr) {
+          const clientTxId = generateUUID();
+          queueOperation('CREATE', clientTxId, null, payload);
+          triggerSync();
+        }
+      } else {
+        const clientTxId = generateUUID();
+        queueOperation('CREATE', clientTxId, null, payload);
+        triggerSync();
+      }
 
       Swal.fire({
         icon: 'success',
