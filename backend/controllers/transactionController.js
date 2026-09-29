@@ -78,22 +78,18 @@ export const createTransaction = async (req, res, next) => {
 
     await transaction.save(); // Invokes pre-save middleware for conversion calculations
 
-    // Adjust Account Balance
+    // Adjust Account Balance using atomic $inc operator to eliminate race conditions
     if (type === 'INCOME') {
       const balanceEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
-      account.balance += balanceEffect;
-      await account.save();
+      await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: balanceEffect } });
     } else if (type === 'EXPENSE') {
       const balanceEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
-      account.balance -= balanceEffect;
-      await account.save();
+      await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: -balanceEffect } });
     } else if (type === 'TRANSFER') {
       const fromEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
       const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, req.user?.baseCurrency || 'MYR');
-      account.balance -= fromEffect;
-      toAccount.balance += toEffect;
-      await account.save();
-      await toAccount.save();
+      await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: -fromEffect } });
+      await Account.updateOne({ _id: toAccount._id, userId: req.user.id }, { $inc: { balance: toEffect } });
     }
 
     res.status(201).json({ success: true, data: transaction });
@@ -113,22 +109,18 @@ export const deleteTransaction = async (req, res, next) => {
     if (account) {
       if (transaction.type === 'INCOME') {
         const balanceEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
-        account.balance -= balanceEffect;
-        await account.save();
+        await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: -balanceEffect } });
       } else if (transaction.type === 'EXPENSE') {
         const balanceEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
-        account.balance += balanceEffect;
-        await account.save();
+        await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: balanceEffect } });
       } else if (transaction.type === 'TRANSFER') {
         const fromEffect = getBalanceEffectForAccount(transaction, account.currency, req.user?.baseCurrency || 'MYR');
-        account.balance += fromEffect;
-        await account.save();
+        await Account.updateOne({ _id: account._id, userId: req.user.id }, { $inc: { balance: fromEffect } });
 
         const toAccount = await Account.findOne({ _id: transaction.toAccountId, userId: req.user.id });
         if (toAccount) {
           const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, req.user?.baseCurrency || 'MYR');
-          toAccount.balance -= toEffect;
-          await toAccount.save();
+          await Account.updateOne({ _id: toAccount._id, userId: req.user.id }, { $inc: { balance: -toEffect } });
         }
       }
     }
@@ -144,7 +136,7 @@ export const updateTransaction = async (req, res, next) => {
   try {
     const { 
       accountId, 
-      toAccountId,
+      toAccountId, 
       categoryId, 
       type, 
       amount, 
@@ -166,19 +158,17 @@ export const updateTransaction = async (req, res, next) => {
     if (oldSourceAccount) {
       const oldFromEffect = getBalanceEffectForAccount(oldTransaction, oldSourceAccount.currency, req.user?.baseCurrency || 'MYR');
       if (oldTransaction.type === 'INCOME') {
-        oldSourceAccount.balance -= oldFromEffect;
+        await Account.updateOne({ _id: oldSourceAccount._id, userId: req.user.id }, { $inc: { balance: -oldFromEffect } });
       } else if (oldTransaction.type === 'EXPENSE') {
-        oldSourceAccount.balance += oldFromEffect;
+        await Account.updateOne({ _id: oldSourceAccount._id, userId: req.user.id }, { $inc: { balance: oldFromEffect } });
       } else if (oldTransaction.type === 'TRANSFER') {
-        oldSourceAccount.balance += oldFromEffect;
+        await Account.updateOne({ _id: oldSourceAccount._id, userId: req.user.id }, { $inc: { balance: oldFromEffect } });
         const oldDestAccount = await Account.findOne({ _id: oldTransaction.toAccountId, userId: req.user.id });
         if (oldDestAccount) {
           const oldToEffect = getBalanceEffectForAccount(oldTransaction, oldDestAccount.currency, req.user?.baseCurrency || 'MYR');
-          oldDestAccount.balance -= oldToEffect;
-          await oldDestAccount.save();
+          await Account.updateOne({ _id: oldDestAccount._id, userId: req.user.id }, { $inc: { balance: -oldToEffect } });
         }
       }
-      await oldSourceAccount.save();
     }
 
     // 2. APPLY NEW TRANSACTION BALANCE EFFECT
@@ -197,12 +187,10 @@ export const updateTransaction = async (req, res, next) => {
 
     if (type === 'INCOME') {
       const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, req.user?.baseCurrency || 'MYR');
-      newSourceAccount.balance += newEffect;
-      await newSourceAccount.save();
+      await Account.updateOne({ _id: newSourceAccount._id, userId: req.user.id }, { $inc: { balance: newEffect } });
     } else if (type === 'EXPENSE') {
       const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, req.user?.baseCurrency || 'MYR');
-      newSourceAccount.balance -= newEffect;
-      await newSourceAccount.save();
+      await Account.updateOne({ _id: newSourceAccount._id, userId: req.user.id }, { $inc: { balance: -newEffect } });
     } else if (type === 'TRANSFER') {
       if (accountId.toString() === toAccountId.toString()) {
         return res.status(400).json({ success: false, message: 'Source and destination accounts must be different.' });
@@ -214,11 +202,8 @@ export const updateTransaction = async (req, res, next) => {
       const newFromEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, req.user?.baseCurrency || 'MYR');
       const newToEffect = getBalanceEffectForAccount(tempTx, newDestAccount.currency, req.user?.baseCurrency || 'MYR');
       
-      newSourceAccount.balance -= newFromEffect;
-      newDestAccount.balance += newToEffect;
-      
-      await newSourceAccount.save();
-      await newDestAccount.save();
+      await Account.updateOne({ _id: newSourceAccount._id, userId: req.user.id }, { $inc: { balance: -newFromEffect } });
+      await Account.updateOne({ _id: newDestAccount._id, userId: req.user.id }, { $inc: { balance: newToEffect } });
     }
 
     // 3. UPDATE TRANSACTION FIELDS

@@ -1,4 +1,5 @@
 import Category from '../models/Category.js';
+import Transaction from '../models/Transaction.js';
 
 export const getCategories = async (req, res, next) => {
   try {
@@ -54,10 +55,24 @@ export const updateCategory = async (req, res, next) => {
 
 export const deleteCategory = async (req, res, next) => {
   try {
-    const category = await Category.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    const category = await Category.findOne({ _id: req.params.id, userId: req.user.id });
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found or access denied.' });
     }
+
+    const txCount = await Transaction.countDocuments({
+      userId: req.user.id,
+      categoryId: req.params.id
+    });
+
+    if (txCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete category "${category.name}". There are ${txCount} transaction(s) linked to it. Please reassign or delete the transactions first.`
+      });
+    }
+
+    await category.deleteOne();
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
     next(error);

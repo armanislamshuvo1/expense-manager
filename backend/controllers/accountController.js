@@ -1,4 +1,5 @@
 import Account from '../models/Account.js';
+import Transaction from '../models/Transaction.js';
 
 export const getAccounts = async (req, res, next) => {
   try {
@@ -58,10 +59,24 @@ export const updateAccount = async (req, res, next) => {
 
 export const deleteAccount = async (req, res, next) => {
   try {
-    const account = await Account.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    const account = await Account.findOne({ _id: req.params.id, userId: req.user.id });
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found or access denied.' });
     }
+
+    const txCount = await Transaction.countDocuments({
+      userId: req.user.id,
+      $or: [{ accountId: req.params.id }, { toAccountId: req.params.id }]
+    });
+
+    if (txCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete account "${account.name}". There are ${txCount} transaction(s) linked to it. Please reassign or delete the transactions first.`
+      });
+    }
+
+    await account.deleteOne();
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
     next(error);
