@@ -1,4 +1,5 @@
 import { publicApi, secureApi } from './apiConfig';
+import { idbGet, idbSet, idbDelete } from './idbStorage';
 
 let isSyncing = false;
 const listeners = new Set();
@@ -31,6 +32,32 @@ export const DEFAULT_ACCOUNTS = [
   { _id: 'acc_def_cash', name: 'Cash', type: 'CASH', balance: 0.0, currency: 'MYR' }
 ];
 
+// Asynchronous hydration from IndexedDB on startup
+export const initIndexedDBCache = async (userId = getCurrentUserId()) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const [txs, accs, cats] = await Promise.all([
+      idbGet(`tx_cache_${userId}`),
+      idbGet(`accounts_cache_${userId}`),
+      idbGet(`categories_cache_${userId}`)
+    ]);
+    if (txs && Array.isArray(txs) && txs.length > 0) {
+      localStorage.setItem(`tx_cache_${userId}`, JSON.stringify(txs));
+    }
+    if (accs && Array.isArray(accs) && accs.length > 0) {
+      localStorage.setItem(`accounts_cache_${userId}`, JSON.stringify(accs));
+    }
+    if (cats && Array.isArray(cats) && cats.length > 0) {
+      localStorage.setItem(`categories_cache_${userId}`, JSON.stringify(cats));
+    }
+  } catch (err) {
+    console.warn('[syncManager] initIndexedDBCache warning:', err);
+  }
+};
+if (typeof window !== 'undefined') {
+  initIndexedDBCache();
+}
+
 // Helper to notify listeners of status changes
 export const getTotalPendingCount = (userId = getCurrentUserId()) => {
   return getQueue(userId).length + getCategoryQueue(userId).length + getAccountQueue(userId).length;
@@ -58,6 +85,7 @@ export const getQueue = (userId = getCurrentUserId()) => {
 
 const saveQueue = (queue, userId = getCurrentUserId()) => {
   localStorage.setItem(`tx_sync_queue_${userId}`, JSON.stringify(queue));
+  idbSet(`tx_sync_queue_${userId}`, queue);
   notify();
 };
 
@@ -71,6 +99,7 @@ export const getCache = (userId = getCurrentUserId()) => {
 
 export const setCache = (transactions, userId = getCurrentUserId()) => {
   localStorage.setItem(`tx_cache_${userId}`, JSON.stringify(transactions));
+  idbSet(`tx_cache_${userId}`, transactions);
 };
 
 /* ==================== ACCOUNTS CACHE & QUEUE ==================== */
@@ -84,6 +113,7 @@ export const getAccountQueue = (userId = getCurrentUserId()) => {
 
 const saveAccountQueue = (queue, userId = getCurrentUserId()) => {
   localStorage.setItem(`acc_sync_queue_${userId}`, JSON.stringify(queue));
+  idbSet(`acc_sync_queue_${userId}`, queue);
   notify();
 };
 
@@ -98,6 +128,7 @@ export const getAccountsCache = (userId = getCurrentUserId()) => {
 export const setAccountsCache = (accounts, userId = getCurrentUserId()) => {
   if (Array.isArray(accounts) && accounts.length > 0) {
     localStorage.setItem(`accounts_cache_${userId}`, JSON.stringify(accounts));
+    idbSet(`accounts_cache_${userId}`, accounts);
   }
 };
 
@@ -112,6 +143,7 @@ export const getCategoryQueue = (userId = getCurrentUserId()) => {
 
 const saveCategoryQueue = (queue, userId = getCurrentUserId()) => {
   localStorage.setItem(`cat_sync_queue_${userId}`, JSON.stringify(queue));
+  idbSet(`cat_sync_queue_${userId}`, queue);
   notify();
 };
 
@@ -126,6 +158,7 @@ export const getCategoriesCache = (userId = getCurrentUserId()) => {
 export const setCategoriesCache = (categories, userId = getCurrentUserId()) => {
   if (Array.isArray(categories) && categories.length > 0) {
     localStorage.setItem(`categories_cache_${userId}`, JSON.stringify(categories));
+    idbSet(`categories_cache_${userId}`, categories);
   }
 };
 
@@ -514,7 +547,7 @@ export const triggerSync = async (force = false) => {
             const catCache = getCategoriesCache(userId);
             const updatedCatCache = catCache.map(c => {
               if (c.clientCatId && idMap[c.clientCatId]) {
-                const { isPending, ...cleanC } = c;
+                const { isPending: _isPending, ...cleanC } = c;
                 return { ...cleanC, _id: idMap[c.clientCatId], isPending: false };
               }
               return c;
@@ -549,7 +582,7 @@ export const triggerSync = async (force = false) => {
             const accCache = getAccountsCache(userId);
             const updatedAccCache = accCache.map(a => {
               if (a.clientAccId && idMap[a.clientAccId]) {
-                const { isPending, ...cleanA } = a;
+                const { isPending: _isPending, ...cleanA } = a;
                 return { ...cleanA, _id: idMap[a.clientAccId], isPending: false };
               }
               return a;
@@ -601,7 +634,7 @@ export const triggerSync = async (force = false) => {
               const txCache = getCache(userId);
               const updatedTxCache = txCache.map(tx => {
                 if (tx.clientTxId && idMap[tx.clientTxId]) {
-                  const { isPending, ...cleanTx } = tx;
+                  const { isPending: _isPending, ...cleanTx } = tx;
                   return { ...cleanTx, _id: idMap[tx.clientTxId], isPending: false };
                 }
                 return tx;
