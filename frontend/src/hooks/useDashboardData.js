@@ -57,12 +57,21 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
       pacingMap[dateKey] = runningTotal;
     });
 
+    // Calculate real dynamic liabilities from credit accounts and negative balances
+    const currentLiabilities = (accounts || []).reduce((sum, acc) => {
+      const bal = Number(acc?.balance) || 0;
+      if (acc?.type === 'CREDIT_CARD') {
+        return sum + (bal < 0 ? Math.abs(bal) : 0);
+      }
+      return sum + (bal < 0 ? Math.abs(bal) : 0);
+    }, 0);
+
     const netWorthChartValues = Object.keys(pacingMap).map(key => {
       const val = Number(pacingMap[key]) || 0;
       return {
         name: key,
-        Assets: Number(val.toFixed(2)),
-        Liabilities: Number((val * 0.15).toFixed(2))
+        Assets: Number((Math.max(val, 0)).toFixed(2)),
+        Liabilities: Number(currentLiabilities.toFixed(2))
       };
     }).reverse();
 
