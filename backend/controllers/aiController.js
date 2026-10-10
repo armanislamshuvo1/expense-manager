@@ -207,6 +207,31 @@ export const scanReceipt = async (req, res, next) => {
 };
 
 /**
+ * Helper to prepare transaction digest for AI analysis, safely preserving notes & descriptions
+ */
+export const formatTransactionForSummary = (t) => {
+  const item = {
+    amount: t.amount,
+    currency: t.currency || undefined,
+    type: t.type,
+    category: t.categoryId ? (typeof t.categoryId === 'object' ? t.categoryId.name : t.categoryId) : 'Transfer',
+    date: t.date instanceof Date 
+      ? t.date.toISOString().split('T')[0] 
+      : (typeof t.date === 'string' ? t.date.split('T')[0] : t.date)
+  };
+  if (t.accountId) {
+    item.account = typeof t.accountId === 'object' ? t.accountId.name : t.accountId;
+  }
+  if (t.note && typeof t.note === 'string' && t.note.trim()) {
+    item.note = t.note.trim().slice(0, 50);
+  }
+  if (t.description && typeof t.description === 'string' && t.description.trim()) {
+    item.description = t.description.trim().slice(0, 100);
+  }
+  return item;
+};
+
+/**
  * 3. AI Advisor Chat
  */
 export const advisorChat = async (req, res, next) => {
@@ -223,15 +248,8 @@ export const advisorChat = async (req, res, next) => {
       .sort({ date: -1 })
       .limit(60); // Limit to avoid prompt token overflow and maintain speed
 
-    // Format transaction digest to protect specific sensitive data
-    const transactionSummary = transactions.map(t => ({
-      amount: t.amount,
-      currency: t.currency,
-      type: t.type,
-      date: t.date.toISOString().split('T')[0],
-      category: t.categoryId ? t.categoryId.name : 'Transfer',
-      account: t.accountId ? t.accountId.name : 'Unknown'
-    }));
+    // Format transaction digest including notes, merchants, and descriptions
+    const transactionSummary = transactions.map(t => formatTransactionForSummary(t));
 
     const accountSummary = accounts.map(a => ({
       name: a.name,
@@ -250,6 +268,7 @@ export const advisorChat = async (req, res, next) => {
       Guidelines:
       - Give constructive, realistic personal finance tips.
       - Be encouraging, and never judge the user's spendings.
+      - Pay close attention to transaction notes (merchants, payees) and descriptions (specific items, reasons) alongside category names to provide deep, personalized context rather than just generic high-level category summaries.
       - Answer questions directly based on the context data when possible.
       - Format key metrics clearly. Keep answers under 3-4 paragraphs.
     `;
@@ -286,17 +305,23 @@ export const advisorChat = async (req, res, next) => {
 export const getInsights = async (req, res, next) => {
   let anomalies = [];
   try {
-    // 1. Check if we have a valid cached version of insights
-    const cached = await InsightCache.findOne({ userId: req.user.id });
-    if (cached) {
-      console.log(`[AI Cache] Serving cached dashboard insights for user: ${req.user.id}`);
-      return res.status(200).json({
-        success: true,
-        data: {
-          digest: cached.digest,
-          anomalies: cached.anomalies
-        }
-      });
+    const forceRefresh = req.query.refresh === 'true' || req.query.force === 'true';
+
+    // 1. Check if we have a valid cached version of insights (unless force-refresh requested)
+    if (!forceRefresh) {
+      const cached = await InsightCache.findOne({ userId: req.user.id });
+      if (cached) {
+        console.log(`[AI Cache] Serving cached dashboard insights for user: ${req.user.id}`);
+        return res.status(200).json({
+          success: true,
+          data: {
+            digest: cached.digest,
+            anomalies: cached.anomalies
+          }
+        });
+      }
+    } else {
+      console.log(`[AI Cache] Force refresh requested for user: ${req.user.id}`);
     }
 
     const transactions = await Transaction.find({ userId: req.user.id })
@@ -348,18 +373,33 @@ export const getInsights = async (req, res, next) => {
       }
     });
 
-    // 3. Generate Weekly/Monthly AI Summary Text
-    const cleanList = transactions.slice(0, 30).map(t => ({
-      amount: t.amount,
-      type: t.type,
-      category: t.categoryId ? t.categoryId.name : 'Transfer',
-      date: t.date.toISOString().split('T')[0]
-    }));
+    // 3. Generate Weekly/Monthly AI Summary Text incorporating notes and descriptions
+    const cleanList = transactions.slice(0, 30).map(t => {
+      const item = {
+        amount: t.amount,
+        type: t.type,
+        category: t.categoryId ? t.categoryId.name : 'Transfer',
+        date: t.date instanceof Date 
+          ? t.date.toISOString().split('T')[0] 
+          : (typeof t.date === 'string' ? t.date.split('T')[0] : '')
+      };
+      if (t.note && typeof t.note === 'string' && t.note.trim()) {
+        item.note = t.note.trim().slice(0, 50);
+      }
+      if (t.description && typeof t.description === 'string' && t.description.trim()) {
+        item.description = t.description.trim().slice(0, 100);
+      }
+      return item;
+    });
 
     const prompt = `
-      Create a brief 2-3 sentence visual summary digest for the user's recent spending patterns:
+      Create a concise, insightful 2-3 sentence visual summary digest for the user's recent spending patterns:
       Recent transactions list: ${JSON.stringify(cleanList)}
-      Be friendly, brief, and highlight where they saved money or spent the most.
+
+      Instructions:
+      - Synthesize patterns by analyzing specific transaction notes (merchants, stores, payees) and descriptions (line items, specific reasons) in addition to category totals.
+      - Call out specific merchants, notable purchases, or recurring spending habits (e.g. mention specific shops, payees, or items purchased) rather than only speaking in generic category names.
+      - Be friendly, brief, and highlight where they saved money or spent the most. Keep it within 2-3 sentences.
     `;
 
     const result = await generateContentWithFallback(prompt);
