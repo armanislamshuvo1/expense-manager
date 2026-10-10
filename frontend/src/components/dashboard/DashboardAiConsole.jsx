@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Camera, Plus, Loader2, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Sparkles, Camera, Plus, Loader2, MessageSquare, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function DashboardAiConsole({
   isDark,
@@ -9,7 +9,9 @@ export default function DashboardAiConsole({
   quickLogText,
   setQuickLogText,
   parsing,
-  aiInsights = { digest: '', anomalies: [] }
+  aiInsights = { digest: '', anomalies: [] },
+  onRefreshInsights,
+  isRefreshingInsights = false
 }) {
   return (
     <div className="space-y-4">
@@ -84,9 +86,22 @@ export default function DashboardAiConsole({
         <div className={`backdrop-blur-xl border rounded-3xl p-4 shadow-md transition-all ${
           isDark ? 'bg-gradient-to-br from-[#0f172a]/80 to-[#1e1b4b]/20 border-white/5' : 'bg-gradient-to-br from-white to-red-50/20 border-slate-200 shadow-sm'
         }`}>
-          <div className="flex items-center gap-1.5 mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-error" />
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-error">AI Financial Summary</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-error" />
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-error">AI Financial Summary</span>
+            </div>
+            {onRefreshInsights && (
+              <button
+                type="button"
+                onClick={onRefreshInsights}
+                disabled={isRefreshingInsights}
+                className="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-error transition-colors disabled:opacity-50"
+                title="Refresh summary using latest notes & details"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingInsights ? 'animate-spin text-error' : ''}`} />
+              </button>
+            )}
           </div>
           <p className="text-xs leading-relaxed opacity-95">{aiInsights.digest}</p>
         </div>

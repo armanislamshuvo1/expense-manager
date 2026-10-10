@@ -129,6 +129,8 @@ export default function Dashboard() {
     return getMergedCategories();
   }, [rawCategories, syncQueueLength]);
 
+  const [isRefreshingInsights, setIsRefreshingInsights] = useState(false);
+
   const { data: aiInsights = { digest: '', anomalies: [] }, refetch: refetchInsights } = useQuery({
     queryKey: ['aiInsights'],
     queryFn: async () => {
@@ -144,6 +146,19 @@ export default function Dashboard() {
     refetchOnReconnect: false // Prevent query on reconnect
   });
 
+  const handleRefreshInsights = async () => {
+    try {
+      setIsRefreshingInsights(true);
+      const res = await axiosSecure.get('/api/ai/insights?refresh=true');
+      if (res.data?.success) {
+        queryClient.setQueryData(['aiInsights'], res.data.data);
+      }
+    } catch (err) {
+      console.error('Error refreshing AI insights:', err);
+    } finally {
+      setIsRefreshingInsights(false);
+    }
+  };
 
   const [quickLogText, setQuickLogText] = useState('');
   const [parsing, setParsing] = useState(false);
@@ -402,6 +417,8 @@ export default function Dashboard() {
             setQuickLogText={setQuickLogText}
             parsing={parsing}
             aiInsights={aiInsights}
+            onRefreshInsights={handleRefreshInsights}
+            isRefreshingInsights={isRefreshingInsights}
           />
 
           {/* Income vs Expenses Tab Indicator */}

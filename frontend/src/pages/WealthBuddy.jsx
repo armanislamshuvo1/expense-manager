@@ -23,8 +23,8 @@ export default function WealthBuddy() {
 
   const suggestionChips = [
     "How is my spending this month?",
+    "Summarize my purchases by merchants & notes",
     "Show my biggest expense categories",
-    "How can I save more money?",
     "Give me a weekly spending summary"
   ];
 
