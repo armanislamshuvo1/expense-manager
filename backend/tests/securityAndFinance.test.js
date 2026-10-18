@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { ACCOUNT_TYPES } from '../models/Account.js';
 
 describe('Security & Authentication Suite', () => {
   it('generates cryptographically secure 32-byte tokens and valid SHA-256 hashes', () => {
@@ -102,3 +103,24 @@ describe('Defensive Offline Sync Resolution Suite', () => {
     expect(isValid).toBe(true);
   });
 });
+
+describe('Account Categories & Types Specification', () => {
+  it('includes E-WALLET in ACCOUNT_TYPES positioned after card types', () => {
+    expect(ACCOUNT_TYPES).toContain('E-WALLET');
+    const cardIndex = ACCOUNT_TYPES.indexOf('CARD');
+    const ewalletIndex = ACCOUNT_TYPES.indexOf('E-WALLET');
+    const savingsIndex = ACCOUNT_TYPES.indexOf('SAVINGS');
+
+    expect(ewalletIndex).toBeGreaterThan(cardIndex);
+    expect(savingsIndex).toBeGreaterThan(ewalletIndex);
+  });
+
+  it('correctly accepts recognized account categories and rejects unknown categories', () => {
+    const validCategory = 'E-WALLET';
+    const invalidCategory = 'PIGGY_BANK';
+
+    expect(ACCOUNT_TYPES.includes(validCategory)).toBe(true);
+    expect(ACCOUNT_TYPES.includes(invalidCategory)).toBe(false);
+  });
+});
+

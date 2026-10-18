@@ -104,10 +104,10 @@ export default function AddAccountModal({
               <option className="bg-base-100 text-base-content" value="CASH">Cash</option>
               <option className="bg-base-100 text-base-content" value="CREDIT_CARD">Credit Card</option>
               <option className="bg-base-100 text-base-content" value="CARD">Debit / Payment Card</option>
+              <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
               <option className="bg-base-100 text-base-content" value="SAVINGS">Savings Account</option>
               <option className="bg-base-100 text-base-content" value="INVESTMENT">Investment Account</option>
               <option className="bg-base-100 text-base-content" value="CRYPTO">Crypto Wallet</option>
-              <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
             </select>
           </div>
 

@@ -128,13 +128,14 @@ export default function Accounts() {
     }
   };
 
-  // Group accounts by type for premium dashboard listing (Cash, Credit Cards, Cards, Savings, Investments)
+  // Group accounts by type for premium dashboard listing (Cash, Credit Cards, Cards, E-Wallets, Savings, Investments)
   const groupAccounts = () => {
-    const groups = { Cash: [], 'Credit Cards': [], Cards: [], Savings: [], Investments: [] };
+    const groups = { Cash: [], 'Credit Cards': [], Cards: [], 'E-Wallets': [], Savings: [], Investments: [] };
     accounts.forEach((acc) => {
       if (acc.type === 'CASH') groups.Cash.push(acc);
       else if (acc.type === 'CREDIT_CARD') groups['Credit Cards'].push(acc);
       else if (acc.type === 'CARD') groups.Cards.push(acc);
+      else if (acc.type === 'E-WALLET') groups['E-Wallets'].push(acc);
       else if (acc.type === 'SAVINGS') groups.Savings.push(acc);
       else groups.Investments.push(acc);
     });
@@ -387,10 +388,10 @@ export default function Accounts() {
                 <option className="bg-base-100 text-base-content" value="CASH">Cash</option>
                 <option className="bg-base-100 text-base-content" value="CREDIT_CARD">Credit Card</option>
                 <option className="bg-base-100 text-base-content" value="CARD">Debit / Payment Card</option>
+                <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
                 <option className="bg-base-100 text-base-content" value="SAVINGS">Savings Account</option>
                 <option className="bg-base-100 text-base-content" value="INVESTMENT">Investment Account</option>
                 <option className="bg-base-100 text-base-content" value="CRYPTO">Crypto Wallet</option>
-                <option className="bg-base-100 text-base-content" value="E-WALLET">E-Wallet</option>
               </select>
             </div>
 

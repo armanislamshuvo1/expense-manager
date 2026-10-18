@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+export const ACCOUNT_TYPES = [
+  'CASH',
+  'CREDIT_CARD',
+  'CARD',
+  'E-WALLET',
+  'SAVINGS',
+  'INVESTMENT',
+  'CRYPTO',
+  'REAL_ESTATE'
+];
+
 const accountSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -15,7 +26,7 @@ const accountSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: true,
-    enum: ['CASH', 'CARD', 'CREDIT_CARD', 'SAVINGS', 'INVESTMENT', 'CRYPTO', 'REAL_ESTATE', 'E-WALLET']
+    enum: ACCOUNT_TYPES
   },
   balance: { 
     type: Number, 

@@ -446,6 +446,7 @@ export const parseMmbakBuffer = async (fileBuffer) => {
         const nameLower = (row.NIC_NAME || '').toLowerCase();
         if (nameLower.includes('cash')) type = 'CASH';
         else if (nameLower.includes('card') || nameLower.includes('credit')) type = 'CARD';
+        else if (nameLower.includes('wallet') || nameLower.includes('tng') || nameLower.includes('touch n go') || nameLower.includes('boost') || nameLower.includes('grab') || nameLower.includes('shopee') || nameLower.includes('paypal') || nameLower.includes('venmo')) type = 'E-WALLET';
         else if (nameLower.includes('invest') || nameLower.includes('stock')) type = 'INVESTMENT';
         else if (nameLower.includes('crypto')) type = 'CRYPTO';
 
