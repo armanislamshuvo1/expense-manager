@@ -30,6 +30,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_BASE_URL: https://nexuswealth-backend-cn5g.onrender.com
+          VITE_GOOGLE_CLIENT_ID: 572838786613-gpgpms78em01lg6sfan1cu2fti686nkj.apps.googleusercontent.com
         run: npm run build
 
       - name: Set up Java JDK
