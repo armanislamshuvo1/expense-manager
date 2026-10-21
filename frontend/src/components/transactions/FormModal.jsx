@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { CreditCard, Tag, Calendar, Plus, Calculator } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
@@ -73,6 +73,8 @@ export default function FormModal({
   } = useFormModal();
 
   const [showNoteSuggestions, setShowNoteSuggestions] = React.useState(false);
+  const noteInputRef = useRef(null);
+  const descriptionInputRef = useRef(null);
   const matchedSuggestions = getNoteSuggestions ? getNoteSuggestions(note) : [];
 
   return (
@@ -131,6 +133,7 @@ export default function FormModal({
                     {/* Currency selector */}
                     <select
                       value={currency}
+                      tabIndex={-1}
                       onChange={(e) => setCurrency(e.target.value)}
                       className="select select-bordered bg-base-200 text-base-content border-base-content/20 text-xs font-bold rounded-xl h-12 w-[75px] px-2 text-center"
                       style={{
@@ -162,11 +165,19 @@ export default function FormModal({
                         min="0"
                         placeholder="0.00"
                         value={amount}
+                        enterKeyHint="next"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            noteInputRef.current?.focus();
+                          }
+                        }}
                         onChange={(e) => setAmount(e.target.value)}
                         className="input input-bordered bg-base-200 border-base-content/20 hover:border-base-content/40 text-base-content font-bold text-lg h-12 w-full pr-12 rounded-xl transition-all"
                       />
                       <button
                         type="button"
+                        tabIndex={-1}
                         title="Open Calculator"
                         onClick={openKeypad}
                         className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost btn-sm text-base-content/60 hover:text-base-content"
@@ -210,6 +221,7 @@ export default function FormModal({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => openAccountSheet('source')}
                     className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                   >
@@ -220,6 +232,7 @@ export default function FormModal({
                   {type === 'TRANSFER' ? (
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={() => openAccountSheet('destination')}
                       className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                     >
@@ -229,6 +242,7 @@ export default function FormModal({
                   ) : (
                     <button
                       type="button"
+                      tabIndex={-1}
                       onClick={openCategorySheet}
                       className="btn bg-base-200 hover:bg-base-100 text-base-content border border-base-content/20 justify-between font-semibold text-xs uppercase rounded-xl h-11 transition-all"
                     >
@@ -247,6 +261,7 @@ export default function FormModal({
                   </label>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={openDatePicker}
                     className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full text-left flex items-center justify-between cursor-pointer font-semibold text-xs transition-all hover:bg-base-100"
                   >
@@ -269,8 +284,21 @@ export default function FormModal({
                     <span className="text-[10px] opacity-45 pr-1 font-semibold">{note.length}/30</span>
                   </div>
                   <input
+                    ref={noteInputRef}
                     type="text"
                     value={note}
+                    enterKeyHint={user?.settings?.showDescription !== false ? 'next' : 'done'}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (user?.settings?.showDescription !== false && descriptionInputRef.current) {
+                          e.preventDefault();
+                          descriptionInputRef.current.focus();
+                        } else {
+                          e.preventDefault();
+                          e.target.blur();
+                        }
+                      }
+                    }}
                     onChange={(e) => {
                       setNote(e.target.value);
                       setShowNoteSuggestions(true);
@@ -306,8 +334,15 @@ export default function FormModal({
                 {user?.settings?.showDescription !== false && (
                   <div className="form-control">
                     <input
+                      ref={descriptionInputRef}
                       type="text"
                       value={description}
+                      enterKeyHint="done"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.target.blur();
+                        }
+                      }}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Add description..."
                       className="input input-sm input-bordered bg-base-200 border-base-content/20 text-base-content rounded-xl h-10 px-3 w-full"

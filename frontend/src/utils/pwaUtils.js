@@ -1,9 +1,22 @@
+import { Capacitor } from '@capacitor/core';
+
 /**
- * Checks if the application is running in standalone mode (installed PWA)
+ * Checks if the application is running as a compiled native Android/iOS app.
+ * @returns {boolean}
+ */
+export function isNativeApp() {
+  return Capacitor.isNativePlatform();
+}
+
+/**
+ * Checks if the application is running in standalone mode (installed PWA or native APK)
  * or has query parameters suggesting PWA context.
  * @returns {boolean}
  */
 export function isPwaMode() {
+  if (Capacitor.isNativePlatform()) {
+    return true;
+  }
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   const isNavigatorStandalone = window.navigator.standalone === true; // iOS Safari
   const hasPwaParam = new URLSearchParams(window.location.search).get('source') === 'pwa' ||

@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { isPwaMode } from './utils/pwaUtils';
 import ScrollToTop from './components/ScrollToTop';
 import SyncStatusBanner from './components/SyncStatusBanner';
+import NativeMobileController from './components/NativeMobileController';
 import { AccountModalProvider } from './context/AccountModalContext';
 import PublicLayout from './components/PublicLayout';
 
@@ -66,6 +67,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <NativeMobileController />
       <AuthProvider>
         <ThemeProvider>
           <AccountModalProvider>

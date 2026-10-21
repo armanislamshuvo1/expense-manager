@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CalendarRange, LayoutDashboard, CreditCard, Settings } from 'lucide-react';
+import { isNativeApp, isPwaMode } from '../utils/pwaUtils';
 
 export const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAppMode = isNativeApp() || isPwaMode();
 
   const navItems = [
     { label: 'Trans.', path: '/transactions', icon: CalendarRange },
@@ -14,9 +16,12 @@ export const BottomNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col shadow-2xl">
+    <div 
+      className="fixed bottom-0 left-0 right-0 z-50 flex flex-col shadow-2xl"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       {/* Navigation Bar */}
-      <div className="border-t border-base-content/10 bg-base-100/90 backdrop-blur-md flex justify-around items-center py-2 h-16">
+      <div className="border-t border-base-content/10 bg-base-100/95 backdrop-blur-md flex justify-around items-center py-1.5 h-16">
         {navItems.map((item) => {
           const IconComponent = item.icon;
           const isActive = location.pathname === item.path;
@@ -25,7 +30,7 @@ export const BottomNav = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`flex flex-col items-center justify-center flex-1 transition-all duration-200 ${
-                isActive ? 'text-error scale-110 font-bold' : 'text-base-content/60 hover:text-base-content'
+                isActive ? 'text-error scale-105 font-bold' : 'text-base-content/60 hover:text-base-content'
               }`}
             >
               <IconComponent className="h-5 w-5 mb-1" />
@@ -35,19 +40,20 @@ export const BottomNav = () => {
         })}
       </div>
 
-      {/* Global Compact Footer */}
-      <div className="bg-base-300/95 backdrop-blur-md border-t border-base-content/10 py-1.5 px-4 text-center text-[10px] text-base-content/75 tracking-wider">
-        <span>© {new Date().getFullYear()} NexusWealth. Built by </span>
-        <a 
-          href="https://armanislam.me" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="text-error hover:text-error/80 transition-colors font-semibold hover:underline"
-        >
-          Arman Islam
-        </a>
-      </div>
+      {/* Global Compact Footer - shown ONLY on web browser, hidden in APK/PWA */}
+      {!isAppMode && (
+        <div className="bg-base-300/95 backdrop-blur-md border-t border-base-content/10 py-1.5 px-4 text-center text-[10px] text-base-content/75 tracking-wider">
+          <span>© {new Date().getFullYear()} NexusWealth. Built by </span>
+          <a 
+            href="https://armanislam.me" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-error hover:text-error/80 transition-colors font-semibold hover:underline"
+          >
+            Arman Islam
+          </a>
+        </div>
+      )}
     </div>
   );
 };
-
