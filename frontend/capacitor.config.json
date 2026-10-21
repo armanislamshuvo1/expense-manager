@@ -1,0 +1,10 @@
+{
+  "appId": "com.nexuswealth.app",
+  "appName": "NexusWealth",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  }
+}
