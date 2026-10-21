@@ -34,7 +34,10 @@ const allowedOrigins = [
   'https://nexuswealthmanager.xyz',
   'https://www.nexuswealthmanager.xyz',
   'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'https://localhost',
+  'http://localhost',
+  'capacitor://localhost'
 ].filter(Boolean);
 
 const corsOptions = {
@@ -45,7 +48,9 @@ const corsOptions = {
     if (
       allowedOrigins.includes(origin) ||
       /\.vercel\.app$/.test(origin) ||
-      /nexuswealthmanager\.xyz$/.test(origin)
+      /nexuswealthmanager\.xyz$/.test(origin) ||
+      /^capacitor:\/\//.test(origin) ||
+      /^https?:\/\/localhost(:[0-9]+)?$/.test(origin)
     ) {
       return callback(null, true);
     }
