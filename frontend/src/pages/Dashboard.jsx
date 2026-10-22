@@ -35,6 +35,7 @@ import ReceiptScannerModal from '../components/ReceiptScannerModal';
 import DashboardAiConsole from '../components/dashboard/DashboardAiConsole';
 import QuickStats from '../components/dashboard/QuickStats';
 import ReviewQuickLogModal from '../components/dashboard/ReviewQuickLogModal';
+import MobileDashboardView from '../components/dashboard/MobileDashboardView';
 
 
 export default function Dashboard() {
@@ -385,8 +386,42 @@ export default function Dashboard() {
       isDark ? 'bg-[#070b13] text-[#e0e6f2]' : 'bg-[#f1f5f9] text-[#475569]'
     }`}>
       {/* Container with Left Sidebar on Desktop */}
-      <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 lg:p-6 gap-6">
-        
+      {/* Mobile / APK Native View (screens < lg) */}
+      <div className="block lg:hidden max-w-lg mx-auto p-4 space-y-4">
+        <MobileDashboardView
+          user={user}
+          accounts={accounts}
+          transactions={transactions}
+          baseCurrency={baseCurrency}
+          totalIncome={totalIncome}
+          totalExpense={totalExpense}
+          syncStatus={syncStatus}
+          queueCount={syncQueueLength}
+          onSyncTrigger={triggerSync}
+          navigate={navigate}
+          periodType={periodType}
+          setPeriodType={setPeriodType}
+          formatPeriodLabel={formatPeriodLabel}
+          handlePrevPeriod={handlePrevPeriod}
+          handleNextPeriod={handleNextPeriod}
+          isDark={isDark}
+          categoryData={categoryData}
+          totalForActiveTab={totalForActiveTab}
+          ACCENT_SHADES={ACCENT_SHADES}
+          handleCategoryClick={handleCategoryClick}
+          setReceiptModalOpen={setReceiptModalOpen}
+          handleQuickLogSubmit={handleQuickLogSubmit}
+          quickLogText={quickLogText}
+          setQuickLogText={setQuickLogText}
+          parsing={parsing}
+          aiInsights={aiInsights}
+          onRefreshInsights={handleRefreshInsights}
+          isRefreshingInsights={isRefreshingInsights}
+        />
+      </div>
+
+      {/* Desktop Multi-Column View (screens >= lg) */}
+      <div className="hidden lg:flex max-w-7xl mx-auto p-6 gap-6">
         {/* SIDEBAR CONTAINER */}
         <Sidebar 
           accounts={accounts} 

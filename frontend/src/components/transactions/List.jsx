@@ -11,101 +11,46 @@ const TransactionRow = React.memo(({
 }) => {
   const { openAccountModal } = useAccountModal();
   const txTime = new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const catName = tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'Uncategorized');
-  const catId = typeof tx.categoryId === 'object' ? (tx.categoryId?._id || tx.categoryId?.clientCatId) : tx.categoryId;
+  const catName = tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'General');
+  const isIncome = tx.type === 'INCOME';
+  const isExpense = tx.type === 'EXPENSE';
 
   return (
-    <div className="group flex justify-between items-center py-2 px-2 hover:bg-base-200/40 rounded-xl transition-colors gap-2">
-      <div 
-        onClick={() => handleOpenEditModal(tx)}
-        className="flex-1 flex justify-between items-center cursor-pointer min-w-0 pr-2"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <span 
-            className="text-2xl shrink-0 cursor-pointer hover:scale-110 transition-transform"
-            title="Click to filter by category"
-            onClick={(e) => {
-              if (onCategoryClick && catId) {
-                e.stopPropagation();
-                onCategoryClick(catId, tx.type);
-              }
-            }}
-          >
-            {tx.type === 'TRANSFER' ? '🔄' : (tx.categoryId?.emoji || '🏷️')}
-          </span>
-          <div className="flex flex-col min-w-0">
-            <span 
-              className="font-semibold text-sm truncate hover:underline hover:text-primary transition-colors cursor-pointer"
-              title="Click to filter by category"
-              onClick={(e) => {
-                if (onCategoryClick && (catId || catName)) {
-                  e.stopPropagation();
-                  onCategoryClick(catId || catName, tx.type);
-                }
-              }}
-            >
-              {catName}
-            </span>
-            {tx.note && (
-              <span className="text-xs text-base-content/80 font-medium py-0.5 truncate">
-                {tx.note}
-              </span>
-            )}
-            <span className="text-[10px] opacity-50 flex items-center gap-1.5 truncate">
-              <span>{txTime}</span>
-              <span>•</span>
-              <span className="flex items-center gap-1 truncate">
-                {tx.type === 'TRANSFER' ? (
-                  <>
-                    <span 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (tx.accountId) openAccountModal(tx.accountId);
-                      }}
-                      className="hover:underline hover:text-primary font-semibold transition-colors truncate"
-                    >
-                      {tx.accountId?.name || 'Unknown'}
-                    </span>
-                    <span>➔</span>
-                    <span 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (tx.toAccountId) openAccountModal(tx.toAccountId);
-                      }}
-                      className="hover:underline hover:text-primary font-semibold transition-colors truncate"
-                    >
-                      {tx.toAccountId?.name || '?'}
-                    </span>
-                  </>
-                ) : (
-                  <span 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (tx.accountId) openAccountModal(tx.accountId);
-                    }}
-                    className="hover:underline hover:text-primary font-semibold transition-colors truncate"
-                  >
-                    {tx.accountId?.name || 'Unknown'}
-                  </span>
-                )}
-              </span>
-            </span>
-          </div>
+    <div 
+      onClick={() => handleOpenEditModal(tx)}
+      className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-base-200/60 active:scale-[0.99] transition-all cursor-pointer gap-2 border border-transparent hover:border-base-content/10"
+    >
+      <div className="flex items-center gap-3 min-w-0 pr-2">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+          isIncome 
+            ? 'bg-primary-app/15 text-primary-app border border-primary-app/30' 
+            : isExpense 
+              ? 'bg-danger-app/15 text-danger-app border border-danger-app/30' 
+              : 'bg-secondary-app/15 text-secondary-app border border-secondary-app/30'
+        }`}>
+          {isIncome ? 'IN' : isExpense ? 'OUT' : '⇄'}
         </div>
-        <div className="text-right shrink-0">
-          <div className={`font-bold text-sm ${
-            tx.type === 'INCOME' ? 'text-primary-app' : tx.type === 'EXPENSE' ? 'text-danger-app' : 'text-secondary-app'
-          }`}>
-            {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '⇄'} {tx.currency} {tx.amount.toFixed(2)}
-          </div>
-          {tx.currency !== user?.baseCurrency && tx.convertedAmount !== undefined && (
-            <div className="text-[9px] opacity-50">
-              Base: {user?.baseCurrency} {tx.convertedAmount.toFixed(2)}
-            </div>
-          )}
+        <div className="flex flex-col min-w-0">
+          <span className="font-bold text-xs text-base-content truncate">
+            {tx.note || catName}
+          </span>
+          <span className="text-[10px] text-base-content/60 flex items-center gap-1 truncate">
+            <span className="font-semibold truncate">{catName}</span>
+            <span>•</span>
+            <span className="truncate">{tx.accountId?.name || 'Account'}</span>
+          </span>
         </div>
       </div>
-      
+      <div className="text-right shrink-0">
+        <div className={`font-black text-xs ${
+          isIncome ? 'text-primary-app' : isExpense ? 'text-danger-app' : 'text-secondary-app'
+        }`}>
+          {isIncome ? '+' : isExpense ? '-' : '⇄'} {tx.currency || user?.baseCurrency} {Number(tx.amount || 0).toFixed(2)}
+        </div>
+        <div className="text-[9px] text-base-content/40">
+          {txTime}
+        </div>
+      </div>
     </div>
   );
 });
