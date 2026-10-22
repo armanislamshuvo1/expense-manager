@@ -54,13 +54,14 @@ jobs:
       - name: Rename APK for Direct Download
         run: cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/android/app/build/outputs/apk/debug/NexusWealth.apk
 
-      - name: Upload to GitHub Releases (Direct APK Download)
+      - name: Publish Direct APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-latest
-          name: "NexusWealth Android App (Latest APK)"
+          tag_name: v3.0.4-build-${{ github.run_number }}
+          name: "NexusWealth Android APK (Build ${{ github.run_number }})"
           body: "Direct download link for Android phone. Tap NexusWealth.apk below to install directly."
           files: frontend/android/app/build/outputs/apk/debug/NexusWealth.apk
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
