@@ -1,5 +1,16 @@
 # NexusWealth 💼📈
 
+<p align="left">
+  <a href="https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk">
+    <img src="https://img.shields.io/badge/Direct_Download-NexusWealth_Android_APK-06B6D4?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+  <a href="https://github.com/armanislamshuvo1/expense-manager/releases/tag/apk-latest">
+    <img src="https://img.shields.io/badge/GitHub-Releases-6366F1?style=for-the-badge&logo=github&logoColor=white" alt="Releases" />
+  </a>
+</p>
+
+> 📲 **Install on Android**: Tap the **[Download Android APK](https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk)** badge above to directly download `NexusWealth.apk` without cloning or unzipping.
+
 NexusWealth is a highly polished, modern MERN-stack wealth and expense manager designed to streamline personal finance tracking. Built with visual excellence, responsive custom elements, and real-time state synchronization, NexusWealth helps users gain complete control of their financial accounts, transaction categories, and wealth distribution.
 
 ## ✨ Key Features
