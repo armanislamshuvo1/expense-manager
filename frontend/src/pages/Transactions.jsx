@@ -419,14 +419,14 @@ export default function Transactions() {
         {/* Monthly Summary Bar */}
         <div className="grid grid-cols-3 text-center bg-base-100 p-3 rounded-xl shadow-md border border-base-200">
           <div className="flex flex-col items-center justify-center border-r border-base-200">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-success font-extrabold">Income</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary-app font-black">Income</span>
             <span className="text-sm font-extrabold text-success mt-1">
               {totalIncome.toFixed(2)}
             </span>
           </div>
           <div className="flex flex-col items-center justify-center border-r border-base-200">
             <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Expenses</span>
-            <span className="text-sm font-bold text-error mt-1">
+            <span className="text-sm font-bold text-danger-app mt-1 font-black">
               {totalExpenses.toFixed(2)}
             </span>
           </div>
@@ -462,7 +462,7 @@ export default function Transactions() {
       {/* Floating Add Action Button */}
       <button
         onClick={() => handleOpenAddModal()}
-        className="btn btn-error btn-circle w-14 h-14 min-h-[3.5rem] fixed bottom-28 right-6 shadow-2xl z-40 text-white animate-bounce flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
+        className="w-14 h-14 rounded-full bg-primary-app text-slate-950 flex items-center justify-center fixed bottom-24 right-5 shadow-2xl shadow-cyan-500/40 z-40 active:scale-90 transition-all font-bold border border-cyan-300/30"
         title="Add Transaction"
       >
         <Plus className="w-8 h-8 stroke-[2.5]" />

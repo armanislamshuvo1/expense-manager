@@ -179,14 +179,14 @@ export default function Accounts() {
         <div className="flex justify-around text-center mt-2">
           <div>
             <div className="text-[10px] uppercase tracking-wider opacity-60">Assets</div>
-            <div className="text-lg font-bold text-primary">
+            <div className="text-lg font-bold text-primary-app">
               {user?.baseCurrency || 'MYR'} {calculateAssets().toFixed(2)}
             </div>
           </div>
           <div className="border-l border-base-content/10 h-8 self-center"></div>
           <div>
             <div className="text-[10px] uppercase tracking-wider opacity-60">Liabilities</div>
-            <div className="text-lg font-bold text-error">
+            <div className="text-lg font-bold text-danger-app">
               {user?.baseCurrency || 'MYR'} {calculateLiabilities().toFixed(2)}
             </div>
           </div>
@@ -253,15 +253,7 @@ export default function Accounts() {
                                   </span>
                                 )}
                               </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteAccount(acc._id);
-                                }}
-                                className="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+
                             </div>
                           </div>
 
@@ -309,7 +301,7 @@ export default function Accounts() {
       {/* Floating Add Transaction Action Button */}
       <button
         onClick={() => navigate('/transactions', { state: { openAddModal: true, returnTo: '/accounts' } })}
-        className="btn btn-error btn-circle fixed bottom-28 right-6 shadow-xl z-40 text-white hover:scale-105 active:scale-95 transition-all"
+        className="w-14 h-14 rounded-full bg-primary-app text-slate-950 flex items-center justify-center fixed bottom-24 right-5 shadow-2xl shadow-cyan-500/40 z-40 active:scale-90 transition-all font-bold border border-cyan-300/30"
         title="Add Transaction"
       >
         <Plus className="w-6 h-6" />

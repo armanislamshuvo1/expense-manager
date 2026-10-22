@@ -398,8 +398,8 @@ export default function Dashboard() {
 
         {/* MAIN PANEL CONTENT */}
         <main className="flex-1 flex flex-col gap-6">
-          {/* Header Month / Time Selector Bar (Desktop) */}
-          <div className="hidden lg:block">
+          {/* Month / Time Selector Bar */}
+          <div>
             <PeriodHeader 
               periodType={periodType}
               setPeriodType={setPeriodType}
@@ -410,31 +410,15 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* AI Quick Console & Alerts */}
-          <DashboardAiConsole
+          {/* Hero Quick Financial Metrics */}
+          <QuickStats
             isDark={isDark}
-            navigate={navigate}
-            setReceiptModalOpen={setReceiptModalOpen}
-            handleQuickLogSubmit={handleQuickLogSubmit}
-            quickLogText={quickLogText}
-            setQuickLogText={setQuickLogText}
-            parsing={parsing}
-            aiInsights={aiInsights}
-            onRefreshInsights={handleRefreshInsights}
-            isRefreshingInsights={isRefreshingInsights}
+            baseCurrency={baseCurrency}
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            netSavings={netSavings}
+            savingsRate={savingsRate}
           />
-
-          {/* Header Month / Time Selector Bar (Small devices: directly on top of Income/Expense tab) */}
-          <div className="block lg:hidden">
-            <PeriodHeader 
-              periodType={periodType}
-              setPeriodType={setPeriodType}
-              formatPeriodLabel={formatPeriodLabel}
-              handlePrevPeriod={handlePrevPeriod}
-              handleNextPeriod={handleNextPeriod}
-              isDark={isDark}
-            />
-          </div>
 
           {/* Income vs Expenses Tab Indicator */}
           <div className="grid grid-cols-2 text-center relative border-b border-base-content/10">
@@ -487,14 +471,18 @@ export default function Dashboard() {
             baseCurrency={baseCurrency}
           />
 
-          {/* Quick Stats Summary Footer Row */}
-          <QuickStats
+          {/* AI Quick Console & Tools */}
+          <DashboardAiConsole
             isDark={isDark}
-            baseCurrency={baseCurrency}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            netSavings={netSavings}
-            savingsRate={savingsRate}
+            navigate={navigate}
+            setReceiptModalOpen={setReceiptModalOpen}
+            handleQuickLogSubmit={handleQuickLogSubmit}
+            quickLogText={quickLogText}
+            setQuickLogText={setQuickLogText}
+            parsing={parsing}
+            aiInsights={aiInsights}
+            onRefreshInsights={handleRefreshInsights}
+            isRefreshingInsights={isRefreshingInsights}
           />
         </main>
       </div>

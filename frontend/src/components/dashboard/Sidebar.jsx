@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, Cloud, CloudOff, RefreshCw, CloudAlert, ChevronDown } from 'lucide-react';
+import { Wallet, Settings, Cloud, CloudOff, RefreshCw, CloudAlert, ChevronDown } from 'lucide-react';
 import { subscribeToSync, triggerSync } from '../../utils/syncManager';
 import { useAccountModal } from '../../context/AccountModalContext';
 
@@ -91,9 +91,19 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
             </div>
           </div>
         </div>
-        <button onClick={logout} className="btn btn-xs btn-ghost text-danger-app hover:bg-danger-app/10 rounded-lg shrink-0 font-bold">
-          Sign Out
-        </button>
+        {isPwaMode() ? (
+          <button 
+            onClick={() => navigate('/more')} 
+            className="w-8 h-8 rounded-xl bg-base-300 border border-base-content/10 flex items-center justify-center text-base-content/70 hover:text-primary-app transition-colors shrink-0 cursor-pointer"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        ) : (
+          <button onClick={logout} className="btn btn-xs btn-ghost text-danger-app hover:bg-danger-app/10 rounded-lg shrink-0 font-bold">
+            Sign Out
+          </button>
+        )}
       </div>
 
       {/* Connected Accounts Card */}

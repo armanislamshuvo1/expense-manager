@@ -105,20 +105,7 @@ const TransactionRow = React.memo(({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        title="Delete Transaction"
-        onMouseDown={(e) => e.stopPropagation()}
-        onTouchStart={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleDeleteTransaction(tx._id);
-        }}
-        className="w-8 h-8 rounded-xl bg-danger-app/10 border border-danger-app/25 text-danger-app hover:bg-danger-app/20 flex items-center justify-center shrink-0 z-20 cursor-pointer active:scale-90 transition-all"
-      >
-        <Trash2 className="w-4 h-4 text-danger-app" />
-      </button>
+      
     </div>
   );
 });

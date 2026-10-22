@@ -21,7 +21,7 @@ export default function DashboardAiConsole({
           isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-sm'
         }`}>
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-error to-error/60 flex items-center justify-center text-white shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-secondary-app to-indigo-600 flex items-center justify-center text-white shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -31,7 +31,7 @@ export default function DashboardAiConsole({
           </div>
           <button 
             onClick={() => navigate('/wealthbuddy')}
-            className="btn btn-sm btn-error text-white font-bold rounded-xl w-full md:w-auto"
+            className="btn btn-sm bg-secondary-app hover:bg-indigo-600 text-white font-bold rounded-xl border-none shadow-md shadow-secondary-app/20 w-full md:w-auto"
           >
             <MessageSquare className="w-4 h-4 mr-1" /> Chat Advisor
           </button>
@@ -41,7 +41,7 @@ export default function DashboardAiConsole({
           isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-sm'
         }`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-base-300 flex items-center justify-center text-error border border-base-content/10 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-base-300 flex items-center justify-center text-primary-app border border-base-content/10 shrink-0">
               <Camera className="w-5 h-5" />
             </div>
             <div>
@@ -51,7 +51,7 @@ export default function DashboardAiConsole({
           </div>
           <button 
             onClick={() => setReceiptModalOpen(true)}
-            className="btn btn-sm btn-circle btn-ghost text-error"
+            className="btn btn-sm btn-circle btn-ghost text-primary-app"
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -75,7 +75,7 @@ export default function DashboardAiConsole({
         <button
           type="submit"
           disabled={parsing || !quickLogText.trim()}
-          className="btn btn-circle btn-error h-10 w-10 min-h-10 text-white"
+          className="btn btn-circle bg-primary-app text-slate-950 hover:bg-cyan-400 border-none h-10 w-10 min-h-10 text-white"
         >
           {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
         </button>
@@ -88,18 +88,18 @@ export default function DashboardAiConsole({
         }`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-error" />
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-error">AI Financial Summary</span>
+              <Sparkles className="w-3.5 h-3.5 text-primary-app" />
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-primary-app">AI Financial Summary</span>
             </div>
             {onRefreshInsights && (
               <button
                 type="button"
                 onClick={onRefreshInsights}
                 disabled={isRefreshingInsights}
-                className="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-error transition-colors disabled:opacity-50"
+                className="btn btn-ghost btn-xs btn-circle text-base-content/50 hover:text-primary-app transition-colors disabled:opacity-50"
                 title="Refresh summary using latest notes & details"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingInsights ? 'animate-spin text-error' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingInsights ? 'animate-spin text-primary-app' : ''}`} />
               </button>
             )}
           </div>
@@ -113,9 +113,9 @@ export default function DashboardAiConsole({
           key={anom.id}
           className="flex items-start gap-3 bg-error/10 border border-error/20 rounded-2xl p-4 animate-fade-in text-xs"
         >
-          <AlertTriangle className="w-5 h-5 text-error shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-primary-app shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-extrabold text-error uppercase tracking-wider text-[10px]">Unusual Spending Alert</h4>
+            <h4 className="font-extrabold text-primary-app uppercase tracking-wider text-[10px]">Unusual Spending Alert</h4>
             <p className="opacity-90 mt-0.5">
               Logged <strong>MYR {anom.amount}</strong> in <strong>{anom.category}</strong> on {anom.date}.
             </p>
