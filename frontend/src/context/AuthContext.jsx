@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { publicApi } from '../utils/apiConfig';
-import { Lock, Delete, LogOut } from 'lucide-react';
+import { Lock, Delete, LogOut, Fingerprint } from 'lucide-react';
 import { setCategoriesCache, setAccountsCache, setCache, triggerSync } from '../utils/syncManager';
 
 const cacheInitialUserData = async (authToken, userData) => {
@@ -58,68 +58,114 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
     setError(false);
   };
 
+  const handleBiometricPrompt = async () => {
+    try {
+      if (window.PublicKeyCredential) {
+        // Trigger web credentials prompt
+        navigator.credentials?.get({
+          publicKey: {
+            challenge: new Uint8Array([1, 2, 3, 4, 5]),
+            timeout: 60000,
+            userVerification: 'preferred'
+          }
+        }).then(() => {
+          onUnlock();
+        }).catch(() => {
+          // If canceled or not set up, user continues with PIN
+        });
+      }
+    } catch (_err) {
+      // Graceful fallback
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-base-300/80 backdrop-blur-md z-[9999] flex items-center justify-center sm:p-4 text-base-content font-sans">
-      <div className="w-full h-full sm:h-auto sm:max-w-md bg-base-300 sm:bg-base-200 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-base-content/10 flex flex-col items-center justify-between py-16 px-6 sm:py-12 sm:px-8 min-h-screen sm:min-h-[580px]">
-        <div className="flex flex-col items-center gap-4 mt-8">
-          <div className="bg-error/10 p-4 rounded-full border border-error/20 animate-pulse">
-            <Lock className="w-8 h-8 text-error" />
+    <div className="fixed inset-0 bg-base-300/90 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 text-base-content font-sans">
+      <div className="w-full max-w-sm bg-base-200/90 rounded-3xl shadow-2xl border border-base-content/10 flex flex-col items-center justify-between py-12 px-8 min-h-[560px]">
+        
+        {/* Shield Header */}
+        <div className="flex flex-col items-center gap-3 mt-4">
+          <div className="w-16 h-16 rounded-3xl bg-primary-app/10 border border-primary-app/30 flex items-center justify-center ring-8 ring-primary-app/5 shadow-xl shadow-cyan-500/10">
+            <Lock className="w-8 h-8 text-primary-app stroke-[2.2]" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-bold tracking-wide">NexusWealth</h2>
-            <p className={`text-xs mt-2 transition-colors ${error ? 'text-error font-semibold' : 'text-base-content/60'}`}>
-              {error ? 'Incorrect passcode. Try again.' : 'Enter your 4-digit passcode to unlock'}
+            <h2 className="text-lg font-black tracking-wide text-base-content">NexusWealth Security</h2>
+            <p className={`text-xs mt-1 transition-colors ${error ? 'text-danger-app font-bold' : 'text-base-content/60'}`}>
+              {error ? 'Incorrect passcode. Try again.' : 'Enter 4-digit PIN to unlock'}
             </p>
           </div>
 
           {/* Passcode dots */}
-          <div className="flex gap-6 mt-8">
+          <div className="flex gap-5 mt-6">
             {[0, 1, 2, 3].map((index) => (
               <div
                 key={index}
-                className={`w-3.5 h-3.5 rounded-full border transition-all duration-150 ${
-                  index < code.length
-                    ? 'bg-error border-error scale-110 shadow-[0_0_8px_rgba(240,84,84,0.6)]'
-                    : 'border-base-content/20 bg-transparent'
+                className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                  error 
+                    ? 'bg-danger-app border-danger-app scale-110 shadow-[0_0_10px_rgba(239,68,68,0.7)]'
+                    : index < code.length
+                      ? 'bg-primary-app border-primary-app scale-110 shadow-[0_0_12px_rgba(6,182,212,0.7)]'
+                      : 'border-base-content/25 bg-transparent'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Keypad */}
-        <div className="w-full max-w-xs space-y-4 mb-4">
-          <div className="grid grid-cols-3 gap-4">
+        {/* 3x4 Tactile Keypad */}
+        <div className="w-full max-w-xs space-y-4 mb-2">
+          <div className="grid grid-cols-3 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <button
                 key={num}
+                type="button"
                 onClick={() => handleKeyPress(String(num))}
-                className="aspect-square rounded-full bg-base-200 hover:bg-base-100 active:bg-base-300 text-2xl font-bold transition-all active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
+                className="aspect-square rounded-2xl bg-base-100/80 hover:bg-base-100 active:bg-primary-app/20 active:scale-95 text-2xl font-black text-base-content transition-all border border-base-content/10 shadow-sm flex items-center justify-center"
               >
                 {num}
               </button>
             ))}
+
+            {/* Key 10: Biometric Trigger */}
             <button
-              onClick={onLogout}
-              className="aspect-square rounded-full hover:bg-error/10 text-error font-semibold text-xs transition-colors flex flex-col items-center justify-center gap-1 border border-transparent"
+              type="button"
+              onClick={handleBiometricPrompt}
+              className="aspect-square rounded-2xl bg-secondary-app/10 hover:bg-secondary-app/20 border border-secondary-app/30 text-secondary-app transition-all active:scale-90 flex flex-col items-center justify-center shadow-sm"
+              title="Biometric Unlock"
             >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <Fingerprint className="w-7 h-7" />
             </button>
+
+            {/* Key 11: 0 */}
             <button
+              type="button"
               onClick={() => handleKeyPress('0')}
-              className="aspect-square rounded-full bg-base-200 hover:bg-base-100 active:bg-base-300 text-2xl font-bold transition-all active:scale-95 duration-100 flex items-center justify-center border border-base-content/10"
+              className="aspect-square rounded-2xl bg-base-100/80 hover:bg-base-100 active:bg-primary-app/20 active:scale-95 text-2xl font-black text-base-content transition-all border border-base-content/10 shadow-sm flex items-center justify-center"
             >
               0
             </button>
+
+            {/* Key 12: Delete */}
             <button
+              type="button"
               onClick={handleDelete}
-              className="aspect-square rounded-full hover:bg-base-100 active:bg-base-200 text-base-content/60 active:scale-95 transition-colors flex items-center justify-center border border-transparent"
+              className="aspect-square rounded-2xl bg-base-100/50 hover:bg-base-100 active:scale-90 text-base-content/60 transition-all flex items-center justify-center border border-base-content/5"
+              title="Delete Digit"
             >
               <Delete className="w-6 h-6" />
             </button>
           </div>
         </div>
+
+        {/* Bottom Subdued Logout */}
+        <button
+          type="button"
+          onClick={onLogout}
+          className="text-xs font-bold text-danger-app hover:underline flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Switch Account / Sign Out</span>
+        </button>
       </div>
     </div>
   );

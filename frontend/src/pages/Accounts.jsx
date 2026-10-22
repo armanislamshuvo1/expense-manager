@@ -218,79 +218,87 @@ export default function Accounts() {
           Object.keys(grouped).map((groupName) => {
             if (grouped[groupName].length === 0) return null;
             return (
-              <div key={groupName} className="card bg-base-100 shadow-md interactive-scale">
-                <div className="card-body p-4">
-                  <h2 className="text-xs font-bold uppercase opacity-60 mb-2">{groupName}</h2>
-                  <div className="divide-y divide-base-200">
-                    {grouped[groupName].map((acc) => {
-                      const isCC = acc.type === 'CREDIT_CARD';
-                      const limit = acc.creditLimit || 0;
-                      const available = isCC && limit ? Math.max(0, limit - acc.balance) : 0;
-                      const utilPercent = isCC && limit ? Math.min(100, Math.round((acc.balance / limit) * 100)) : 0;
+              <div key={groupName} className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60">{groupName}</h2>
+                  <span className="text-[10px] font-semibold text-base-content/40">{grouped[groupName].length} account{grouped[groupName].length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {grouped[groupName].map((acc) => {
+                    const isCC = acc.type === 'CREDIT_CARD';
+                    const limit = acc.creditLimit || 0;
+                    const available = isCC && limit ? Math.max(0, limit - acc.balance) : 0;
+                    const utilPercent = isCC && limit ? Math.min(100, Math.round((acc.balance / limit) * 100)) : 0;
 
-                      return (
-                        <div 
-                          key={acc._id} 
-                          onClick={() => openAccountModal(acc)}
-                          className="py-3 px-2 rounded-xl hover:bg-base-200/50 cursor-pointer transition-colors space-y-2"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-sm hover:underline flex items-center gap-1.5">
-                                {acc.name}
-                                {isCC && <span className="badge badge-xs badge-outline badge-secondary">CC</span>}
-                              </span>
-                              <span className="text-[10px] opacity-50 uppercase">{acc.type.replace('_', ' ')}</span>
+                    return (
+                      <div 
+                        key={acc._id} 
+                        onClick={() => openAccountModal(acc)}
+                        className={`p-4 rounded-3xl cursor-pointer transition-all active:scale-[0.98] shadow-lg border relative overflow-hidden ${
+                          isCC 
+                            ? 'bg-gradient-to-br from-base-200 to-base-300 border-secondary-app/30 hover:border-secondary-app' 
+                            : 'bg-gradient-to-br from-base-200 to-base-300 border-primary-app/30 hover:border-primary-app'
+                        }`}
+                      >
+                        {/* Card Top: Chip + Masked Number + Type Badge */}
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-5 rounded-md bg-amber-400/20 border border-amber-400/40 flex items-center justify-center">
+                              <div className="w-3.5 h-2.5 border border-amber-400/30 rounded-sm"></div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <span className={`font-bold text-sm block ${isCC ? 'text-error' : ''}`}>
-                                  {acc.currency} {acc.balance.toFixed(2)}
-                                </span>
-                                {isCC && (
-                                  <span className="text-[10px] opacity-60 block">
-                                    Owed / Bal.
-                                  </span>
-                                )}
-                              </div>
-
-                            </div>
+                            <span className="text-[10px] text-base-content/40 tracking-widest font-mono">
+                              •••• {acc.name.slice(0, 4)}
+                            </span>
                           </div>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                            isCC 
+                              ? 'bg-secondary-app/15 text-secondary-app border-secondary-app/30' 
+                              : 'bg-primary-app/15 text-primary-app border-primary-app/30'
+                          }`}>
+                            {acc.type.replace('_', ' ')}
+                          </span>
+                        </div>
 
-                          {/* Credit Card Specific Progress & Limit Details */}
+                        {/* Card Middle: Account Name & Subtitle */}
+                        <div className="mb-2">
+                          <h3 className="font-extrabold text-sm text-base-content tracking-wide">{acc.name}</h3>
+                          <span className="text-[10px] text-base-content/50 uppercase font-semibold">
+                            {isCC ? 'Credit Account' : 'Available Balance'}
+                          </span>
+                        </div>
+
+                        {/* Card Bottom: Hero Balance & CC Details */}
+                        <div className="flex items-baseline justify-between pt-1">
+                          <span className={`text-xl font-black ${isCC ? 'text-danger-app' : 'text-primary-app'}`}>
+                            {acc.currency} {acc.balance.toFixed(2)}
+                          </span>
                           {isCC && limit > 0 && (
-                            <div className="bg-base-200/80 p-2 rounded-xl space-y-1.5 border border-base-content/5">
-                              <div className="flex justify-between items-center text-[10px] font-semibold">
-                                <span className="text-base-content/70">
-                                  Limit: {acc.currency} {limit.toFixed(2)}
-                                </span>
-                                <span className="text-success font-bold">
-                                  Available: {acc.currency} {available.toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="w-full bg-base-300 rounded-full h-1.5 overflow-hidden">
-                                <div 
-                                  className={`h-full transition-all duration-300 ${
-                                    utilPercent > 70 ? 'bg-error' : utilPercent > 30 ? 'bg-warning' : 'bg-success'
-                                  }`} 
-                                  style={{ width: `${utilPercent}%` }}
-                                ></div>
-                              </div>
-                              <div className="flex justify-between text-[9px] opacity-60">
-                                <span>Util: {utilPercent}%</span>
-                                {(acc.statementDate || acc.dueDate) && (
-                                  <span>
-                                    {acc.statementDate ? `Stmt: Day ${acc.statementDate}` : ''} 
-                                    {acc.dueDate ? ` | Due: Day ${acc.dueDate}` : ''}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                            <span className="text-[10px] text-base-content/60 font-semibold">
+                              Limit: {acc.currency} {limit.toFixed(0)}
+                            </span>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {/* Credit Card Specific Progress & Limit Details */}
+                        {isCC && limit > 0 && (
+                          <div className="mt-3 space-y-1">
+                            <div className="w-full bg-base-300/80 rounded-full h-1.5 overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  utilPercent > 70 ? 'bg-danger-app' : utilPercent > 30 ? 'bg-secondary-app' : 'bg-primary-app'
+                                }`} 
+                                style={{ width: `${utilPercent}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-base-content/50 font-semibold">
+                              <span>{utilPercent}% Used</span>
+                              <span>{acc.currency} {available.toFixed(2)} avail</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

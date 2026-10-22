@@ -223,7 +223,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => document.getElementById('reset_password_modal').showModal()}
-                  className="text-xs text-error font-bold hover:underline"
+                  className="text-xs text-secondary-app font-bold hover:underline"
                 >
                   Forgot Password?
                 </button>
@@ -248,7 +248,7 @@ export default function Login() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn btn-error btn-block mt-4 text-white">
+            <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl bg-primary-app text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-primary-app/25 hover:bg-cyan-400 active:scale-[0.98] transition-all cursor-pointer mt-4">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
@@ -278,7 +278,7 @@ export default function Login() {
           )}
 
           <div className="divider text-xs text-base-content/40">New User?</div>
-          <Link to="/register" className="btn btn-outline btn-block btn-sm">
+          <Link to="/register" className="w-full py-3 rounded-2xl bg-secondary-app/15 border border-secondary-app/30 text-secondary-app font-bold text-xs uppercase tracking-wider hover:bg-secondary-app/25 active:scale-[0.98] transition-all flex items-center justify-center">
             Create Premium Account
           </Link>
         </div>
@@ -295,7 +295,7 @@ export default function Login() {
         }}
       >
         <div className="modal-box bg-base-100 border border-base-200 text-base-content">
-          <h3 className="font-bold text-lg mb-4 text-error">Recover Account Credentials</h3>
+          <h3 className="font-bold text-lg mb-4 text-primary-app">Recover Account Credentials</h3>
 
           {resetError && <div className="alert alert-error text-xs p-2 mb-3">{resetError}</div>}
           {resetMessage && <div className="alert alert-info text-xs p-2 mb-3">{resetMessage}</div>}

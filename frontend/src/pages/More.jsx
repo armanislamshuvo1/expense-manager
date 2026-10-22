@@ -199,7 +199,7 @@ export default function More() {
           <ArrowLeft className="w-6 h-6" />
         </button>
         <div>
-          <h1 className="text-lg font-bold">Configuration</h1>
+          <h1 className="text-lg font-bold">Settings & Security</h1>
           <p className="text-xs text-base-content/50">Settings and Customizations</p>
         </div>
       </div>
@@ -211,8 +211,8 @@ export default function More() {
           className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg cursor-pointer hover:bg-base-200 transition-colors"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-error/20 border border-error/40 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg font-bold text-error">
+            <div className="w-12 h-12 rounded-2xl bg-primary-app/20 border border-primary-app/40 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-black text-primary-app">
                 {(user?.name || '?').charAt(0).toUpperCase()}
               </span>
             </div>
@@ -245,7 +245,7 @@ export default function More() {
         {/* AI Features List */}
         <div>
           <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-error" /> AI Assistance
+            <Sparkles className="w-3.5 h-3.5 text-secondary-app" /> AI Assistance
           </h2>
           <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
             <button

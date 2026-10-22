@@ -9,7 +9,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
       onChange(!checked);
     }}
     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none ${
-      checked ? 'bg-error' : 'bg-base-content/20'
+      checked ? 'bg-primary-app' : 'bg-base-content/20'
     }`}
   >
     <div
@@ -78,7 +78,7 @@ export default function SettingsSection({
           >
             <span className="text-sm font-medium text-base-content/80">Budget Setting</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">
+              <span className="text-xs font-semibold text-primary-app">
                 {settings.budgetLimit > 0 ? `${baseCurrency} ${settings.budgetLimit}` : 'OFF'}
               </span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
@@ -91,7 +91,7 @@ export default function SettingsSection({
           >
             <span className="text-sm font-medium text-base-content/80">Repeat Setting</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.repeatDefault || 'None'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.repeatDefault || 'None'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -118,7 +118,7 @@ export default function SettingsSection({
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
           <div className="flex justify-between items-center p-4">
             <span>Main Currency Setting</span>
-            <span className="text-xs font-bold text-error">{baseCurrency}</span>
+            <span className="text-xs font-semibold text-primary-app">{baseCurrency}</span>
           </div>
           
           <button
@@ -127,7 +127,7 @@ export default function SettingsSection({
           >
             <span>Sub Currency Setting</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.subCurrency || 'USD'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.subCurrency || 'USD'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -138,7 +138,7 @@ export default function SettingsSection({
           >
             <span>Start Screen (Daily/Calendar)</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.startScreen || 'Daily'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.startScreen || 'Daily'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -149,7 +149,7 @@ export default function SettingsSection({
           >
             <span>Monthly Start Date</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">Every {settings.monthlyStartDate || 1}</span>
+              <span className="text-xs font-semibold text-primary-app">Every {settings.monthlyStartDate || 1}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -160,7 +160,7 @@ export default function SettingsSection({
           >
             <span>Weekly Start Day</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.weeklyStartDay || 'Sunday'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.weeklyStartDay || 'Sunday'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -179,7 +179,7 @@ export default function SettingsSection({
           >
             <span>Swipe</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.swipeAction || 'To Change Date'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.swipeAction || 'To Change Date'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -190,7 +190,7 @@ export default function SettingsSection({
           >
             <span>Income-Expenses Color Setting</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.colorSetting || 'Set. A'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.colorSetting || 'Set. A'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -202,7 +202,7 @@ export default function SettingsSection({
           >
             <span>Time Input</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{settings.timeInputSetting || 'Input Only, Desc.'}</span>
+              <span className="text-xs font-semibold text-primary-app">{settings.timeInputSetting || 'Input Only, Desc.'}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
@@ -238,7 +238,7 @@ export default function SettingsSection({
               Theme
             </span>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-error">{themeLabel}</span>
+              <span className="text-xs font-semibold text-primary-app">{themeLabel}</span>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function SettingsSection({
           >
             <span>Passcode</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-error">
+              <span className="text-xs font-semibold text-primary-app">
                 {settings.passcodeEnabled ? 'ON' : 'OFF'}
               </span>
               <ToggleSwitch 
@@ -295,7 +295,7 @@ export default function SettingsSection({
         <div className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg space-y-3 text-sm">
           <div className="flex justify-between items-center">
             <span className="font-medium text-base-content/80 flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-error" /> Enable Public Link
+              <Share2 className="w-4 h-4 text-secondary-app" /> Enable Public Link
             </span>
             <ToggleSwitch checked={!!user?.isSharingEnabled} onChange={handleToggleSharing} />
           </div>
@@ -326,7 +326,7 @@ export default function SettingsSection({
               <button
                 type="button"
                 onClick={handleRegenerateShareToken}
-                className="btn btn-xs btn-outline btn-error w-full mt-1 cursor-pointer"
+                className="btn btn-xs btn-outline border-secondary-app text-secondary-app hover:bg-secondary-app hover:text-white w-full mt-1 cursor-pointer"
               >
                 Regenerate Share Link
               </button>
@@ -338,7 +338,7 @@ export default function SettingsSection({
       {/* Data & Device Management */}
       <div>
         <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1 flex items-center gap-1.5">
-          <Database className="w-3.5 h-3.5 text-error" /> Data & Device Governance
+          <Database className="w-3.5 h-3.5 text-primary-app" /> Data & Device Governance
         </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
           <button
@@ -348,7 +348,7 @@ export default function SettingsSection({
           >
             <div>
               <span className="text-sm font-medium text-base-content/80 flex items-center gap-2">
-                <Download className="w-4 h-4 text-error" /> Device Import, Export & PDF Reports
+                <Download className="w-4 h-4 text-primary-app" /> Device Import, Export & PDF Reports
               </span>
               <span className="text-[10px] text-base-content/50 block pl-6">Backup, restore, XLSX, PDF reports & Money Manager files</span>
             </div>
@@ -375,8 +375,8 @@ export default function SettingsSection({
             className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
           >
             <div>
-              <span className="text-sm font-medium text-error flex items-center gap-2">
-                <UserX className="w-4 h-4 text-error" /> Delete Account
+              <span className="text-sm font-medium text-danger-app flex items-center gap-2">
+                <UserX className="w-4 h-4 text-danger-app" /> Delete Account
               </span>
               <span className="text-[10px] text-base-content/50 block pl-6">Soft delete user profile & restrict login access</span>
             </div>
@@ -403,14 +403,14 @@ export default function SettingsSection({
 
       {/* Admin Controls */}
       {user?.role === 'ADMIN' && (
-        <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-error/20 flex justify-between items-center">
+        <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-secondary-app/20 flex justify-between items-center">
           <div>
             <h3 className="font-bold text-sm text-error flex items-center gap-2">
               <ShieldAlert className="w-4 h-4" /> Admin Controls
             </h3>
             <p className="text-[10px] text-base-content/50">Manage locks & roles</p>
           </div>
-          <button onClick={() => navigate('/admin')} className="btn btn-xs bg-error hover:bg-error/80 text-white border-none">
+          <button onClick={() => navigate('/admin')} className="btn btn-xs bg-secondary-app hover:bg-indigo-600 text-white border-none">
             Portal
           </button>
         </div>

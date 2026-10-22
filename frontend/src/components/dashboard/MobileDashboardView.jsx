@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Settings, Plus, Wallet, Sparkles, Cloud, CloudOff, RefreshCw, CloudAlert, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Eye, EyeOff, Settings, Plus, Wallet, Sparkles, Cloud, CloudOff, RefreshCw, CloudAlert, PieChart, TrendingUp } from 'lucide-react';
 import PeriodHeader from './PeriodHeader';
 import CategoryChart from './CategoryChart';
 import DashboardAiConsole from './DashboardAiConsole';
@@ -21,8 +21,8 @@ export default function MobileDashboardView({
   handlePrevPeriod,
   handleNextPeriod,
   isDark,
-  categoryData,
-  totalForActiveTab,
+  categoryData = [],
+  totalForActiveTab = 0,
   ACCENT_SHADES,
   handleCategoryClick,
   setReceiptModalOpen,
@@ -35,18 +35,34 @@ export default function MobileDashboardView({
   isRefreshingInsights
 }) {
   const [hideBalance, setHideBalance] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Calculate Net Worth: Assets - Liabilities
-  const netWorth = accounts.reduce((sum, acc) => {
-    if (acc.type === 'CREDIT_CARD') {
-      return sum - (Number(acc.balance) || 0);
-    }
-    return sum + (Number(acc.balance) || 0);
-  }, 0);
+  const netWorth = useMemo(() => {
+    return accounts.reduce((sum, acc) => {
+      if (acc.type === 'CREDIT_CARD') {
+        return sum - (Number(acc.balance) || 0);
+      }
+      return sum + (Number(acc.balance) || 0);
+    }, 0);
+  }, [accounts]);
 
-  // Latest 5 transactions
-  const recentTransactions = transactions.slice(0, 5);
+  // Compute top spending categories
+  const sortedCategories = useMemo(() => {
+    const list = [...categoryData].sort((a, b) => b.value - a.value);
+    const total = list.reduce((sum, c) => sum + c.value, 0);
+    return list.map(c => ({
+      ...c,
+      percent: total > 0 ? Math.round((c.value / total) * 100) : 0
+    }));
+  }, [categoryData]);
+
+  // Budget pacing calculation
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysRemaining = Math.max(1, daysInMonth - dayOfMonth);
+  const netSavings = totalIncome - totalExpense;
+  const safeDailySpend = netSavings > 0 ? (netSavings / daysRemaining) : 0;
 
   const renderSyncBadge = () => {
     if (syncStatus === 'offline') {
@@ -192,114 +208,110 @@ export default function MobileDashboardView({
         </button>
       </div>
 
-      {/* 4. Recent Transactions Feed */}
-      <div className="space-y-2 pt-1">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="text-xs font-bold text-base-content/70 tracking-wider uppercase">Recent Activity</h3>
-          <button 
-            onClick={() => navigate('/transactions')} 
-            className="text-xs text-secondary-app font-semibold hover:underline flex items-center gap-0.5"
-          >
-            <span>View All</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+      {/* 4. Month / Period Selector Bar */}
+      <div>
+        <PeriodHeader 
+          periodType={periodType}
+          setPeriodType={setPeriodType}
+          formatPeriodLabel={formatPeriodLabel}
+          handlePrevPeriod={handlePrevPeriod}
+          handleNextPeriod={handleNextPeriod}
+          isDark={isDark}
+        />
+      </div>
+
+      {/* 5. Safe-to-Spend & Budget Gauge Card */}
+      <div className="rounded-2xl p-4 bg-base-200/80 border border-base-content/10 space-y-2">
+        <div className="flex justify-between items-center text-xs">
+          <div className="flex items-center gap-1.5 text-base-content/70 font-bold uppercase tracking-wider text-[10px]">
+            <TrendingUp className="w-3.5 h-3.5 text-primary-app" />
+            <span>Daily Safe-To-Spend</span>
+          </div>
+          <span className="text-[10px] text-base-content/50 font-semibold">{daysRemaining} days left</span>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-xl font-black text-primary-app">
+            {baseCurrency} {safeDailySpend.toFixed(2)} <span className="text-xs font-normal text-base-content/60">/ day</span>
+          </span>
+          <span className="text-xs font-bold text-secondary-app">
+            {netSavings >= 0 ? `+${baseCurrency} ${netSavings.toFixed(0)} saved` : `-${baseCurrency} ${Math.abs(netSavings).toFixed(0)} deficit`}
+          </span>
+        </div>
+      </div>
+
+      {/* 6. Primary Category Breakdown Section (Replacing duplicate transactions) */}
+      <div className="rounded-3xl p-5 bg-base-200/90 border border-base-content/10 shadow-lg space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-secondary-app" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-base-content">
+              Category Breakdown
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold text-base-content/50 uppercase">
+            Total {baseCurrency} {totalExpense.toFixed(2)}
+          </span>
         </div>
 
-        {recentTransactions.length === 0 ? (
-          <div className="text-center py-6 bg-base-200/50 rounded-2xl border border-base-content/5 text-xs text-base-content/50">
-            No recent activity recorded. Tap "+ Add Log" above.
-          </div>
-        ) : (
-          recentTransactions.map((tx) => {
-            const isIncome = tx.type === 'INCOME';
-            const isExpense = tx.type === 'EXPENSE';
-            const catName = tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || tx.categoryName || 'General');
-            const accName = tx.accountId?.name || 'Account';
-            const txTime = new Date(tx.date).toLocaleDateString([], { month: 'short', day: 'numeric' });
+        {/* Visual Category Donut */}
+        <CategoryChart 
+          categoryData={categoryData}
+          totalForActiveTab={totalForActiveTab || totalExpense}
+          baseCurrency={baseCurrency}
+          isDark={isDark}
+          ACCENT_SHADES={ACCENT_SHADES}
+          handleCategoryClick={handleCategoryClick}
+        />
+
+        {/* Top 4 Category Progress Bars */}
+        <div className="space-y-2.5 pt-2 border-t border-base-content/10">
+          {sortedCategories.slice(0, 4).map((cat, idx) => {
+            const barColors = [
+              'bg-primary-app',
+              'bg-secondary-app',
+              'bg-cyan-500',
+              'bg-indigo-400'
+            ];
+            const colorClass = barColors[idx % barColors.length];
 
             return (
               <div 
-                key={tx._id || tx.clientTxId}
-                onClick={() => navigate('/transactions', { state: { editTx: tx } })}
-                className="flex items-center justify-between p-3 rounded-2xl bg-base-200/70 border border-base-content/10 hover:border-primary-app/40 active:scale-[0.99] transition-all cursor-pointer shadow-sm"
+                key={cat.name} 
+                onClick={() => handleCategoryClick && handleCategoryClick(cat.name)}
+                className="space-y-1 cursor-pointer hover:opacity-80 active:scale-[0.99] transition-all"
               >
-                <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
-                    isIncome 
-                      ? 'bg-primary-app/15 text-primary-app border border-primary-app/30' 
-                      : isExpense 
-                        ? 'bg-danger-app/15 text-danger-app border border-danger-app/30' 
-                        : 'bg-secondary-app/15 text-secondary-app border border-secondary-app/30'
-                  }`}>
-                    {isIncome ? 'IN' : isExpense ? 'OUT' : '⇄'}
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-base-content truncate">
-                      {tx.note || catName}
-                    </h4>
-                    <p className="text-[11px] text-base-content/50 truncate">
-                      {catName} • {accName}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className={`text-xs font-black ${
-                    isIncome ? 'text-primary-app' : isExpense ? 'text-danger-app' : 'text-secondary-app'
-                  }`}>
-                    {isIncome ? '+' : isExpense ? '-' : '⇄'}{tx.currency || baseCurrency} {(Number(tx.amount) || 0).toFixed(2)}
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-base-content truncate pr-2">{cat.name}</span>
+                  <span className="font-bold text-base-content shrink-0">
+                    {baseCurrency} {Number(cat.value).toFixed(2)} ({cat.percent}%)
                   </span>
-                  <p className="text-[10px] text-base-content/40">{txTime}</p>
+                </div>
+                <div className="w-full bg-base-300 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${colorClass}`} 
+                    style={{ width: `${Math.min(100, cat.percent)}%` }}
+                  />
                 </div>
               </div>
             );
-          })
-        )}
+          })}
+        </div>
       </div>
 
-      {/* 5. Collapsible Period Analytics & AI Tools */}
-      <div className="pt-2 border-t border-base-content/10">
-        <button
-          onClick={() => setShowAnalytics(!showAnalytics)}
-          className="w-full py-2.5 px-3 rounded-xl bg-base-200/60 border border-base-content/10 flex items-center justify-between text-xs font-bold text-base-content/70 hover:text-base-content transition-all"
-        >
-          <span>Analytics & AI Scanner</span>
-          <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${showAnalytics ? 'rotate-90' : ''}`} />
-        </button>
-
-        {showAnalytics && (
-          <div className="space-y-4 pt-3">
-            <PeriodHeader 
-              periodType={periodType}
-              setPeriodType={setPeriodType}
-              formatPeriodLabel={formatPeriodLabel}
-              handlePrevPeriod={handlePrevPeriod}
-              handleNextPeriod={handleNextPeriod}
-              isDark={isDark}
-            />
-
-            <CategoryChart 
-              categoryData={categoryData}
-              totalForActiveTab={totalForActiveTab}
-              baseCurrency={baseCurrency}
-              isDark={isDark}
-              ACCENT_SHADES={ACCENT_SHADES}
-              handleCategoryClick={handleCategoryClick}
-            />
-
-            <DashboardAiConsole
-              isDark={isDark}
-              navigate={navigate}
-              setReceiptModalOpen={setReceiptModalOpen}
-              handleQuickLogSubmit={handleQuickLogSubmit}
-              quickLogText={quickLogText}
-              setQuickLogText={setQuickLogText}
-              parsing={parsing}
-              aiInsights={aiInsights}
-              onRefreshInsights={onRefreshInsights}
-              isRefreshingInsights={isRefreshingInsights}
-            />
-          </div>
-        )}
+      {/* 7. AI Quick Tools & Receipt Scanner */}
+      <div className="pt-1">
+        <DashboardAiConsole
+          isDark={isDark}
+          navigate={navigate}
+          setReceiptModalOpen={setReceiptModalOpen}
+          handleQuickLogSubmit={handleQuickLogSubmit}
+          quickLogText={quickLogText}
+          setQuickLogText={setQuickLogText}
+          parsing={parsing}
+          aiInsights={aiInsights}
+          onRefreshInsights={onRefreshInsights}
+          isRefreshingInsights={isRefreshingInsights}
+        />
       </div>
     </div>
   );
