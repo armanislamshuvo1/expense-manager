@@ -46,7 +46,7 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
       return (
         <div 
           onClick={triggerSync}
-          className="flex items-center gap-1 text-[9px] font-bold text-error bg-error/10 border border-error/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-error/20 transition-all select-none"
+          className="flex items-center gap-1 text-[9px] font-bold text-danger-app bg-danger-app/10 border border-danger-app/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-danger-app/20 transition-all select-none"
           title="Sync error, click to retry"
         >
           <CloudAlert className="w-2.5 h-2.5" />
@@ -57,7 +57,7 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
     return (
       <div 
         onClick={triggerSync}
-        className="flex items-center gap-1 text-[9px] font-bold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-success/20 transition-all select-none"
+        className="flex items-center gap-1 text-[9px] font-bold text-primary-app bg-primary-app/10 border border-primary-app/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-primary-app/20 transition-all select-none"
         title="All changes synced"
       >
         <Cloud className="w-2.5 h-2.5" />
@@ -70,15 +70,15 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
     <aside className="w-full lg:w-72 flex flex-col gap-6">
       {/* Logo / Title Panel */}
       <div className={`backdrop-blur-xl border rounded-3xl p-5 flex items-center justify-between shadow-xl transition-all duration-300 ${
-        isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+        isDark ? 'bg-base-200/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
       }`}>
         <div 
           onClick={() => !isPwaMode() && navigate('/')}
           className={`flex items-center gap-3 ${!isPwaMode() ? 'cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all' : ''}`}
           title={!isPwaMode() ? "Go to Landing Page" : undefined}
         >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-error to-error/60 flex items-center justify-center shadow-lg shadow-error/20">
-            <span className="text-xl font-black text-white">N</span>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary-app to-cyan-400 flex items-center justify-center shadow-lg shadow-primary-app/25">
+            <span className="text-xl font-black text-slate-950">N</span>
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -91,14 +91,14 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
             </div>
           </div>
         </div>
-        <button onClick={logout} className="btn btn-xs btn-ghost text-error/80 hover:text-error hover:bg-error/10 rounded-lg shrink-0">
+        <button onClick={logout} className="btn btn-xs btn-ghost text-danger-app hover:bg-danger-app/10 rounded-lg shrink-0 font-bold">
           Sign Out
         </button>
       </div>
 
       {/* Connected Accounts Card */}
       <div className={`backdrop-blur-xl border rounded-3xl p-5 shadow-xl transition-all duration-300 ${
-        isDark ? 'bg-[#0f172a]/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
+        isDark ? 'bg-base-200/60 border-white/5' : 'bg-white border-slate-200/80 shadow-md'
       }`}>
         <div 
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -109,7 +109,7 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
             <h3 className={`text-xs font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-700'}`}>Total Assets Summary</h3>
           </div>
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-error" />
+            <Wallet className="w-4 h-4 text-secondary-app" />
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`} />
           </div>
         </div>
@@ -123,11 +123,11 @@ export default function Sidebar({ accounts, isDark, logout, navigate, isPwaMode 
               onClick={() => openAccountModal(acc)}
               className={`flex justify-between items-center p-3 rounded-2xl border transition-all cursor-pointer ${
               isDark 
-                ? 'bg-[#1e293b]/40 border-white/5 hover:bg-[#1e293b]/70' 
+                ? 'bg-base-300/40 border-white/5 hover:bg-base-300/80' 
                 : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
             }`}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-error font-bold text-xs">
+                <div className="w-8 h-8 rounded-xl bg-secondary-app/15 border border-secondary-app/30 flex items-center justify-center text-secondary-app font-bold text-xs">
                   {acc.name.charAt(0).toUpperCase()}
                 </div>
                 <div>

@@ -19,6 +19,24 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  --app-primary: #06b6d4;
+  --app-secondary: #6366f1;
+  --app-danger: #ef4444;
+}
+
+.bg-primary-app { background-color: var(--app-primary); }
+.text-primary-app { color: var(--app-primary); }
+.border-primary-app { border-color: var(--app-primary); }
+
+.bg-secondary-app { background-color: var(--app-secondary); }
+.text-secondary-app { color: var(--app-secondary); }
+.border-secondary-app { border-color: var(--app-secondary); }
+
+.bg-danger-app { background-color: var(--app-danger); }
+.text-danger-app { color: var(--app-danger); }
+.border-danger-app { border-color: var(--app-danger); }
+
 html, body {
   margin: 0;
   padding: 0;

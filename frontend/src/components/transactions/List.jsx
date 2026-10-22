@@ -94,7 +94,7 @@ const TransactionRow = React.memo(({
         </div>
         <div className="text-right shrink-0">
           <div className={`font-bold text-sm ${
-            tx.type === 'INCOME' ? 'text-primary' : tx.type === 'EXPENSE' ? 'text-error' : 'text-warning'
+            tx.type === 'INCOME' ? 'text-primary-app' : tx.type === 'EXPENSE' ? 'text-danger-app' : 'text-secondary-app'
           }`}>
             {tx.type === 'INCOME' ? '+' : tx.type === 'EXPENSE' ? '-' : '⇄'} {tx.currency} {tx.amount.toFixed(2)}
           </div>
@@ -115,9 +115,9 @@ const TransactionRow = React.memo(({
           e.stopPropagation();
           handleDeleteTransaction(tx._id);
         }}
-        className="w-8 h-8 rounded-xl bg-error/10 border border-error/20 text-error hover:bg-error/20 flex items-center justify-center shrink-0 z-20 cursor-pointer active:scale-90 transition-all"
+        className="w-8 h-8 rounded-xl bg-danger-app/10 border border-danger-app/25 text-danger-app hover:bg-danger-app/20 flex items-center justify-center shrink-0 z-20 cursor-pointer active:scale-90 transition-all"
       >
-        <Trash2 className="w-4 h-4 text-error" />
+        <Trash2 className="w-4 h-4 text-danger-app" />
       </button>
     </div>
   );

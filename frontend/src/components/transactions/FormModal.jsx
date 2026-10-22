@@ -364,7 +364,7 @@ export default function FormModal({
                     }
                   }}
                   disabled={loading}
-                  className="btn btn-ghost text-error flex-1 rounded-none py-4 h-auto hover:bg-error hover:text-white font-bold border-r border-base-content/10"
+                  className="btn btn-ghost text-danger-app flex-1 rounded-none py-4 h-auto hover:bg-danger-app hover:text-white font-bold border-r border-base-content/10"
                 >
                   Delete
                 </button>
@@ -379,13 +379,7 @@ export default function FormModal({
               <button
                 type="submit"
                 disabled={loading}
-                className={`btn border-none flex-1 rounded-none py-4 h-auto font-black transition-colors ${
-                  type === 'INCOME' 
-                    ? 'bg-success hover:bg-success/90 text-white' 
-                    : type === 'EXPENSE'
-                    ? 'bg-error hover:bg-error/90 text-white'
-                    : 'bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-200 dark:text-slate-900'
-                }`}
+                className="btn border-none flex-1 rounded-none py-4 h-auto font-black bg-primary-app hover:bg-cyan-400 text-slate-950 transition-colors"
               >
                 {editMode ? 'Save Changes' : 'Save'}
               </button>

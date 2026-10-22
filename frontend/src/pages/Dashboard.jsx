@@ -442,7 +442,7 @@ export default function Dashboard() {
               onClick={() => setActiveTab('INCOME')}
               className={`py-3 text-xs md:text-sm font-black tracking-wider transition-all cursor-pointer ${
                 activeTab === 'INCOME' 
-                  ? 'text-primary' 
+                  ? 'text-primary-app' 
                   : 'text-base-content/50 hover:text-base-content'
               }`}
             >
@@ -452,7 +452,7 @@ export default function Dashboard() {
               onClick={() => setActiveTab('EXPENSE')}
               className={`py-3 text-xs md:text-sm font-black tracking-wider transition-all cursor-pointer ${
                 activeTab === 'EXPENSE' 
-                  ? 'text-error' 
+                  ? 'text-danger-app' 
                   : 'text-base-content/50 hover:text-base-content'
               }`}
             >
@@ -460,7 +460,9 @@ export default function Dashboard() {
             </button>
             
             <div 
-              className="absolute bottom-0 h-0.5 bg-error transition-all duration-300 w-1/2" 
+              className={`absolute bottom-0 h-0.5 transition-all duration-300 w-1/2 ${
+                activeTab === 'INCOME' ? 'bg-primary-app' : 'bg-danger-app'
+              }`} 
               style={{ left: activeTab === 'INCOME' ? '0%' : '50%' }}
             />
           </div>

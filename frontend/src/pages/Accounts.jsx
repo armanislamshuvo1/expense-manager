@@ -166,11 +166,11 @@ export default function Accounts() {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold">Accounts</h1>
-            <span className="badge badge-error gap-1 font-bold">LIVE</span>
+            <span className="badge bg-secondary-app/20 text-secondary-app border-secondary-app/30 gap-1 font-bold">LIVE</span>
           </div>
           <button
             onClick={() => document.getElementById('add_account_modal').showModal()}
-            className="btn btn-sm btn-error btn-outline rounded-xl flex items-center gap-1 text-xs font-bold"
+            className="btn btn-sm bg-primary-app text-slate-950 hover:bg-cyan-400 border-none rounded-xl flex items-center gap-1 text-xs font-bold shadow-md shadow-primary-app/20"
           >
             <Plus className="w-4 h-4" />
             Add Account
@@ -516,7 +516,7 @@ export default function Accounts() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-error text-white font-semibold shadow-lg shadow-error/25 hover:shadow-error/40 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl px-6 text-sm flex items-center gap-2"
+                className="btn bg-primary-app text-slate-950 font-black border-none hover:bg-cyan-400 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl px-6 text-sm flex items-center gap-2 shadow-lg shadow-primary-app/25"
               >
                 {loading ? (
                   <span className="loading loading-spinner loading-xs"></span>

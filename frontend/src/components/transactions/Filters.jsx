@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import { isNativeApp, isPwaMode } from '../../utils/pwaUtils';
 
 export default function Filters({
   searchQuery,
@@ -44,16 +45,18 @@ export default function Filters({
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn btn-xs ${showFilters ? 'btn-error text-white' : 'btn-outline'} flex items-center gap-1 cursor-pointer`}
+            className={`btn btn-xs ${showFilters ? 'bg-secondary-app text-white border-secondary-app' : 'btn-outline'} flex items-center gap-1 cursor-pointer`}
           >
             <SlidersHorizontal className="w-3 h-3" /> Filters
           </button>
-          <button
-            onClick={handleInstallApp}
-            className="btn btn-xs btn-outline cursor-pointer"
-          >
-            Install App
-          </button>
+          {!(isNativeApp() || isPwaMode()) && (
+            <button
+              onClick={handleInstallApp}
+              className="btn btn-xs btn-outline cursor-pointer"
+            >
+              Install App
+            </button>
+          )}
         </div>
       </div>
 
