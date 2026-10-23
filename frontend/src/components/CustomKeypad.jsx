@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Delete, Calculator, Check } from 'lucide-react';
+import { hapticTap, hapticSelection, hapticMedium } from '../utils/haptics';
 
 export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['MYR', 'USD'], activeCurrency, onCurrencyChange }) => {
   const [expression, setExpression] = useState(value || '');
@@ -9,9 +10,7 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
   }, [value]);
 
   const handleKeyPress = (char) => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    hapticTap();
     if (char === 'C') {
       setExpression('');
       onChange('');
@@ -66,7 +65,7 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
             key={curr}
             type="button"
             onClick={() => {
-              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+              hapticSelection();
               onCurrencyChange(curr);
             }}
             className={`btn btn-xs sm:btn-sm flex-1 font-semibold text-[10px] sm:text-xs py-1 px-2 border rounded-xl transition-all ${
@@ -115,7 +114,7 @@ export const CustomKeypad = ({ value, onChange, onDone, preferredCurrencies = ['
       <button
         type="button"
         onClick={() => {
-          if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+          hapticMedium();
           onDone();
         }}
         className="btn btn-error border-none btn-block mt-3 sm:mt-4 py-2 sm:py-3 h-auto font-bold text-sm sm:text-md flex gap-2 items-center justify-center rounded-xl shadow-lg shadow-error/20 transition-all active:scale-[0.98]"

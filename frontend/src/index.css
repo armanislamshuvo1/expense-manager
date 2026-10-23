@@ -20,6 +20,12 @@ body, html, input, button, select, textarea {
 
 * {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+img, a {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
 }
 
 :root {
@@ -76,9 +82,11 @@ input, textarea, [contenteditable="true"] {
 .interactive-scale {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
 }
-.interactive-scale:hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
+@media (hover: hover) {
+  .interactive-scale:hover {
+    transform: translateY(-1px) scale(1.01);
+    filter: brightness(1.05);
+  }
 }
 .interactive-scale:active {
   transform: translateY(0) scale(0.98);
@@ -117,6 +125,14 @@ dialog[open] {
   max-width: 100% !important;
   max-height: 100% !important;
   border: none !important;
+}
+
+@media (max-width: 639px) {
+  dialog[open] > .modal-box {
+    animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border-top-left-radius: 1.5rem !important;
+    border-top-right-radius: 1.5rem !important;
+  }
 }
 
 @media (min-width: 640px) {

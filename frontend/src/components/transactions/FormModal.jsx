@@ -7,6 +7,7 @@ import DateTimePickerModal from '../DateTimePickerModal';
 import AddCategoryModal from './AddCategoryModal';
 import AddAccountModal from './AddAccountModal';
 import { useFormModal } from '../../hooks/useFormModal';
+import { hapticSelection, hapticSuccess } from '../../utils/haptics';
 
 export default function FormModal({
   type,
@@ -83,17 +84,21 @@ export default function FormModal({
         id="add_transaction_modal"
         className="modal modal-bottom sm:modal-middle p-0 m-0 backdrop:bg-black/50 overflow-hidden"
         onClick={(e) => {
-          if (e.target === e.currentTarget && window.innerWidth >= 640) {
+          if (e.target === e.currentTarget) {
             e.currentTarget.close();
           }
         }}
       >
-        <div className={`modal-box w-full max-w-none h-full sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-none sm:rounded-2xl bg-base-300 border-0 sm:border sm:border-base-content/10 p-0 relative overflow-hidden text-base-content shadow-2xl transition-all duration-300 flex flex-col justify-between ${
+        <div className={`modal-box w-full max-w-none max-h-[92dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-3xl sm:rounded-2xl bg-base-300 border-t border-base-content/15 sm:border sm:border-base-content/10 p-0 relative overflow-hidden text-base-content shadow-2xl transition-all duration-300 flex flex-col justify-between ${
           showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[480px] sm:min-h-[540px]' : 'min-h-[350px]'
         }`}>
+          {/* Mobile Bottom Sheet Pill Indicator */}
+          <div className="w-10 h-1 bg-base-content/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0 sm:hidden" />
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              hapticSuccess();
               handleSaveTransaction(e);
             }}
             className="flex flex-col h-full min-h-0 flex-1 justify-between overflow-hidden"
@@ -105,7 +110,10 @@ export default function FormModal({
                   <button
                     key={t}
                     type="button"
-                    onClick={() => setType(t)}
+                    onClick={() => {
+                      hapticSelection();
+                      setType(t);
+                    }}
                     className={`py-3 text-xs font-bold tracking-wider transition-all duration-200 ${
                       type === t 
                         ? (t === 'INCOME' 

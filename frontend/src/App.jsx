@@ -67,9 +67,9 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <NativeMobileController />
       <AuthProvider>
         <ThemeProvider>
+          <NativeMobileController />
           <AccountModalProvider>
             <SyncStatusBanner />
             <Suspense fallback={<PageLoadingFallback />}>
