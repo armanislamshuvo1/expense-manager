@@ -54,7 +54,7 @@ export default function Filters({
               onClick={handleInstallApp}
               className="btn btn-xs btn-outline cursor-pointer"
             >
-              Install App
+              Install APK
             </button>
           )}
         </div>

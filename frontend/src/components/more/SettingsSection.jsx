@@ -1,4 +1,5 @@
 import React from 'react';
+import { isNativeApp, downloadApkDirect } from '../../utils/pwaUtils';
 import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database } from 'lucide-react';
 
 const ToggleSwitch = ({ checked, onChange }) => (
@@ -389,6 +390,22 @@ export default function SettingsSection({
       <div>
         <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Guides & Help</h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+          {!isNativeApp() && (
+            <button
+              type="button"
+              onClick={downloadApkDirect}
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <Download className="w-4 h-4 text-primary-app" />
+                <div>
+                  <span className="text-sm font-medium text-base-content/90 block">Download Android APK</span>
+                  <span className="text-[10px] text-base-content/50 block">Install the full native Android app</span>
+                </div>
+              </div>
+              <span className="badge badge-primary badge-sm font-bold text-[10px]">APK</span>
+            </button>
+          )}
           <button
             onClick={() => navigate('/how-it-works')}
             className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"

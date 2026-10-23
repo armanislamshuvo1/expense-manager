@@ -19,6 +19,7 @@ import {
   subscribeToSync
 } from '../utils/syncManager';
 import { useTransactionsForm } from '../hooks/useTransactionsForm';
+import { downloadApkDirect } from '../utils/pwaUtils';
 
 // Import modularized components
 import Filters from '../components/transactions/Filters';
@@ -359,37 +360,11 @@ export default function Transactions() {
 
   const total = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-    } else {
-      Swal.fire({
-        title: 'Install App',
-        text: 'To install this app on your device, click the install icon in your browser\'s address bar or select "Add to Home Screen" from the browser menu.',
-        icon: 'info',
-        confirmButtonColor: '#f05454',
-        background: '#1e1e24',
-        color: '#ffffff'
-      });
-    }
+  const handleInstallApp = () => {
+    downloadApkDirect();
   };
 
-  return (
+return (
     <div className="min-h-screen bg-base-300 pb-32 text-base-content font-sans">
       {/* Date / Month Header Row & Filters Bar */}
       <Filters

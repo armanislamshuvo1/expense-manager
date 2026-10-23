@@ -9,6 +9,25 @@ export function isNativeApp() {
 }
 
 /**
+ * Direct download URL for the latest compiled Android APK from GitHub Releases
+ */
+export const APK_DOWNLOAD_URL = 'https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk';
+
+/**
+ * Triggers a direct download of the native Android APK file
+ */
+export function downloadApkDirect() {
+  const link = document.createElement('a');
+  link.href = APK_DOWNLOAD_URL;
+  link.setAttribute('download', 'NexusWealth.apk');
+  link.setAttribute('target', '_blank');
+  link.setAttribute('rel', 'noopener noreferrer');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
  * Checks if the application is running in standalone mode (installed PWA or native APK)
  * or has query parameters suggesting PWA context.
  * @returns {boolean}
