@@ -273,6 +273,25 @@ export default function SettingsSection({
           </div>
 
           <div 
+            onClick={() => updateSettingKey('biometricEnabled', settings.biometricEnabled === false)}
+            className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
+          >
+            <div className="flex flex-col">
+              <span>Fingerprint Unlock</span>
+              <span className="text-[11px] text-base-content/50">Prompt biometric sensor when locked</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-primary-app">
+                {settings.biometricEnabled !== false ? 'ON' : 'OFF'}
+              </span>
+              <ToggleSwitch 
+                checked={settings.biometricEnabled !== false} 
+                onChange={(val) => updateSettingKey('biometricEnabled', val)} 
+              />
+            </div>
+          </div>
+
+          <div 
             onClick={() => updateSettingKey('alarmEnabled', !settings.alarmEnabled)}
             className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
           >

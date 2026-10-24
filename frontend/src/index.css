@@ -55,7 +55,6 @@ html, body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   overscroll-behavior-y: none;
-  padding-top: env(safe-area-inset-top, 0px);
 }
 
 input, textarea, [contenteditable="true"] {

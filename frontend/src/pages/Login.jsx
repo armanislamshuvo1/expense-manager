@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosPublic } from '../hooks/useApi';
-import { Lock, Mail, Key, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, Key, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import AccountDeletedModal from '../components/auth/AccountDeletedModal';
+import { isBiometricAvailable, getBiometricSession, verifyBiometrics, saveBiometricSession } from '../utils/biometricAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -28,6 +29,53 @@ export default function Login() {
   const api = useAxiosPublic();
   const navigate = useNavigate();
 
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricSession, setBiometricSession] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const initBiometrics = async () => {
+      const available = await isBiometricAvailable();
+      if (!isMounted) return;
+      setBiometricAvailable(available);
+      if (available) {
+        const session = await getBiometricSession();
+        if (isMounted && session?.email) {
+          setBiometricSession(session);
+        }
+      }
+    };
+    initBiometrics();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const verifyRes = await verifyBiometrics('Sign in to NexusWealth');
+      if (verifyRes.success) {
+        if (biometricSession?.token) {
+          const res = await api.get('/api/auth/me', {
+            headers: { Authorization: `Bearer ${biometricSession.token}` }
+          });
+          if (res.data?.success) {
+            login(biometricSession.token, res.data.data);
+            navigate('/dashboard');
+            return;
+          }
+        }
+        setError('Saved biometric session expired. Please sign in with password.');
+      } else if (verifyRes.error) {
+        setError(verifyRes.error);
+      }
+    } catch (_err) {
+      setError('Biometric sign-in was canceled or failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -36,6 +84,7 @@ export default function Login() {
     try {
       const response = await api.post('/api/auth/login', { email, password });
       if (response.data.success) {
+        saveBiometricSession(email, response.data.data.token);
         login(response.data.data.token, response.data.data.user);
         navigate('/dashboard');
       }
@@ -124,6 +173,7 @@ export default function Login() {
         name: 'Alex Mercer'
       });
       if (response.data.success) {
+        saveBiometricSession(email, response.data.data.token);
         login(response.data.data.token, response.data.data.user);
         navigate('/dashboard');
       }
@@ -251,6 +301,17 @@ export default function Login() {
             <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl bg-primary-app text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-primary-app/25 hover:bg-cyan-400 active:scale-[0.98] transition-all cursor-pointer mt-4">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+            {biometricAvailable && biometricSession?.email && (
+              <button
+                type="button"
+                onClick={handleBiometricLogin}
+                disabled={loading}
+                className="w-full py-3 rounded-2xl bg-secondary-app/10 border border-secondary-app/30 text-secondary-app font-bold text-xs uppercase tracking-wider hover:bg-secondary-app/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
+              >
+                <Fingerprint className="w-4 h-4" />
+                <span>Sign In with Fingerprint ({biometricSession.email})</span>
+              </button>
+            )}
           </form>
 
           <div className="divider text-xs text-base-content/40">Or Connect With</div>
@@ -338,7 +399,8 @@ export default function Login() {
                   Verify Email
                 </button>
               </div>
-            </form>
+
+          </form>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <p className="text-xs opacity-75">
@@ -387,7 +449,8 @@ export default function Login() {
                   Reset Password
                 </button>
               </div>
-            </form>
+
+          </form>
           )}
         </div>
       </dialog>

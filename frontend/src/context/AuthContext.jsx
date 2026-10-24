@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { publicApi } from '../utils/apiConfig';
 import { Lock, Delete, LogOut, Fingerprint } from 'lucide-react';
 import { setCategoriesCache, setAccountsCache, setCache, triggerSync } from '../utils/syncManager';
+import { verifyBiometrics, isBiometricAvailable } from '../utils/biometricAuth';
 
 const cacheInitialUserData = async (authToken, userData) => {
   if (!navigator.onLine || !authToken) return;
@@ -31,7 +32,7 @@ const cacheInitialUserData = async (authToken, userData) => {
 
 const AuthContext = createContext(null);
 
-function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
+function PasscodeLockScreen({ passcodeValue, biometricEnabled = true, onUnlock, onLogout }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
 
@@ -58,24 +59,27 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
     setError(false);
   };
 
-  const handleBiometricPrompt = async () => {
-    try {
-      if (window.PublicKeyCredential) {
-        // Trigger web credentials prompt
-        navigator.credentials?.get({
-          publicKey: {
-            challenge: new Uint8Array([1, 2, 3, 4, 5]),
-            timeout: 60000,
-            userVerification: 'preferred'
-          }
-        }).then(() => {
-          onUnlock();
-        }).catch(() => {
-          // If canceled or not set up, user continues with PIN
-        });
+  const [hasBiometric, setHasBiometric] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkBio = async () => {
+      const available = await isBiometricAvailable();
+      if (active && available) {
+        setHasBiometric(true);
+        if (biometricEnabled) {
+          triggerBiometrics();
+        }
       }
-    } catch (_err) {
-      // Graceful fallback
+    };
+    checkBio();
+    return () => { active = false; };
+  }, [biometricEnabled]);
+
+  const triggerBiometrics = async () => {
+    const res = await verifyBiometrics('Scan fingerprint to unlock NexusWealth');
+    if (res.success) {
+      onUnlock();
     }
   };
 
@@ -129,9 +133,14 @@ function PasscodeLockScreen({ passcodeValue, onUnlock, onLogout }) {
             {/* Key 10: Biometric Trigger */}
             <button
               type="button"
-              onClick={handleBiometricPrompt}
-              className="aspect-square rounded-2xl bg-secondary-app/10 hover:bg-secondary-app/20 border border-secondary-app/30 text-secondary-app transition-all active:scale-90 flex flex-col items-center justify-center shadow-sm"
-              title="Biometric Unlock"
+              onClick={triggerBiometrics}
+              disabled={!hasBiometric}
+              className={`aspect-square rounded-2xl border transition-all active:scale-90 flex flex-col items-center justify-center shadow-sm ${
+                hasBiometric 
+                  ? 'bg-secondary-app/10 hover:bg-secondary-app/20 border-secondary-app/30 text-secondary-app' 
+                  : 'bg-base-100/30 border-base-content/5 text-base-content/20 cursor-not-allowed'
+              }`}
+              title={hasBiometric ? "Biometric Unlock" : "Biometrics Unavailable"}
             >
               <Fingerprint className="w-7 h-7" />
             </button>
@@ -316,6 +325,7 @@ export const AuthProvider = ({ children }) => {
       {isLocked ? (
         <PasscodeLockScreen
           passcodeValue={user.settings.passcodeValue}
+          biometricEnabled={user.settings?.biometricEnabled !== false}
           onUnlock={() => setIsUnlocked(true)}
           onLogout={logout}
         />
