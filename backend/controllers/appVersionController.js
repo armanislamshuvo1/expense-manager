@@ -3,8 +3,9 @@ let lastFetchTime = 0;
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const getLatestAppVersion = async (req, res) => {
+  const forceRefresh = req.query.refresh === 'true';
   const now = Date.now();
-  if (cachedVersionData && now - lastFetchTime < CACHE_TTL) {
+  if (!forceRefresh && cachedVersionData && now - lastFetchTime < CACHE_TTL) {
     return res.status(200).json({
       success: true,
       data: cachedVersionData,

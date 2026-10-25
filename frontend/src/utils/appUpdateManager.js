@@ -4,7 +4,7 @@ import { publicApi } from './apiConfig';
 
 const AppUpdate = registerPlugin('AppUpdate');
 
-export const CURRENT_APP_VERSION = '3.0.4';
+export const CURRENT_APP_VERSION = '3.0.5';
 
 /**
  * Parses semver string (e.g., "3.0.4" -> [3, 0, 4])
@@ -60,10 +60,11 @@ export async function getInstalledAppInfo() {
 /**
  * Fetches latest release metadata from backend proxy or direct GitHub
  */
-export async function fetchLatestRelease() {
+export async function fetchLatestRelease(forceRefresh = false) {
   // Try backend proxy first (handles caching and avoids rate limits)
   try {
-    const res = await publicApi.get('/api/app/version', { timeout: 8000 });
+    const url = forceRefresh ? '/api/app/version?refresh=true' : '/api/app/version';
+    const res = await publicApi.get(url, { timeout: 8000 });
     if (res.data?.success && res.data?.data) {
       return res.data.data;
     }
@@ -107,10 +108,10 @@ export async function fetchLatestRelease() {
 /**
  * Checks if a newer release exists compared to installed app
  */
-export async function checkForUpdate() {
+export async function checkForUpdate(forceRefresh = false) {
   const [installed, latest] = await Promise.all([
     getInstalledAppInfo(),
-    fetchLatestRelease()
+    fetchLatestRelease(forceRefresh)
   ]);
 
   if (!latest) {

@@ -63,7 +63,7 @@ export default function SettingsSection({
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
     try {
-      const check = await checkForUpdate();
+      const check = await checkForUpdate(true);
       if (check.hasUpdate) {
         window.dispatchEvent(
           new CustomEvent('nexus_open_app_update_modal', { detail: check })
