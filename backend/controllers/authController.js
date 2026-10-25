@@ -169,7 +169,8 @@ export const updateSettings = async (req, res, next) => {
     if (preferredCurrencies) user.preferredCurrencies = preferredCurrencies;
     if (theme) user.theme = theme;
     if (settings) {
-      user.settings = { ...user.settings, ...settings };
+      const currentSettings = user.settings?.toObject ? user.settings.toObject() : (user.settings || {});
+      user.settings = { ...currentSettings, ...settings };
     }
 
     await user.save();

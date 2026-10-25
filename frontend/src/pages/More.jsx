@@ -14,6 +14,8 @@ import PreferencesModal from '../components/more/PreferencesModal';
 import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
 import QuickPreferenceForm from '../components/more/QuickPreferenceForm';
 import SettingsSection from '../components/more/SettingsSection';
+import FingerprintModal from '../components/auth/FingerprintModal';
+import { saveBiometricSession, clearBiometricSession } from '../utils/biometricAuth';
 
 import DeviceImportExportModal from '../components/more/DeviceImportExportModal';
 import ConflictResolutionModal from '../components/more/ConflictResolutionModal';
@@ -53,6 +55,7 @@ export default function More() {
   const [newPasscode, setNewPasscode] = useState('');
   const [passcodeConfirm, setPasscodeConfirm] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
+  const [fingerprintModalOpen, setFingerprintModalOpen] = useState(false);
 
   const settings = user?.settings || {};
 
@@ -80,6 +83,13 @@ export default function More() {
   };
 
   const updateSettingKey = async (key, val) => {
+    const updatedSettings = { ...settings, [key]: val };
+    const optimisticUser = { ...user, settings: updatedSettings };
+    setUser(optimisticUser);
+    localStorage.setItem('user_cache', JSON.stringify(optimisticUser));
+    if (key === 'biometricEnabled') {
+      localStorage.setItem('nexus_biometric_lock_enabled', val ? 'true' : 'false');
+    }
     try {
       const response = await axiosSecure.put('/api/auth/settings', {
         settings: {
@@ -92,6 +102,7 @@ export default function More() {
       }
     } catch (err) {
       console.error("Failed to update setting:", err);
+      return;
     }
   };
 
@@ -153,6 +164,31 @@ export default function More() {
     setPasscodeModalOpen(true);
   };
 
+  const openFingerprintModal = () => {
+    setFingerprintModalOpen(true);
+  };
+
+  const handleEnableFingerprint = async () => {
+    setFingerprintModalOpen(false);
+    const activeToken = localStorage.getItem('token');
+    if (user?.email && activeToken) {
+      await saveBiometricSession(user.email, activeToken);
+    }
+    await updateSettingKey('biometricEnabled', true);
+    setSuccess('Fingerprint Lock enabled successfully!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const handleDisableFingerprint = async () => {
+    await clearBiometricSession();
+    await updateSettingKey('biometricEnabled', false);
+    setSuccess('Fingerprint Lock disabled.');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const _unusedKeep = () => {
+  };
+
   const handleSavePasscode = async () => {
     if (newPasscode.length !== 4 || !/^\d+$/.test(newPasscode)) {
       setPasscodeError('Passcode must be a 4-digit number.');
@@ -172,6 +208,7 @@ export default function More() {
       });
       if (response.data.success) {
         setUser(response.data.data);
+        localStorage.setItem('user_cache', JSON.stringify(response.data.data));
         setPasscodeModalOpen(false);
       }
     } catch (err) {
@@ -271,6 +308,8 @@ export default function More() {
           openNumberModal={openNumberModal}
           openSelectModal={openSelectModal}
           openPasscodeModal={openPasscodeModal}
+          openFingerprintModal={openFingerprintModal}
+          onDisableFingerprint={handleDisableFingerprint}
           handleToggleSharing={handleToggleSharing}
           handleRegenerateShareToken={handleRegenerateShareToken}
           loading={loading}
@@ -331,6 +370,16 @@ export default function More() {
         setPasscodeConfirm={setPasscodeConfirm}
         passcodeError={passcodeError}
         handleSavePasscode={handleSavePasscode}
+      />
+
+      {/* Fingerprint Lock Setup / Verification Modal */}
+      <FingerprintModal
+        isOpen={fingerprintModalOpen}
+        onClose={() => setFingerprintModalOpen(false)}
+        onSuccess={handleEnableFingerprint}
+        title="Enable Fingerprint Lock"
+        subtitle="Touch the fingerprint sensor to enable Fingerprint Lock"
+        email={user?.email}
       />
 
       {/* Device Import, Export & PDF Reports Modal */}

@@ -63,6 +63,7 @@ const userSchema = new mongoose.Schema({
     autocomplete: { type: Boolean, default: true },
     passcodeEnabled: { type: Boolean, default: false },
     passcodeValue: { type: String, default: '' },
+    biometricEnabled: { type: Boolean, default: false },
     alarmEnabled: { type: Boolean, default: true },
     quickAddEnabled: { type: Boolean, default: false }
   },
