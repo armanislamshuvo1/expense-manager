@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { isNativeApp, downloadApkDirect } from '../../utils/pwaUtils';
 import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { checkForUpdate, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
+import { checkForUpdate, getInstalledAppInfo, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -47,6 +47,17 @@ export default function SettingsSection({
   onOpenDeleteAccount
 }) {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [appVersion, setAppVersion] = useState(CURRENT_APP_VERSION);
+
+  React.useEffect(() => {
+    getInstalledAppInfo()
+      .then((info) => {
+        if (info?.version) {
+          setAppVersion(info.version);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
@@ -496,7 +507,7 @@ export default function SettingsSection({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-base-content">NexusWealth</span>
-              <span className="badge badge-sm badge-outline text-[10px] font-mono">v{CURRENT_APP_VERSION}</span>
+              <span className="badge badge-sm badge-outline text-[10px] font-mono">v{appVersion}</span>
             </div>
             <p className="text-[10px] text-base-content/50 mt-0.5">Automated In-App Updates</p>
           </div>

@@ -47,6 +47,7 @@ jobs:
         working-directory: frontend/android
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
+          APP_VERSION: 3.0.4
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
