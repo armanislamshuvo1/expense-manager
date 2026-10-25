@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { isPwaMode } from './utils/pwaUtils';
@@ -59,7 +59,12 @@ function PageLoadingFallback() {
 }
 
 function PwaSafeRoute({ element }) {
+  const { user } = useAuth();
   if (isPwaMode()) {
+    const start = user?.settings?.startScreen;
+    if (start === 'Daily' || start === 'Calendar') {
+      return <Navigate to="/transactions" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
   return element;

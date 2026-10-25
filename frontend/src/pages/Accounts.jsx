@@ -5,7 +5,7 @@ import { useAxiosSecure } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useAccountModal } from '../context/AccountModalContext';
 import { BottomNav } from '../components/BottomNav';
-import { CreditCard, Plus, Trash2, X, Wallet, DollarSign, Globe, Layers, Calendar, Check, AlertCircle } from 'lucide-react';
+import { CreditCard, Plus, Trash2, X, Wallet, DollarSign, Globe, Layers, Calendar, Check, AlertCircle, Banknote, Smartphone, Landmark, TrendingUp } from 'lucide-react';
 import { getPreferredCurrencies } from '../utils/currencies';
 import { getMergedAccounts, setAccountsCache, getAccountsCache, queueAccountOperation, generateUUID, subscribeToSync } from '../utils/syncManager';
 import Swal from 'sweetalert2';
@@ -217,11 +217,31 @@ export default function Accounts() {
         ) : (
           Object.keys(grouped).map((groupName) => {
             if (grouped[groupName].length === 0) return null;
+            const GROUP_CONFIG = {
+              Cash: { icon: Banknote, style: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+              'Credit Cards': { icon: CreditCard, style: 'text-secondary-app bg-secondary-app/10 border-secondary-app/30' },
+              Cards: { icon: CreditCard, style: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' },
+              'E-Wallets': { icon: Smartphone, style: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30' },
+              Savings: { icon: Landmark, style: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+              Investments: { icon: TrendingUp, style: 'text-purple-400 bg-purple-500/10 border-purple-500/30' }
+            };
+            const currentGroup = GROUP_CONFIG[groupName] || { icon: Layers, style: 'text-primary-app bg-primary-app/10 border-primary-app/30' };
+            const GroupIcon = currentGroup.icon;
+
             return (
-              <div key={groupName} className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60">{groupName}</h2>
-                  <span className="text-[10px] font-semibold text-base-content/40">{grouped[groupName].length} account{grouped[groupName].length > 1 ? 's' : ''}</span>
+              <div key={groupName} className="space-y-3 pt-2">
+                <div className="flex items-center justify-between px-2 py-1 bg-base-200/60 rounded-2xl border border-base-content/10 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-7 h-7 rounded-xl border flex items-center justify-center ${currentGroup.style}`}>
+                      <GroupIcon className="w-3.5 h-3.5" />
+                    </div>
+                    <h2 className="text-xs font-black uppercase tracking-wider text-base-content">
+                      {groupName}
+                    </h2>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-base-100 border border-base-content/10 text-base-content/60">
+                    {grouped[groupName].length} {grouped[groupName].length > 1 ? 'accounts' : 'account'}
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {grouped[groupName].map((acc) => {

@@ -11,6 +11,7 @@ export default function MobileDashboardView({
   baseCurrency,
   totalIncome = 0,
   totalExpense = 0,
+  carryOverBalance = 0,
   syncStatus = 'synced',
   queueCount = 0,
   onSyncTrigger,
@@ -21,6 +22,8 @@ export default function MobileDashboardView({
   handlePrevPeriod,
   handleNextPeriod,
   isDark,
+  activeTab = 'EXPENSE',
+  setActiveTab,
   categoryData = [],
   totalForActiveTab = 0,
   ACCENT_SHADES,
@@ -61,8 +64,26 @@ export default function MobileDashboardView({
   const dayOfMonth = today.getDate();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const daysRemaining = Math.max(1, daysInMonth - dayOfMonth);
-  const netSavings = totalIncome - totalExpense;
+  const carryOverAmount = (user?.settings?.carryOverEnabled !== false) ? carryOverBalance : 0;
+  const netSavings = totalIncome - totalExpense + carryOverAmount;
   const safeDailySpend = netSavings > 0 ? (netSavings / daysRemaining) : 0;
+
+  const touchStartX = React.useRef(null);
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(deltaX) > 60) {
+      if (deltaX > 0) {
+        handlePrevPeriod && handlePrevPeriod();
+      } else {
+        handleNextPeriod && handleNextPeriod();
+      }
+    }
+  };
 
   const renderSyncBadge = () => {
     if (syncStatus === 'offline') {
@@ -110,7 +131,7 @@ export default function MobileDashboardView({
     .toUpperCase();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* 1. Mobile Native Header */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-3">
@@ -248,15 +269,47 @@ export default function MobileDashboardView({
               Category Breakdown
             </h3>
           </div>
-          <span className="text-[10px] font-bold text-base-content/50 uppercase">
-            Total {baseCurrency} {totalExpense.toFixed(2)}
+          <span className="text-[10px] font-bold text-base-content/60 uppercase">
+            Total {baseCurrency} {(activeTab === 'INCOME' ? totalIncome : totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
+        </div>
+
+        {/* Expense / Income Pill Toggle */}
+        <div className="grid grid-cols-2 p-1 bg-base-300 rounded-2xl border border-base-content/10 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setActiveTab && setActiveTab('EXPENSE')}
+            className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'EXPENSE'
+                ? 'bg-danger-app/20 text-danger-app border border-danger-app/30 shadow-sm font-extrabold'
+                : 'text-base-content/60 hover:text-base-content'
+            }`}
+          >
+            <span>Expenses</span>
+            <span className="text-[10px] opacity-75">
+              ({baseCurrency} {totalExpense.toFixed(0)})
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab && setActiveTab('INCOME')}
+            className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'INCOME'
+                ? 'bg-primary-app/20 text-primary-app border border-primary-app/30 shadow-sm font-extrabold'
+                : 'text-base-content/60 hover:text-base-content'
+            }`}
+          >
+            <span>Income</span>
+            <span className="text-[10px] opacity-75">
+              ({baseCurrency} {totalIncome.toFixed(0)})
+            </span>
+          </button>
         </div>
 
         {/* Visual Category Donut */}
         <CategoryChart 
           categoryData={categoryData}
-          totalForActiveTab={totalForActiveTab || totalExpense}
+          totalForActiveTab={totalForActiveTab || (activeTab === 'INCOME' ? totalIncome : totalExpense)}
           baseCurrency={baseCurrency}
           isDark={isDark}
           ACCENT_SHADES={ACCENT_SHADES}

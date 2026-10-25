@@ -4,10 +4,13 @@ import { Plus } from 'lucide-react';
 export default function AddCategoryModal({
   isOpen,
   onClose,
-  handleCreateCategory
+  handleCreateCategory,
+  categories = [],
+  user = null
 }) {
   const [newCatName, setNewCatName] = useState('');
   const [newCatEmoji, setNewCatEmoji] = useState('🏷️');
+  const [selectedParentId, setSelectedParentId] = useState('');
 
   if (!isOpen) return null;
 
@@ -15,10 +18,11 @@ export default function AddCategoryModal({
     e.preventDefault();
     if (!newCatName.trim()) return;
     try {
-      await handleCreateCategory(newCatName.trim(), newCatEmoji);
+      await handleCreateCategory(newCatName.trim(), newCatEmoji, selectedParentId || null);
       onClose();
       setNewCatName('');
       setNewCatEmoji('🏷️');
+      setSelectedParentId('');
     } catch (err) {
       console.error(err);
     }
@@ -77,6 +81,26 @@ export default function AddCategoryModal({
               ))}
             </div>
           </div>
+
+          {user?.settings?.subcategoryEnabled && (
+            <div className="form-control">
+              <label className="label py-1">
+                <span className="label-text text-xs">Parent Category (Optional)</span>
+              </label>
+              <select
+                className="select select-bordered select-sm w-full text-xs"
+                value={selectedParentId}
+                onChange={(e) => setSelectedParentId(e.target.value)}
+              >
+                <option value="">None (Top-Level Category)</option>
+                {categories.filter(c => !c.parentId).map((c) => (
+                  <option key={c._id || c.clientCatId} value={c._id || c.clientCatId}>
+                    {c.emoji || '🏷️'} {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2.5 pt-2">
             <button

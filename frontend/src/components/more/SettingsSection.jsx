@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { isNativeApp, downloadApkDirect } from '../../utils/pwaUtils';
-import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database, RefreshCw } from 'lucide-react';
+import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database, RefreshCw, FolderKanban, Wallet, Sliders, Shield, Smartphone } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { checkForUpdate, getInstalledAppInfo, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
+import { getPublicWebUrl } from '../../utils/apiConfig';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -97,7 +98,9 @@ export default function SettingsSection({
     <>
       {/* Category & Repeat Settings List */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Category/Repeat</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
+          <FolderKanban className="w-3.5 h-3.5 text-primary-app" /> Category & Repeat
+        </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
 
           <button
@@ -152,7 +155,9 @@ export default function SettingsSection({
 
       {/* Accounts Setting List */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Accounts</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
+          <Wallet className="w-3.5 h-3.5 text-emerald-400" /> Accounts
+        </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
           <button
             onClick={() => navigate('/settings/accounts')}
@@ -166,7 +171,9 @@ export default function SettingsSection({
 
       {/* Configuration List */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Configuration</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
+          <Sliders className="w-3.5 h-3.5 text-cyan-400" /> Configuration
+        </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
           <div className="flex justify-between items-center p-4">
             <span>Main Currency Setting</span>
@@ -279,7 +286,9 @@ export default function SettingsSection({
 
       {/* Other settings list */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Other</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-purple-400" /> Security & System
+        </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10 text-sm text-base-content/80">
           <div 
             onClick={toggleTheme}
@@ -355,11 +364,43 @@ export default function SettingsSection({
           </div>
 
           <div 
-            onClick={() => updateSettingKey('alarmEnabled', !settings.alarmEnabled)}
+            onClick={() => {
+              if (!settings.alarmEnabled && 'Notification' in window && Notification.permission !== 'granted') {
+                Notification.requestPermission();
+              }
+              updateSettingKey('alarmEnabled', !settings.alarmEnabled);
+            }}
             className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
           >
-            <span>Alarm Setting</span>
-            <ToggleSwitch checked={settings.alarmEnabled !== false} onChange={(val) => updateSettingKey('alarmEnabled', val)} />
+            <div className="flex flex-col">
+              <span>Daily Reminder Alarm</span>
+              <span className="text-[11px] text-base-content/50">
+                {settings.alarmEnabled ? `Remind daily at ${settings.alarmTime || '20:00'}` : 'Notifications disabled'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {settings.alarmEnabled && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openSelectModal('alarmTime', 'Daily Reminder Time', ['08:00', '12:00', '18:00', '19:00', '20:00', '21:00', '22:00'], settings.alarmTime || '20:00');
+                  }}
+                  className="btn btn-xs bg-base-200 border border-base-content/20 text-primary-app font-bold cursor-pointer"
+                >
+                  {settings.alarmTime || '20:00'}
+                </button>
+              )}
+              <ToggleSwitch 
+                checked={!!settings.alarmEnabled} 
+                onChange={(val) => {
+                  if (val && 'Notification' in window && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                  }
+                  updateSettingKey('alarmEnabled', val);
+                }} 
+              />
+            </div>
           </div>
 
           <div 
@@ -391,12 +432,33 @@ export default function SettingsSection({
               <div className="flex items-center gap-2 bg-base-200 border border-base-content/20 rounded-lg p-2 overflow-hidden">
                 <Link className="w-4 h-4 text-base-content/40 flex-shrink-0" />
                 <span className="text-xs text-base-content/70 select-all truncate flex-1 font-mono">
-                  {window.location.origin}/shared/{user.shareToken}
+                  {`${getPublicWebUrl()}/shared/${user.shareToken}`}
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/shared/${user.shareToken}`);
+                    const linkUrl = `${getPublicWebUrl()}/shared/${user.shareToken}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'NexusWealth Shared Financial Stats',
+                        text: 'View my real-time cash flow and net worth logs:',
+                        url: linkUrl
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(linkUrl);
+                      setSuccess('Copied share link to clipboard!');
+                      setTimeout(() => setSuccess(''), 3000);
+                    }
+                  }}
+                  className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content cursor-pointer"
+                  title="Share Link"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-secondary-app" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${getPublicWebUrl()}/shared/${user.shareToken}`);
                     setSuccess('Copied share link to clipboard!');
                     setTimeout(() => setSuccess(''), 3000);
                   }}
@@ -502,7 +564,9 @@ export default function SettingsSection({
 
       {/* App Version & In-App Update Control */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Application</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
+          <Smartphone className="w-3.5 h-3.5 text-blue-400" /> Application & Updates
+        </h2>
         <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-base-content/10 flex justify-between items-center">
           <div>
             <div className="flex items-center gap-2">

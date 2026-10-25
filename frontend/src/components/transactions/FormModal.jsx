@@ -50,7 +50,8 @@ export default function FormModal({
   handleCreateCategory,
   handleSaveCustomAccount,
   handleDeleteTransaction,
-  getNoteSuggestions
+  getNoteSuggestions,
+  applyNoteAutocomplete
 }) {
   const {
     showKeypad,
@@ -325,7 +326,11 @@ export default function FormModal({
                           type="button"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setNote(sug);
+                            if (applyNoteAutocomplete) {
+                              applyNoteAutocomplete(sug);
+                            } else {
+                              setNote(sug);
+                            }
                             setShowNoteSuggestions(false);
                           }}
                           className="w-full text-left px-3 py-2 text-xs text-base-content/90 hover:bg-base-300 cursor-pointer transition-colors flex items-center justify-between font-medium"
@@ -460,6 +465,8 @@ export default function FormModal({
           isOpen={showAddCategoryModal}
           onClose={() => setShowAddCategoryModal(false)}
           handleCreateCategory={handleCreateCategory}
+          categories={categories}
+          user={user}
         />
 
         <AddAccountModal

@@ -184,11 +184,12 @@ export default function Dashboard() {
   const baseCurrency = user?.baseCurrency || 'MYR';
 
   // Use the custom hook for dashboard metrics and period selections
-  const dashboardProps = useDashboardData(accounts, transactions, categories);
+  const dashboardProps = useDashboardData(accounts, transactions, categories, user);
   const {
     netWorthData,
     cashFlowData,
     categoryData,
+    carryOverBalance = 0,
     selectedDate,
     setSelectedDate,
     periodType,
@@ -395,6 +396,7 @@ export default function Dashboard() {
           baseCurrency={baseCurrency}
           totalIncome={totalIncome}
           totalExpense={totalExpense}
+          carryOverBalance={carryOverBalance}
           syncStatus={syncStatus}
           queueCount={syncQueueLength}
           onSyncTrigger={triggerSync}
@@ -405,6 +407,8 @@ export default function Dashboard() {
           handlePrevPeriod={handlePrevPeriod}
           handleNextPeriod={handleNextPeriod}
           isDark={isDark}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           categoryData={categoryData}
           totalForActiveTab={totalForActiveTab}
           ACCENT_SHADES={ACCENT_SHADES}

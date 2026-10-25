@@ -2,6 +2,14 @@ import axios from 'axios';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_LOCAL_URL || 'http://localhost:5000';
 
+export const getPublicWebUrl = () => {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return import.meta.env.VITE_PUBLIC_WEB_URL || 'https://nexuswealthmanager.xyz';
+  }
+  return origin;
+};
+
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 
-export function useDashboardData(accounts = [], transactions = [], categories = []) {
+export function useDashboardData(accounts = [], transactions = [], categories = [], user = null) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [periodType, setPeriodType] = useState('Monthly'); // 'Weekly' | 'Monthly' | 'Yearly' | 'All'
   const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
@@ -14,6 +14,7 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
     const currentTab = activeTab;
 
     let filteredTx = [...txList];
+    let carryOverBalance = 0;
 
     if (period !== 'All') {
       let start, end;
@@ -24,12 +25,44 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
         end = new Date(start);
         end.setDate(start.getDate() + 7);
       } else if (period === 'Monthly') {
-        start = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-        end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 1);
+        const monthlyStartDay = Math.min(31, Math.max(1, Number(user?.settings?.monthlyStartDate) || 1));
+        if (monthlyStartDay === 1) {
+          start = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+        } else {
+          const currentDay = refDate.getDate();
+          if (currentDay >= monthlyStartDay) {
+            start = new Date(refDate.getFullYear(), refDate.getMonth(), monthlyStartDay);
+          } else {
+            start = new Date(refDate.getFullYear(), refDate.getMonth() - 1, monthlyStartDay);
+          }
+        }
+        if (monthlyStartDay === 1) {
+          end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 1);
+        } else {
+          const currentDay = refDate.getDate();
+          if (currentDay >= monthlyStartDay) {
+            end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, monthlyStartDay);
+          } else {
+            end = new Date(refDate.getFullYear(), refDate.getMonth(), monthlyStartDay);
+          }
+        }
       } else if (period === 'Yearly') {
         start = new Date(refDate.getFullYear(), 0, 1);
         end = new Date(refDate.getFullYear() + 1, 0, 1);
       }
+      if (user?.settings?.carryOverEnabled !== false && start) {
+        txList.forEach(tx => {
+          if (tx && tx.date) {
+            const txDate = new Date(tx.date);
+            if (txDate < start) {
+              const amt = Number(tx.convertedAmount || tx.amount) || 0;
+              if (tx.type === 'INCOME') carryOverBalance += amt;
+              else if (tx.type === 'EXPENSE') carryOverBalance -= amt;
+            }
+          }
+        });
+      }
+
       filteredTx = txList.filter(tx => {
         if (!tx || !tx.date) return false;
         const txDate = new Date(tx.date);
@@ -135,15 +168,29 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
     return {
       netWorthData: netWorthChartValues.slice(-12),
       cashFlowData: sortedCashFlow,
-      categoryData: categoryPieData
+      categoryData: categoryPieData,
+      carryOverBalance
     };
-  }, [accounts, transactions, categories, periodType, selectedDate, activeTab]);
+  }, [accounts, transactions, categories, periodType, selectedDate, activeTab, user]);
 
   const formatPeriodLabel = () => {
     if (periodType === 'All') return 'All Time';
     if (periodType === 'Yearly') return selectedDate.getFullYear().toString();
     if (periodType === 'Monthly') {
-      return selectedDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      const monthlyStartDay = Math.min(31, Math.max(1, Number(user?.settings?.monthlyStartDate) || 1));
+      if (monthlyStartDay === 1) {
+        return selectedDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      }
+      const currentDay = selectedDate.getDate();
+      let startMonth = selectedDate.getMonth();
+      let startYear = selectedDate.getFullYear();
+      if (currentDay < monthlyStartDay) {
+        startMonth -= 1;
+        if (startMonth < 0) { startMonth = 11; startYear -= 1; }
+      }
+      const s = new Date(startYear, startMonth, monthlyStartDay);
+      const e = new Date(startYear, startMonth + 1, monthlyStartDay - 1);
+      return `${s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${e.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}`;
     }
     if (periodType === 'Weekly') {
       const start = new Date(selectedDate);
@@ -177,6 +224,7 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
     netWorthData,
     cashFlowData,
     categoryData,
+    carryOverBalance,
     selectedDate,
     setSelectedDate,
     periodType,

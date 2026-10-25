@@ -174,7 +174,8 @@ export default function Transactions() {
     handleCreateCategory,
     handleSaveCustomAccount,
     handleDeleteTransaction,
-    getNoteSuggestions
+    getNoteSuggestions,
+    applyNoteAutocomplete
   } = formProps;
 
   const [returnPath, setReturnPath] = useState(null);
@@ -307,8 +308,22 @@ export default function Transactions() {
           startOfWeek.setDate(today.getDate() - today.getDay());
           if (txDate < startOfWeek) return false;
         } else if (filterDateRange === 'MONTH') {
-          const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+          const monthlyStartDay = Math.min(31, Math.max(1, Number(user?.settings?.monthlyStartDate) || 1));
+          let startOfMonth, endOfMonth;
+          if (monthlyStartDay === 1) {
+            startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+          } else {
+            const currentDay = today.getDate();
+            if (currentDay >= monthlyStartDay) {
+              startOfMonth = new Date(today.getFullYear(), today.getMonth(), monthlyStartDay);
+              endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, monthlyStartDay - 1, 23, 59, 59, 999);
+            } else {
+              startOfMonth = new Date(today.getFullYear(), today.getMonth() - 1, monthlyStartDay);
+              endOfMonth = new Date(today.getFullYear(), today.getMonth(), monthlyStartDay - 1, 23, 59, 59, 999);
+            }
+          }
+
           if (txDate < startOfMonth || txDate > endOfMonth) return false;
         } else if (filterDateRange === 'CUSTOM') {
           if (customStartDate && txDate < new Date(customStartDate)) return false;
@@ -322,7 +337,7 @@ export default function Transactions() {
 
       return true;
     });
-  }, [transactions, searchQuery, filterType, filterCategory, filterAccount, filterDateRange, customStartDate, customEndDate]);
+  }, [transactions, searchQuery, filterType, filterCategory, filterAccount, filterDateRange, customStartDate, customEndDate, user]);
 
   const groupedTransactions = useMemo(() => {
     return filteredTransactions.reduce((groups, tx) => {
@@ -486,6 +501,7 @@ return (
         handleSaveCustomAccount={handleSaveCustomAccount}
         handleDeleteTransaction={handleDeleteTransaction}
         getNoteSuggestions={getNoteSuggestions}
+        applyNoteAutocomplete={applyNoteAutocomplete}
       />
 
       <BottomNav />

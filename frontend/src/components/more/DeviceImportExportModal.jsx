@@ -92,12 +92,26 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
       const response = await axiosSecure.get(`/api/sync/export?${queryStr}`, { responseType: 'blob' });
 
       const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const extMap = { json: 'json', csv: 'csv', xlsx: 'xlsx', pdf: 'pdf' };
+      const filename = `NexusWealth_Export_${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`;
+      const mimeType = response.headers['content-type'] || 'application/octet-stream';
+      const file = new File([blob], filename, { type: mimeType });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'NexusWealth Export',
+          text: `NexusWealth Financial Export (${extMap[exportFormat].toUpperCase()})`
+        }).catch(() => {});
+        return;
+      }
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
+
       
-      const extMap = { json: 'json', csv: 'csv', xlsx: 'xlsx', pdf: 'pdf' };
-      link.setAttribute('download', `NexusWealth_Export_${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`);
+      // second extMap removed
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();

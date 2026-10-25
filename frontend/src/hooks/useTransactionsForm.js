@@ -224,12 +224,13 @@ export function useTransactionsForm(transactions = []) {
     updateMutation, createMutation
   ]);
 
-  const handleCreateCategory = useCallback(async (catName, emoji) => {
+  const handleCreateCategory = useCallback(async (catName, emoji, parentId = null) => {
     try {
       const clientCatId = generateUUID('cat');
       queueCategoryOperation('CREATE', clientCatId, null, {
         name: catName,
         emoji: emoji || '',
+        parentId: parentId || null,
         type: type === 'INCOME' ? 'INCOME' : 'EXPENSE'
       });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -316,6 +317,32 @@ export function useTransactionsForm(transactions = []) {
       .slice(0, 5);
   }, [transactions]);
 
+  const applyNoteAutocomplete = useCallback((noteText) => {
+    setNote(noteText);
+    if (user?.settings?.autocomplete !== false) {
+      const match = transactions.find(
+        (tx) => tx.note && tx.note.trim().toLowerCase() === noteText.trim().toLowerCase()
+      );
+      if (match) {
+        if (match.type && (match.type === 'INCOME' || match.type === 'EXPENSE')) {
+          setType(match.type);
+        }
+        if (match.categoryId) {
+          const catId = typeof match.categoryId === 'object' ? (match.categoryId._id || match.categoryId.clientCatId) : match.categoryId;
+          const catName = typeof match.categoryId === 'object' ? match.categoryId.name : match.categoryName;
+          if (catId) setCategoryId(catId);
+          if (catName) setCategoryName(catName);
+        }
+        if (match.accountId) {
+          const accId = typeof match.accountId === 'object' ? match.accountId._id : match.accountId;
+          const accName = typeof match.accountId === 'object' ? match.accountId.name : match.accountName;
+          if (accId) setAccountId(accId);
+          if (accName) setAccountName(accName);
+        }
+      }
+    }
+  }, [transactions, user]);
+
   return {
     type,
     setType,
@@ -356,6 +383,7 @@ export function useTransactionsForm(transactions = []) {
     handleCreateCategory,
     handleSaveCustomAccount,
     handleDeleteTransaction,
-    getNoteSuggestions
+    getNoteSuggestions,
+    applyNoteAutocomplete
   };
 }

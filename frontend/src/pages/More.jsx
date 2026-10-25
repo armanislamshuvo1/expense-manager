@@ -245,7 +245,7 @@ export default function More() {
         {/* Profile Card */}
         <div
           onClick={() => navigate('/profile')}
-          className="bg-base-300 rounded-2xl border border-base-content/10 p-4 shadow-lg cursor-pointer hover:bg-base-200 transition-colors"
+          className="bg-gradient-to-br from-base-300 to-base-200/90 rounded-3xl border border-primary-app/20 p-5 shadow-xl cursor-pointer hover:border-primary-app/40 transition-all"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-primary-app/20 border border-primary-app/40 flex items-center justify-center flex-shrink-0">

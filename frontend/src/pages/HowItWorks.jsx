@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { 
+  ArrowLeft,
   TrendingUp, 
   HelpCircle,
   Sliders,
@@ -104,6 +105,22 @@ export default function HowItWorks() {
 
   return (
     <>
+      {/* Mobile Top Navigation */}
+      <div className="sticky top-0 z-40 bg-base-300/90 backdrop-blur-md border-b border-base-content/10 p-3 flex items-center gap-3">
+        <button 
+          type="button" 
+          onClick={() => navigate(-1)} 
+          className="btn btn-ghost btn-circle btn-sm text-base-content/70 hover:text-base-content cursor-pointer" 
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-sm font-bold text-base-content">How It Works Guide</h2>
+          <p className="text-[10px] text-base-content/50">Feature guide & workflow</p>
+        </div>
+      </div>
+
       {/* Background Animated Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className={`absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[120px] animate-pulse ${
