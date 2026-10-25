@@ -32,7 +32,7 @@ const cacheInitialUserData = async (authToken, userData) => {
 
 const AuthContext = createContext(null);
 
-function PasscodeLockScreen({ passcodeValue, passcodeEnabled, userEmail, onUnlock, onLogout }) {
+function PasscodeLockScreen({ passcodeValue, passcodeEnabled, biometricEnabled = false, userEmail, onUnlock, onLogout }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
   const [errorText, setErrorText] = useState('');
@@ -43,7 +43,7 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, userEmail, onUnloc
   const handleKeyPress = (num) => {
     if (!hasPinConfigured) {
       setError(true);
-      setErrorText('PIN not set. Tap the fingerprint icon below to unlock.');
+      setErrorText(biometricEnabled ? 'PIN not set. Tap the fingerprint icon below to unlock.' : 'PIN not set. Please set a PIN in Settings.');
       return;
     }
     if (code.length >= 4) return;
@@ -72,6 +72,11 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, userEmail, onUnloc
   };
 
   const handleOpenFingerprintModal = () => {
+    if (!biometricEnabled) {
+      setError(true);
+      setErrorText('Fingerprint unlock is turned off in Settings. Please enter your PIN.');
+      return;
+    }
     setError(false);
     setErrorText('');
     setFingerprintModalOpen(true);
@@ -92,7 +97,7 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, userEmail, onUnloc
               {error
                 ? (errorText || 'Incorrect passcode. Try again.')
                 : hasPinConfigured
-                  ? 'Enter 4-digit PIN or tap Fingerprint to unlock'
+                  ? (biometricEnabled ? 'Enter 4-digit PIN or tap Fingerprint to unlock' : 'Enter 4-digit PIN to unlock')
                   : 'Tap the Fingerprint icon below to unlock'}
             </p>
           </div>
@@ -128,12 +133,17 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, userEmail, onUnloc
               </button>
             ))}
 
-            {/* Key 10: Biometric Trigger (Opens Fingerprint Modal on Click) */}
+            {/* Key 10: Biometric Trigger (Opens Fingerprint Modal only when enabled) */}
             <button
               type="button"
               onClick={handleOpenFingerprintModal}
-              className="aspect-square rounded-2xl bg-secondary-app/10 hover:bg-secondary-app/20 border border-secondary-app/30 text-secondary-app transition-all active:scale-90 flex flex-col items-center justify-center shadow-sm cursor-pointer"
-              title="Unlock with Fingerprint"
+              disabled={!biometricEnabled}
+              className={`aspect-square rounded-2xl border transition-all flex flex-col items-center justify-center shadow-sm ${
+                biometricEnabled
+                  ? 'bg-secondary-app/10 hover:bg-secondary-app/20 border-secondary-app/30 text-secondary-app active:scale-90 cursor-pointer'
+                  : 'bg-base-100/30 border-base-content/5 text-base-content/20 cursor-not-allowed opacity-35'
+              }`}
+              title={biometricEnabled ? 'Unlock with Fingerprint' : 'Fingerprint unlock is turned off in Settings'}
             >
               <Fingerprint className="w-7 h-7" />
             </button>
@@ -339,6 +349,7 @@ export const AuthProvider = ({ children }) => {
         <PasscodeLockScreen
           passcodeValue={user?.settings?.passcodeValue}
           passcodeEnabled={!!user?.settings?.passcodeEnabled}
+          biometricEnabled={!!user?.settings?.biometricEnabled}
           userEmail={user?.email}
           onUnlock={() => setIsUnlocked(true)}
           onLogout={logout}
