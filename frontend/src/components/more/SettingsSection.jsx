@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { isNativeApp, downloadApkDirect } from '../../utils/pwaUtils';
-import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database } from 'lucide-react';
+import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database, RefreshCw } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { checkForUpdate, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -33,6 +35,8 @@ export default function SettingsSection({
   openNumberModal,
   openSelectModal,
   openPasscodeModal,
+  openFingerprintModal,
+  onDisableFingerprint,
   handleToggleSharing,
   handleRegenerateShareToken,
   loading,
@@ -42,6 +46,42 @@ export default function SettingsSection({
   onOpenWipeData,
   onOpenDeleteAccount
 }) {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const check = await checkForUpdate();
+      if (check.hasUpdate) {
+        window.dispatchEvent(
+          new CustomEvent('nexus_open_app_update_modal', { detail: check })
+        );
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: 'Up to Date!',
+          text: `You are on the latest version (v${check.installed.version || CURRENT_APP_VERSION}).`,
+          timer: 2500,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }
+    } catch (_err) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Check Complete',
+        text: 'Could not connect to update server. Please check your internet connection.',
+        timer: 2500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
   return (
     <>
       {/* Category & Repeat Settings List */}
@@ -273,20 +313,32 @@ export default function SettingsSection({
           </div>
 
           <div 
-            onClick={() => updateSettingKey('biometricEnabled', settings.biometricEnabled === false)}
+            onClick={() => {
+              if (settings.biometricEnabled) {
+                onDisableFingerprint();
+              } else {
+                openFingerprintModal();
+              }
+            }}
             className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
           >
             <div className="flex flex-col">
-              <span>Fingerprint Unlock</span>
-              <span className="text-[11px] text-base-content/50">Prompt biometric sensor when locked</span>
+              <span>Fingerprint Lock</span>
+              <span className="text-[11px] text-base-content/50">Unlock app using fingerprint sensor</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-primary-app">
-                {settings.biometricEnabled !== false ? 'ON' : 'OFF'}
+                {settings.biometricEnabled ? 'ON' : 'OFF'}
               </span>
               <ToggleSwitch 
-                checked={settings.biometricEnabled !== false} 
-                onChange={(val) => updateSettingKey('biometricEnabled', val)} 
+                checked={!!settings.biometricEnabled} 
+                onChange={(val) => {
+                  if (!val) {
+                    onDisableFingerprint();
+                  } else {
+                    openFingerprintModal();
+                  }
+                }} 
               />
             </div>
           </div>
@@ -433,6 +485,29 @@ export default function SettingsSection({
               How It Works Guide
             </span>
             <ChevronRight className="w-4 h-4 text-base-content/50" />
+          </button>
+        </div>
+      </div>
+
+      {/* App Version & In-App Update Control */}
+      <div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1">Application</h2>
+        <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-base-content/10 flex justify-between items-center">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-base-content">NexusWealth</span>
+              <span className="badge badge-sm badge-outline text-[10px] font-mono">v{CURRENT_APP_VERSION}</span>
+            </div>
+            <p className="text-[10px] text-base-content/50 mt-0.5">Automated In-App Updates</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCheckUpdate}
+            disabled={checkingUpdate}
+            className="btn btn-xs bg-primary-app text-slate-950 hover:bg-cyan-400 border-none font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-md shadow-primary-app/20"
+          >
+            <RefreshCw className={`w-3 h-3 ${checkingUpdate ? 'animate-spin' : ''}`} />
+            <span>{checkingUpdate ? 'Checking...' : 'Check Updates'}</span>
           </button>
         </div>
       </div>

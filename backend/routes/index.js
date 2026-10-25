@@ -9,10 +9,14 @@ import userRoutes from './userRoutes.js';
 import shareRoutes from './shareRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import syncRoutes from './syncRoutes.js';
+import { getLatestAppVersion } from '../controllers/appVersionController.js';
 
 const router = express.Router();
 
 // Mount master sub-routers
+// Public app version check
+router.get('/app/version', getLatestAppVersion);
+
 router.use('/auth', authRoutes);
 router.use('/accounts', accountRoutes);
 router.use('/categories', categoryRoutes);

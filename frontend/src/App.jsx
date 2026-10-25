@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -9,6 +9,8 @@ import SyncStatusBanner from './components/SyncStatusBanner';
 import NativeMobileController from './components/NativeMobileController';
 import { AccountModalProvider } from './context/AccountModalContext';
 import PublicLayout from './components/PublicLayout';
+import AppUpdateModal from './components/AppUpdateModal';
+import { checkForUpdate } from './utils/appUpdateManager';
 
 // Robust lazy import with automatic retry on chunk update / cache refresh
 function lazyWithRetry(componentImport) {
@@ -64,9 +66,52 @@ function PwaSafeRoute({ element }) {
 }
 
 function App() {
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+
+  useEffect(() => {
+    // 1. Automatic background check after initial mount
+    const timer = setTimeout(async () => {
+      try {
+        const check = await checkForUpdate();
+        if (check.hasUpdate) {
+          const dismissedTag = sessionStorage.getItem('dismissed_update_tag');
+          if (dismissedTag !== check.latest?.tag) {
+            setUpdateInfo(check);
+            setUpdateModalOpen(true);
+          }
+        }
+      } catch (_e) {}
+    }, 2500);
+
+    // 2. Event listener for manual update triggers (e.g., from Settings)
+    const handleManualUpdateEvent = (e) => {
+      if (e.detail) {
+        setUpdateInfo(e.detail);
+        setUpdateModalOpen(true);
+      }
+    };
+    window.addEventListener('nexus_open_app_update_modal', handleManualUpdateEvent);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('nexus_open_app_update_modal', handleManualUpdateEvent);
+    };
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
+      <AppUpdateModal
+        isOpen={updateModalOpen}
+        updateInfo={updateInfo}
+        onClose={() => {
+          if (updateInfo?.latest?.tag) {
+            sessionStorage.setItem('dismissed_update_tag', updateInfo.latest.tag);
+          }
+          setUpdateModalOpen(false);
+        }}
+      />
       <AuthProvider>
         <ThemeProvider>
           <NativeMobileController />
