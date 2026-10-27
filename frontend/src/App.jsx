@@ -78,7 +78,7 @@ function App() {
     // 1. Automatic background check after initial mount
     const timer = setTimeout(async () => {
       try {
-        const check = await checkForUpdate();
+        const check = await checkForUpdate(true);
         if (check.hasUpdate) {
           const dismissedTag = sessionStorage.getItem('dismissed_update_tag');
           if (dismissedTag !== check.latest?.tag) {

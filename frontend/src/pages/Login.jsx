@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAxiosPublic } from '../hooks/useApi';
-import { Lock, Mail, Key, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Lock, Mail, Key, Eye, EyeOff, Fingerprint, DownloadCloud } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { checkForUpdate, CURRENT_APP_VERSION } from '../utils/appUpdateManager';
 import AccountDeletedModal from '../components/auth/AccountDeletedModal';
 import { isBiometricAvailable, getBiometricSession, verifyBiometrics, saveBiometricSession } from '../utils/biometricAuth';
 
@@ -12,6 +14,37 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [accountDeletedModalOpen, setAccountDeletedModalOpen] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const check = await checkForUpdate(true);
+      if (check.hasUpdate) {
+        window.dispatchEvent(
+          new CustomEvent('nexus_open_app_update_modal', { detail: check })
+        );
+      } else {
+        Swal.fire({
+          icon: 'info',
+          title: 'Up to Date',
+          text: `You are currently using the latest version (v${CURRENT_APP_VERSION}).`,
+          confirmButtonColor: '#06b6d4',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    } catch (_err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Check Failed',
+        text: 'Could not connect to update service. Please check your internet connection.',
+        confirmButtonColor: '#ff5c5c'
+      });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
   
   // Password visibility states
   const [showPassword, setShowPassword] = useState(false);

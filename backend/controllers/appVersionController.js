@@ -1,6 +1,6 @@
 let cachedVersionData = null;
 let lastFetchTime = 0;
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
 export const getLatestAppVersion = async (req, res) => {
   const forceRefresh = req.query.refresh === 'true';
