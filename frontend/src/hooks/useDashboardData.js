@@ -6,7 +6,7 @@ export function useDashboardData(accounts = [], transactions = [], categories = 
   const [activeTab, setActiveTab] = useState('EXPENSE'); // 'EXPENSE' | 'INCOME'
   const [selectedCategoryTransactions, setSelectedCategoryTransactions] = useState(null);
 
-  const { netWorthData, cashFlowData, categoryData } = useMemo(() => {
+  const { netWorthData, cashFlowData, categoryData, carryOverBalance } = useMemo(() => {
     const txList = transactions || [];
     const currentAssets = (accounts || []).reduce((sum, acc) => sum + (Number(acc?.balance) || 0), 0);
     const period = periodType;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexuswealth-cache-v11';
+const CACHE_NAME = 'nexuswealth-cache-v12';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -64,7 +64,7 @@ self.addEventListener('fetch', (event) => {
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
-              cache.put('/index.html', response.clone());
+              cache.put('/index.html', responseToCache.clone());
             });
           }
           return response;
