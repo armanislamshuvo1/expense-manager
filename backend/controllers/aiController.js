@@ -339,13 +339,14 @@ export const getInsights = async (req, res, next) => {
       });
     }
 
-    // 2. Core Anomaly Detection (Simple outlier checks: transactions > 3x the category average)
+    // 2. Core Anomaly Detection (Outlier check: EXPENSES only > 3x the category average)
+    const expenseTransactions = transactions.filter(t => t.type === 'EXPENSE' && t.categoryId);
     const categoryTotals = {};
     const categoryCounts = {};
-    transactions.forEach(t => {
-      if (!t.categoryId) return;
+    expenseTransactions.forEach(t => {
       const catName = t.categoryId.name;
-      categoryTotals[catName] = (categoryTotals[catName] || 0) + t.amount;
+      const amt = t.convertedAmount || t.amount;
+      categoryTotals[catName] = (categoryTotals[catName] || 0) + amt;
       categoryCounts[catName] = (categoryCounts[catName] || 0) + 1;
     });
 
@@ -356,19 +357,21 @@ export const getInsights = async (req, res, next) => {
 
     anomalies = [];
 
-    transactions.slice(0, 10).forEach(t => {
-      if (!t.categoryId) return;
+    expenseTransactions.slice(0, 10).forEach(t => {
       const catName = t.categoryId.name;
       const avg = categoryAverages[catName];
-      // If a recent transaction is > 3x the average of that category, tag it as an anomaly
-      if (t.amount > avg * 3 && t.amount > 100) {
+      const amt = t.convertedAmount || t.amount;
+      // If a recent expense is > 3x the average of that category, tag it as an anomaly
+      if (amt > avg * 3 && amt > 100) {
+        const curr = t.currency || '';
         anomalies.push({
           id: t._id,
           amount: t.amount,
+          currency: curr,
           category: catName,
           date: t.date.toISOString().split('T')[0],
           description: t.description || t.note || 'No description',
-          reason: `This transaction is 3x higher than your average spend of $${avg.toFixed(2)} in ${catName}.`
+          reason: `This expense is 3x higher than your average spend of ${curr} ${avg.toFixed(2)} in ${catName}.`
         });
       }
     });
@@ -377,8 +380,9 @@ export const getInsights = async (req, res, next) => {
     const cleanList = transactions.slice(0, 30).map(t => {
       const item = {
         amount: t.amount,
-        type: t.type,
-        category: t.categoryId ? t.categoryId.name : 'Transfer',
+        currency: t.currency || '',
+        type: t.type, // 'INCOME', 'EXPENSE', 'TRANSFER'
+        category: t.categoryId ? t.categoryId.name : (t.type === 'TRANSFER' ? 'Transfer' : 'General'),
         date: t.date instanceof Date 
           ? t.date.toISOString().split('T')[0] 
           : (typeof t.date === 'string' ? t.date.split('T')[0] : '')
@@ -393,13 +397,14 @@ export const getInsights = async (req, res, next) => {
     });
 
     const prompt = `
-      Create a concise, insightful 2-3 sentence visual summary digest for the user's recent spending patterns:
+      Create a concise, insightful 2-3 sentence visual summary digest for the user's recent financial activity:
       Recent transactions list: ${JSON.stringify(cleanList)}
 
       Instructions:
-      - Synthesize patterns by analyzing specific transaction notes (merchants, stores, payees) and descriptions (line items, specific reasons) in addition to category totals.
-      - Call out specific merchants, notable purchases, or recurring spending habits (e.g. mention specific shops, payees, or items purchased) rather than only speaking in generic category names.
-      - Be friendly, brief, and highlight where they saved money or spent the most. Keep it within 2-3 sentences.
+      - STRICT RULE: Pay close attention to transaction "type". "INCOME" transactions (such as salary, earnings, refunds, deposits) are inflows/income — NEVER refer to them as spending, purchases, or expenses!
+      - Only refer to "EXPENSE" transactions when discussing spending, purchases, or high-cost areas.
+      - Call out specific merchants, payees, or items mentioned in transaction notes or descriptions rather than generic categories.
+      - Be friendly, brief, and highlight where they saved, earned, or spent the most. Keep it within 2-3 sentences.
     `;
 
     const result = await generateContentWithFallback(prompt);

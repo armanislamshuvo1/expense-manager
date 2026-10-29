@@ -117,7 +117,7 @@ export default function DashboardAiConsole({
           <div>
             <h4 className="font-extrabold text-primary-app uppercase tracking-wider text-[10px]">Unusual Spending Alert</h4>
             <p className="opacity-90 mt-0.5">
-              Logged <strong>MYR {anom.amount}</strong> in <strong>{anom.category}</strong> on {anom.date}.
+              Logged <strong>{anom.currency || 'MYR'} {anom.amount}</strong> in <strong>{anom.category}</strong> on {anom.date}.
             </p>
             <p className="opacity-60 text-[10px] mt-1">{anom.reason}</p>
           </div>
