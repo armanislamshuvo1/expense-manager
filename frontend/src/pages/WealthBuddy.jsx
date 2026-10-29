@@ -50,10 +50,11 @@ export default function WealthBuddy() {
         text: m.text
       }));
 
-      const res = await axiosSecure.post('/api/ai/chat', {
-        message: text,
-        history: formattedHistory
-      });
+      const res = await axiosSecure.post(
+        '/api/ai/chat',
+        { message: text, history: formattedHistory },
+        { timeout: 45000 }
+      );
 
       if (res.data.success) {
         setMessages(prev => [...prev, { role: 'model', text: res.data.data.text }]);

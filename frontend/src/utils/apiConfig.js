@@ -12,7 +12,7 @@ export const getPublicWebUrl = () => {
 
 export const publicApi = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -20,7 +20,7 @@ export const publicApi = axios.create({
 
 export const secureApi = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },

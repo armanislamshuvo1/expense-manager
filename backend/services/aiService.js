@@ -7,10 +7,10 @@ export const generateContentWithFallback = async (generateArgs, generationConfig
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
   const modelsToTry = [
-    process.env.GEMINI_MODEL, // Configured model
-    'gemini-3.8-flash',
+    process.env.GEMINI_MODEL, // Configured model (defaulting to fast gemini-3.5-flash)
     'gemini-3.5-flash',
     'gemini-3.5-flash-lite',
+    'gemini-3.8-flash',
     'gemini-flash-latest',
     'gemini-pro-latest'
   ].filter(Boolean);
@@ -22,7 +22,11 @@ export const generateContentWithFallback = async (generateArgs, generationConfig
   for (const modelName of uniqueModels) {
     try {
       console.log(`[AI] Attempting call with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName, generationConfig });
+      // 8-second timeout per model so hanging/503 spikes failover rapidly
+      const model = genAI.getGenerativeModel(
+        { model: modelName, generationConfig },
+        { timeout: 8000 }
+      );
       const result = await model.generateContent(generateArgs);
       return result;
     } catch (err) {
