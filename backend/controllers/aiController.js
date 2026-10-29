@@ -266,6 +266,7 @@ export const advisorChat = async (req, res, next) => {
       Recent User Transactions: ${JSON.stringify(transactionSummary)}
 
       Guidelines:
+      - Actively remember, reference, and maintain context across previous conversation turns (goals, earlier figures, mentioned plans, follow-up questions).
       - Give constructive, realistic personal finance tips.
       - Be encouraging, and never judge the user's spendings.
       - Pay close attention to transaction notes (merchants, payees) and descriptions (specific items, reasons) alongside category names to provide deep, personalized context rather than just generic high-level category summaries.
@@ -273,23 +274,42 @@ export const advisorChat = async (req, res, next) => {
       - Format key metrics clearly. Keep answers under 3-4 paragraphs.
     `;
 
-    // Construct history parts if available
-    const contents = [];
+    // Filter and sanitize history so it:
+    // 1. Drops the initial greeting (role: 'model' at index 0)
+    // 2. Keeps up to the last 14 meaningful conversation turns
+    // 3. Strictly alternates user -> model -> user -> model
+    const cleanHistory = [];
     if (history && Array.isArray(history)) {
-      history.forEach(turn => {
-        contents.push({
-          role: turn.role === 'user' ? 'user' : 'model',
-          parts: [{ text: turn.text }]
-        });
-      });
+      const firstUserIdx = history.findIndex(h => h.role === 'user');
+      if (firstUserIdx !== -1) {
+        const recentTurns = history.slice(firstUserIdx).slice(-14);
+        let expectedRole = 'user';
+        for (const turn of recentTurns) {
+          if (!turn.text || typeof turn.text !== 'string' || !turn.text.trim()) continue;
+          if (turn.role === expectedRole) {
+            cleanHistory.push({
+              role: turn.role,
+              parts: [{ text: turn.text.trim() }]
+            });
+            expectedRole = expectedRole === 'user' ? 'model' : 'user';
+          }
+        }
+        // If history ended on a user turn, pop it so the incoming message represents the latest user turn
+        if (cleanHistory.length > 0 && cleanHistory[cleanHistory.length - 1].role === 'user') {
+          cleanHistory.pop();
+        }
+      }
     }
 
-    contents.push({
-      role: 'user',
-      parts: [{ text: `${systemInstruction}\n\nUser Question: ${message}` }]
-    });
+    const contents = [
+      ...cleanHistory,
+      {
+        role: 'user',
+        parts: [{ text: message }]
+      }
+    ];
 
-    const result = await generateContentWithFallback({ contents });
+    const result = await generateContentWithFallback({ contents }, {}, systemInstruction);
     const replyText = result.response.text();
 
     res.status(200).json({ success: true, data: { text: replyText } });

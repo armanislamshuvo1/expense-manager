@@ -2,24 +2,60 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAxiosSecure } from '../hooks/useApi';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, Sparkles, Send, Bot, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
+
+const DEFAULT_MESSAGES = [
+  {
+    role: 'model',
+    text: "Hello! I'm WealthBuddy, your personal AI financial advisor. Ask me anything about your spending habits, account balances, or financial optimizations!"
+  }
+];
 
 export default function WealthBuddy() {
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const isDark = theme === 'dark';
 
-  const [messages, setMessages] = useState([
-    {
-      role: 'model',
-      text: "Hello! I'm WealthBuddy, your personal AI financial advisor. Ask me anything about your spending habits, account balances, or financial optimizations!"
+  const storageKey = `wealthbuddy_chat_${user?._id || user?.id || 'guest'}`;
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_e) {
+      // Ignore JSON error
     }
-  ]);
+    return DEFAULT_MESSAGES;
+  });
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Sync chat history to localStorage whenever messages update
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch (_e) {
+      // Ignore quota error
+    }
+  }, [messages, storageKey]);
+
+  const handleClearChat = () => {
+    setMessages(DEFAULT_MESSAGES);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (_e) {
+      // Ignore
+    }
+  };
 
   const suggestionChips = [
     "How is my spending this month?",
@@ -90,6 +126,19 @@ export default function WealthBuddy() {
             <p className="text-[9px] opacity-40 uppercase tracking-widest font-semibold">Virtual Advisor</p>
           </div>
         </div>
+
+        {/* Clear Chat Button */}
+        {messages.length > 1 && (
+          <div className="ml-auto">
+            <button 
+              onClick={handleClearChat}
+              title="Clear chat history"
+              className="btn btn-xs btn-ghost btn-circle text-base-content/40 hover:text-error hover:bg-error/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Main Conversation Container */}

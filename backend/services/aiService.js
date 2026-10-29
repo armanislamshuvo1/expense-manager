@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export const generateContentWithFallback = async (generateArgs, generationConfig = {}) => {
+export const generateContentWithFallback = async (generateArgs, generationConfig = {}, systemInstruction = null) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY environment variable is not configured');
   }
@@ -22,11 +22,12 @@ export const generateContentWithFallback = async (generateArgs, generationConfig
   for (const modelName of uniqueModels) {
     try {
       console.log(`[AI] Attempting call with model: ${modelName}`);
+      const modelOptions = { model: modelName, generationConfig };
+      if (systemInstruction) {
+        modelOptions.systemInstruction = systemInstruction;
+      }
       // 8-second timeout per model so hanging/503 spikes failover rapidly
-      const model = genAI.getGenerativeModel(
-        { model: modelName, generationConfig },
-        { timeout: 8000 }
-      );
+      const model = genAI.getGenerativeModel(modelOptions, { timeout: 8000 });
       const result = await model.generateContent(generateArgs);
       return result;
     } catch (err) {
