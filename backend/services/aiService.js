@@ -8,13 +8,11 @@ export const generateContentWithFallback = async (generateArgs, generationConfig
 
   const modelsToTry = [
     process.env.GEMINI_MODEL, // Configured model
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-flash-latest', // 1.5 Flash alias
-    'gemini-2.5-flash',
+    'gemini-3.8-flash',
     'gemini-3.5-flash',
-    'gemini-2.5-pro',
-    'gemini-pro-latest' // 1.5 Pro alias
+    'gemini-3.5-flash-lite',
+    'gemini-flash-latest',
+    'gemini-pro-latest'
   ].filter(Boolean);
 
   // Remove duplicates
