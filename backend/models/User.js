@@ -22,8 +22,13 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['USER', 'ADMIN', 'ADVISOR'], 
+    enum: ['USER', 'ADMIN', 'ADVISOR', 'SUPER_ADMIN'], 
     default: 'USER' 
+  },
+  tier: {
+    type: String,
+    enum: ['FREE', 'PRO', 'ENTERPRISE'],
+    default: 'FREE'
   },
   status: { 
     type: String, 

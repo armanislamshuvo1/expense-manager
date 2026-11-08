@@ -40,7 +40,7 @@ const Transactions = lazyWithRetry(() => import('./pages/Transactions'));
 const Accounts = lazyWithRetry(() => import('./pages/Accounts'));
 const More = lazyWithRetry(() => import('./pages/More'));
 const Profile = lazyWithRetry(() => import('./pages/Profile'));
-const AdminConsole = lazyWithRetry(() => import('./pages/AdminConsole'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/admin/AdminDashboard'));
 const IncomeCategoriesSetting = lazyWithRetry(() => import('./pages/IncomeCategoriesSetting'));
 const ExpenseCategoriesSetting = lazyWithRetry(() => import('./pages/ExpenseCategoriesSetting'));
 const AccountsSetting = lazyWithRetry(() => import('./pages/AccountsSetting'));
@@ -165,7 +165,6 @@ function App() {
               </ProtectedRoute>
             } />
 
-
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
@@ -191,8 +190,8 @@ function App() {
             } />
 
             <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminConsole />
+              <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
 

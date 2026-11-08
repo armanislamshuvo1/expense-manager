@@ -12,8 +12,8 @@ export default function ReviewQuickLogModal({
   if (!reviewTransaction) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md rounded-3xl border border-base-content/10 bg-base-100 p-6 shadow-2xl transition-all text-xs">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-md rounded-3xl border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-2xl transition-all text-xs max-h-[85vh] sm:max-h-[90vh] my-auto overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-error" />

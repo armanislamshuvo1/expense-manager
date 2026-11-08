@@ -185,8 +185,8 @@ export default function Profile() {
       </div>
 
       {pwModalOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-y-auto max-h-[85vh] sm:max-h-[90vh] my-auto shadow-2xl p-4 sm:p-5 space-y-4">
             <h3 className="text-md font-bold border-b border-base-content/10 pb-2">
               {hasPassword ? 'Change Password' : 'Set Password'}
             </h3>

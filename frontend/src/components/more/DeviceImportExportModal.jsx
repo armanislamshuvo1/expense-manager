@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Upload, Shield, FileText, FileSpreadsheet, Lock, Calendar, Sparkles, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { useAxiosSecure } from '../../hooks/useApi';
+import { downloadOrShareFile } from '../../utils/mobileFileUtils';
 
 export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConflictResolution, onImportSuccess }) {
   const axiosSecure = useAxiosSecure();
@@ -178,8 +179,8 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-base-300 w-full max-w-lg rounded-3xl border border-base-content/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-base-300 w-full max-w-lg rounded-3xl border border-base-content/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto">
         {/* Header */}
         <div className="p-4 border-b border-base-content/10 flex justify-between items-center bg-base-200">
           <div>
@@ -214,7 +215,7 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
         </div>
 
         {/* Tab Content */}
-        <div className="p-5 overflow-y-auto space-y-5 flex-1">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-5 flex-1 pb-10 overscroll-contain">
           {errorMessage && (
             <div className="alert alert-error text-xs p-3 text-white rounded-xl flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -379,10 +380,11 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
                 >
                   <input
                     type="file"
-                    accept=".json,.csv,.xlsx,.mmbak"
+                    accept=".json,.csv,.xlsx,.mmbak,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         const file = e.target.files[0];
+e.target.value = '';
                         setImportFile(file);
                         setIsEncryptedFile(false);
                         handleScanFile(file, importPasscode);

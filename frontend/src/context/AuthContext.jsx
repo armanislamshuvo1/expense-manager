@@ -82,6 +82,22 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, biometricEnabled =
     setFingerprintModalOpen(true);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target?.tagName)) return;
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        handleKeyPress(e.key);
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleDelete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [code, hasPinConfigured, passcodeValue, biometricEnabled]);
+
   return (
     <div className="fixed inset-0 bg-base-300/90 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 text-base-content font-sans">
       <div className="w-full max-w-sm bg-base-200/90 rounded-3xl shadow-2xl border border-base-content/10 flex flex-col items-center justify-between py-12 px-8 min-h-[560px]">
@@ -97,7 +113,7 @@ function PasscodeLockScreen({ passcodeValue, passcodeEnabled, biometricEnabled =
               {error
                 ? (errorText || 'Incorrect passcode. Try again.')
                 : hasPinConfigured
-                  ? (biometricEnabled ? 'Enter 4-digit PIN or tap Fingerprint to unlock' : 'Enter 4-digit PIN to unlock')
+                  ? (biometricEnabled ? 'Enter 4-digit PIN or tap Fingerprint to unlock' : 'Enter 4-digit PIN (keyboard supported)')
                   : 'Tap the Fingerprint icon below to unlock'}
             </p>
           </div>
@@ -220,6 +236,9 @@ export const AuthProvider = ({ children }) => {
           const localBioPref = localStorage.getItem('nexus_biometric_lock_enabled');
           if (fetchedUser?.settings && fetchedUser.settings.biometricEnabled === undefined && localBioPref !== null) {
             fetchedUser.settings.biometricEnabled = localBioPref === 'true';
+          }
+          if (response.data.token) {
+            updateToken(response.data.token);
           }
           setUser(fetchedUser);
           localStorage.setItem('user_cache', JSON.stringify(fetchedUser));

@@ -9,6 +9,7 @@ import userRoutes from './userRoutes.js';
 import shareRoutes from './shareRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import syncRoutes from './syncRoutes.js';
+import supportRoutes from './supportRoutes.js';
 import { getLatestAppVersion } from '../controllers/appVersionController.js';
 
 const router = express.Router();
@@ -26,5 +27,6 @@ router.use('/user', userRoutes);
 router.use('/share', shareRoutes);
 router.use('/ai', aiRoutes);
 router.use('/sync', syncRoutes);
+router.use('/support', supportRoutes);
 
 export default router;

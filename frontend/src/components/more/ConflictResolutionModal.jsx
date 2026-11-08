@@ -49,8 +49,8 @@ export default function ConflictResolutionModal({ isOpen, onClose, scanData, onI
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-base-300 w-full max-w-2xl rounded-3xl border border-base-content/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-base-300 w-full max-w-2xl rounded-3xl border border-base-content/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto">
         {/* Header */}
         <div className="p-4 border-b border-base-content/10 flex justify-between items-center bg-base-200">
           <div>

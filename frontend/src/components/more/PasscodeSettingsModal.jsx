@@ -13,8 +13,8 @@ export default function PasscodeSettingsModal({
   if (!passcodeModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4 text-base-content">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-base-300 border border-base-content/10 rounded-2xl w-full max-w-sm overflow-y-auto max-h-[85vh] sm:max-h-[90vh] my-auto shadow-2xl p-4 sm:p-5 space-y-4 text-base-content">
         <h3 className="text-md font-bold border-b border-base-content/10 pb-2">Set Lock Passcode</h3>
 
         {passcodeError && (

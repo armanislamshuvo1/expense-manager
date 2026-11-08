@@ -47,8 +47,8 @@ const corsOptions = {
 
     if (
       allowedOrigins.includes(origin) ||
-      /\.vercel\.app$/.test(origin) ||
-      /nexuswealthmanager\.xyz$/.test(origin) ||
+      /^https:\/\/nexuswealth.*\.vercel\.app$/.test(origin) ||
+      /^https:\/\/([a-zA-Z0-9-]+\.)?nexuswealthmanager\.xyz$/.test(origin) ||
       /^capacitor:\/\//.test(origin) ||
       /^https?:\/\/localhost(:[0-9]+)?$/.test(origin)
     ) {

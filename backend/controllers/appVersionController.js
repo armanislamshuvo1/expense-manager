@@ -35,9 +35,9 @@ export const getLatestAppVersion = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: {
-          versionName: '3.0.4',
+          versionName: '3.0.6',
           buildNumber: 1,
-          tag: 'v3.0.4',
+          tag: 'v3.0.6',
           downloadUrl: 'https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk',
           releaseNotes: 'Performance improvements and bug fixes.',
           publishedAt: new Date().toISOString()

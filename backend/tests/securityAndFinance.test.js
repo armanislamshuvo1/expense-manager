@@ -43,6 +43,20 @@ describe('Security & Authentication Suite', () => {
     expect(decoded.email).toBe('alex@nexus.com');
     expect(decoded.baseCurrency).toBe('EUR');
   });
+
+  it('prohibits fallback secret generation when NODE_ENV is production', async () => {
+    const { getJwtSecret } = await import('../config/jwt.js');
+    const originalEnv = process.env.NODE_ENV;
+    const originalSecret = process.env.JWT_SECRET;
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.JWT_SECRET;
+      expect(() => getJwtSecret()).toThrow(/JWT_SECRET environment variable must be defined/);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalSecret) process.env.JWT_SECRET = originalSecret;
+    }
+  });
 });
 
 describe('Financial Calculation & Concurrency Suite', () => {

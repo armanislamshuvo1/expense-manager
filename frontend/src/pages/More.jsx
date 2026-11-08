@@ -4,12 +4,23 @@ import { ALL_CURRENCIES } from '../utils/currencies';
 import { useTheme } from '../context/ThemeContext';
 import { useAxiosSecure } from '../hooks/useApi';
 import { BottomNav } from '../components/BottomNav';
-import { ArrowLeft, ChevronRight, Settings, ShieldAlert, Sun, Moon, Share2, Link, Copy, Sparkles } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ChevronRight, 
+  Settings, 
+  ShieldAlert, 
+  Sun, 
+  Moon, 
+  Share2, 
+  Link, 
+  Copy, 
+  Sparkles, 
+  AlertCircle 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 // Import modularized components
-
 import PreferencesModal from '../components/more/PreferencesModal';
 import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
 import QuickPreferenceForm from '../components/more/QuickPreferenceForm';
@@ -21,6 +32,7 @@ import DeviceImportExportModal from '../components/more/DeviceImportExportModal'
 import ConflictResolutionModal from '../components/more/ConflictResolutionModal';
 import WipeDataConfirmModal from '../components/more/WipeDataConfirmModal';
 import AccountDeleteModal from '../components/more/AccountDeleteModal';
+import ReportProblemModal from '../components/ReportProblemModal';
 
 export default function More() {
   const { user, setUser } = useAuth();
@@ -35,7 +47,8 @@ export default function More() {
   const [accountDeleteModalOpen, setAccountDeleteModalOpen] = useState(false);
   const [scanResultData, setScanResultData] = useState(null);
 
-
+  // Problem report modal state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const [baseCurrency, setBaseCurrency] = useState(user?.baseCurrency || 'MYR');
   const [curList, setCurList] = useState(user?.preferredCurrencies || []);
@@ -186,9 +199,6 @@ export default function More() {
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  const _unusedKeep = () => {
-  };
-
   const handleSavePasscode = async () => {
     if (newPasscode.length !== 4 || !/^\d+$/.test(newPasscode)) {
       setPasscodeError('Passcode must be a 4-digit number.');
@@ -263,8 +273,37 @@ export default function More() {
             <span className={`badge badge-xs ${user?.provider === 'google' ? 'badge-primary' : 'badge-ghost'} text-[10px]`}>
               {user?.provider === 'google' ? 'Google' : 'Password'}
             </span>
+            <span className="badge badge-xs badge-outline text-[10px] font-bold">
+              Tier: {user?.tier || 'FREE'}
+            </span>
           </div>
         </div>
+
+        {/* Admin Portal Entry if role is ADMIN or SUPER_ADMIN */}
+        {['ADMIN', 'SUPER_ADMIN'].includes(user?.role) && (
+          <div
+            onClick={() => navigate('/admin')}
+            className="bg-gradient-to-r from-red-950/40 via-red-900/30 to-base-300 rounded-2xl border border-red-500/40 p-4 shadow-lg cursor-pointer hover:border-red-500/70 transition-all flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-error/20 text-error rounded-xl">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-error flex items-center gap-2">
+                  Admin Portal
+                  <span className="badge badge-error badge-xs text-[9px] font-bold text-white">
+                    {user?.role}
+                  </span>
+                </div>
+                <p className="text-[11px] text-base-content/60">
+                  Analytics, user tiers, telemetry & problem tickets
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-base-content/50" />
+          </div>
+        )}
 
         {success && <div className="alert alert-success text-xs p-2 text-white bg-success border-none rounded-xl">{success}</div>}
 
@@ -290,6 +329,25 @@ export default function More() {
               className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
             >
               <span className="text-sm font-medium text-base-content/80">Chat with WealthBuddy AI</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
+            </button>
+          </div>
+        </div>
+
+        {/* Help & Problem Reporting */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-2 px-1 flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-warning" /> Help & Support
+          </h2>
+          <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
+            <button
+              onClick={() => setReportModalOpen(true)}
+              className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+            >
+              <div>
+                <div className="text-sm font-medium text-base-content/80">Report an Issue / Bug</div>
+                <div className="text-[10px] text-base-content/50">Submit a problem ticket or check status</div>
+              </div>
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </button>
           </div>
@@ -346,6 +404,12 @@ export default function More() {
           }}
         />
       </div>
+
+      {/* Report a Problem Modal */}
+      <ReportProblemModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+      />
 
       {/* Preferences Selection & Number Input Dialog Component */}
       <PreferencesModal

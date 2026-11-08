@@ -339,8 +339,8 @@ export default function ReceiptScannerModal({ isOpen, onClose, onTransactionAppr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="relative w-full max-w-lg rounded-3xl border border-base-content/10 bg-base-100 p-6 shadow-2xl transition-all duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="relative w-full max-w-lg rounded-3xl border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-2xl transition-all duration-300 max-h-[85vh] sm:max-h-[90vh] my-auto overflow-y-auto flex flex-col">
         <input
           ref={nativeCameraInputRef}
           type="file"

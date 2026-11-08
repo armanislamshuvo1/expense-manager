@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { getJwtSecret } from '../config/jwt.js';
 import User from '../models/User.js';
 import Category from '../models/Category.js';
 import Account from '../models/Account.js';
@@ -59,8 +60,9 @@ export const register = async (req, res, next) => {
     await prePopulateDefaults(newUser._id, newUser.baseCurrency);
 
     const token = jwt.sign(
-      { id: newUser._id, email: newUser.email, role: newUser.role, status: newUser.status, baseCurrency: newUser.baseCurrency || 'MYR' },
-      process.env.JWT_SECRET || 'fallback_secret',
+      { id: newUser._id, email: newUser.email, role: newUser.role,
+          tier: newUser.tier || 'FREE', status: newUser.status, baseCurrency: newUser.baseCurrency || 'MYR' },
+      getJwtSecret(),
       { expiresIn: '1d' }
     );
 
@@ -73,6 +75,7 @@ export const register = async (req, res, next) => {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
+          tier: newUser.tier || 'FREE',
           provider: newUser.provider,
           baseCurrency: newUser.baseCurrency,
           preferredCurrencies: newUser.preferredCurrencies,
@@ -117,8 +120,9 @@ export const login = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
-      process.env.JWT_SECRET || 'fallback_secret',
+      { id: user._id, email: user.email, role: user.role,
+          tier: user.tier || 'FREE', status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
+      getJwtSecret(),
       { expiresIn: '1d' }
     );
 
@@ -131,6 +135,7 @@ export const login = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          tier: user.tier || 'FREE',
           provider: user.provider,
           baseCurrency: user.baseCurrency,
           preferredCurrencies: user.preferredCurrencies,
@@ -151,7 +156,19 @@ export const getMe = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
-    res.status(200).json({ success: true, data: user });
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role, 
+        tier: user.tier || 'FREE', 
+        status: user.status, 
+        baseCurrency: user.baseCurrency || 'MYR' 
+      },
+      getJwtSecret(),
+      { expiresIn: '1d' }
+    );
+    res.status(200).json({ success: true, data: user, token });
   } catch (error) {
     next(error);
   }
@@ -182,6 +199,7 @@ export const updateSettings = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+          tier: user.tier || 'FREE',
         provider: user.provider,
         baseCurrency: user.baseCurrency,
         preferredCurrencies: user.preferredCurrencies,
@@ -212,7 +230,7 @@ export const googleLogin = async (req, res, next) => {
       const payload = ticket.getPayload();
       email = payload.email;
       name = payload.name;
-    } else if (process.env.NODE_ENV !== 'production' && bodyEmail === 'googleuser@mockauth.com') {
+    } else if (process.env.ALLOW_MOCK_AUTH === 'true' && process.env.NODE_ENV !== 'production' && bodyEmail === 'googleuser@mockauth.com') {
       // Allowed fallback/mock behavior ONLY in non-production environments for demo testing
       email = bodyEmail;
       name = bodyName || 'Alex Mercer';
@@ -253,8 +271,9 @@ export const googleLogin = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
-      process.env.JWT_SECRET || 'fallback_secret',
+      { id: user._id, email: user.email, role: user.role,
+          tier: user.tier || 'FREE', status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
+      getJwtSecret(),
       { expiresIn: '1d' }
     );
 
@@ -267,6 +286,7 @@ export const googleLogin = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          tier: user.tier || 'FREE',
           provider: user.provider,
           baseCurrency: user.baseCurrency,
           preferredCurrencies: user.preferredCurrencies,
@@ -290,7 +310,7 @@ export const forgotPassword = async (req, res, next) => {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No user registered with this email.' });
+      return res.status(200).json({ success: true, message: 'If this email is registered, password reset instructions have been sent.' });
     }
 
     // Generate secure random 32-byte token and hash it for database storage
@@ -303,8 +323,8 @@ export const forgotPassword = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset token generated successfully. Valid for 15 minutes.',
-      resetToken
+      message: 'If this email is registered, password reset instructions have been sent.'
+
     });
   } catch (error) {
     next(error);
@@ -364,7 +384,7 @@ export const refreshToken = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', { ignoreExpiration: true });
+      decoded = jwt.verify(token, getJwtSecret(), { ignoreExpiration: true });
     } catch (err) {
       return res.status(401).json({ success: false, message: 'Invalid token signature.' });
     }
@@ -385,8 +405,9 @@ export const refreshToken = async (req, res, next) => {
     }
 
     const newToken = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
-      process.env.JWT_SECRET || 'fallback_secret',
+      { id: user._id, email: user.email, role: user.role,
+          tier: user.tier || 'FREE', status: user.status, baseCurrency: user.baseCurrency || 'MYR' },
+      getJwtSecret(),
       { expiresIn: '1d' }
     );
 
@@ -399,6 +420,7 @@ export const refreshToken = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          tier: user.tier || 'FREE',
           provider: user.provider,
           baseCurrency: user.baseCurrency,
           preferredCurrencies: user.preferredCurrencies,

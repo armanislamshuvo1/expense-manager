@@ -44,8 +44,8 @@ export const updateAccount = async (req, res, next) => {
 
     if (name) account.name = name;
     if (type) account.type = type;
-    if (balance !== undefined) account.balance = balance;
-    if (creditLimit !== undefined) account.creditLimit = creditLimit;
+    if (balance !== undefined && Number.isFinite(Number(balance))) account.balance = Number(balance);
+    if (creditLimit !== undefined && Number.isFinite(Number(creditLimit))) account.creditLimit = Number(creditLimit);
     if (statementDate !== undefined) account.statementDate = statementDate;
     if (dueDate !== undefined) account.dueDate = dueDate;
     if (currency) account.currency = currency;

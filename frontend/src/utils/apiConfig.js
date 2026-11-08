@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_LOCAL_URL || 'http://localhost:5000';
+// When running on localhost in a desktop browser, route to local backend (port 5000)
+// so newly created features, admin endpoints, and local database models function during development.
+// In native Android/iOS (Capacitor) or production web, use VITE_API_BASE_URL.
+const isLocalBrowser = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+  !window.Capacitor?.isNativePlatform();
+
+export const API_BASE_URL = isLocalBrowser
+  ? (import.meta.env.VITE_API_LOCAL_URL || 'http://localhost:5000')
+  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
 export const getPublicWebUrl = () => {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -37,4 +46,3 @@ secureApi.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../config/jwt.js';
 
 /**
  * Middleware: Verify user JWT and inject verified context into Request object
@@ -15,7 +16,7 @@ export const requireAuth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, getJwtSecret());
     
     if (decoded.status === 'SUSPENDED' || decoded.status === 'BANNED') {
       return res.status(403).json({

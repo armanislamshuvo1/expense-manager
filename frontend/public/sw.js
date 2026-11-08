@@ -61,10 +61,11 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           if (response && response.status === 200) {
-            const responseToCache = response.clone();
+            const copy1 = response.clone();
+            const copy2 = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-              cache.put('/index.html', responseToCache.clone());
+              cache.put(event.request, copy1);
+              cache.put('/index.html', copy2);
             });
           }
           return response;

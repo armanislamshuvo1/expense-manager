@@ -46,7 +46,7 @@ export default function CategoryTransactionsModal({
         }
       }}
     >
-      <div className="bg-base-300 border border-base-content/15 rounded-2xl max-w-lg w-full p-5 shadow-2xl relative animate-scaleUp">
+      <div className="bg-base-300 border border-base-content/15 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl relative animate-scaleUp flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto overflow-hidden">
         <div className="flex items-center justify-between pb-3 border-b border-base-content/10 mb-4">
           <div>
             <h3 className="font-extrabold text-lg flex items-center gap-2">
@@ -67,7 +67,7 @@ export default function CategoryTransactionsModal({
           </button>
         </div>
         
-        <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+        <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
           {selectedCategoryTransactions.transactions.map((tx) => (
             <div 
               key={tx._id || tx.clientTxId} 
