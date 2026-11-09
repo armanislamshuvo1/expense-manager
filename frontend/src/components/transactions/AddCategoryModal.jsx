@@ -82,7 +82,7 @@ export default function AddCategoryModal({
             </div>
           </div>
 
-          {user?.settings?.subcategoryEnabled && (
+          {user?.settings?.subcategoryEnabled !== false && (
             <div className="form-control">
               <label className="label py-1">
                 <span className="label-text text-xs">Parent Category (Optional)</span>

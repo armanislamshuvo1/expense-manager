@@ -4,6 +4,7 @@ import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Tra
 import Swal from 'sweetalert2';
 import { checkForUpdate, getInstalledAppInfo, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
 import { getPublicWebUrl } from '../../utils/apiConfig';
+import { requestReminderPermission, scheduleDailyReminder, cancelDailyReminder } from '../../utils/reminderManager';
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <button
@@ -364,11 +365,15 @@ export default function SettingsSection({
           </div>
 
           <div 
-            onClick={() => {
-              if (!settings.alarmEnabled && 'Notification' in window && Notification.permission !== 'granted') {
-                Notification.requestPermission();
+            onClick={async () => {
+              const nextState = !settings.alarmEnabled;
+              if (nextState) {
+                await requestReminderPermission();
+                await scheduleDailyReminder(settings.alarmTime || '20:00');
+              } else {
+                await cancelDailyReminder();
               }
-              updateSettingKey('alarmEnabled', !settings.alarmEnabled);
+              updateSettingKey('alarmEnabled', nextState);
             }}
             className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors cursor-pointer"
           >
@@ -393,9 +398,12 @@ export default function SettingsSection({
               )}
               <ToggleSwitch 
                 checked={!!settings.alarmEnabled} 
-                onChange={(val) => {
-                  if (val && 'Notification' in window && Notification.permission !== 'granted') {
-                    Notification.requestPermission();
+                onChange={async (val) => {
+                  if (val) {
+                    await requestReminderPermission();
+                    await scheduleDailyReminder(settings.alarmTime || '20:00');
+                  } else {
+                    await cancelDailyReminder();
                   }
                   updateSettingKey('alarmEnabled', val);
                 }} 

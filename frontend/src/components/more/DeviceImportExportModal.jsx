@@ -96,27 +96,7 @@ export default function DeviceImportExportModal({ isOpen, onClose, onTriggerConf
       const extMap = { json: 'json', csv: 'csv', xlsx: 'xlsx', pdf: 'pdf' };
       const filename = `NexusWealth_Export_${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`;
       const mimeType = response.headers['content-type'] || 'application/octet-stream';
-      const file = new File([blob], filename, { type: mimeType });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'NexusWealth Export',
-          text: `NexusWealth Financial Export (${extMap[exportFormat].toUpperCase()})`
-        }).catch(() => {});
-        return;
-      }
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-
-      
-      // second extMap removed
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadOrShareFile(blob, filename, mimeType);
     } catch (err) {
       console.error('Export Error:', err);
       let msg = 'Failed to generate export file.';

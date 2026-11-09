@@ -196,6 +196,22 @@ export default function MobileDashboardView({
               -{baseCurrency} {totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
+          {user?.settings?.carryOverEnabled !== false && (
+            <div className="col-span-2 bg-base-100/70 rounded-xl p-2.5 border border-purple-500/25 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-base-content/60 font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                  Carry-Over (Prior Months Rollover)
+                </span>
+                <span className="text-[9px] text-base-content/40 block">
+                  Cumulative net balance from prior periods
+                </span>
+              </div>
+              <p className={`text-xs font-black ${carryOverBalance >= 0 ? 'text-purple-400' : 'text-danger-app'}`}>
+                {carryOverBalance >= 0 ? '+' : '-'}{baseCurrency} {Math.abs(carryOverBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

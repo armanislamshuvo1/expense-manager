@@ -305,6 +305,7 @@ export const syncCategories = async (req, res, next) => {
           emoji: data.emoji || '',
           color: data.color || '#94a3b8',
           type: data.type || 'EXPENSE',
+          parentId: (data.parentId && idMap[data.parentId]) ? idMap[data.parentId] : (data.parentId || null),
           clientCatId
         });
 
@@ -324,6 +325,9 @@ export const syncCategories = async (req, res, next) => {
         if (data.emoji !== undefined) category.emoji = data.emoji;
         if (data.color) category.color = data.color;
         if (data.type) category.type = data.type;
+        if (data.parentId !== undefined) {
+          category.parentId = (data.parentId && idMap[data.parentId]) ? idMap[data.parentId] : (data.parentId || null);
+        }
 
         await category.save();
         processedOps.push({ clientCatId, status: 'UPDATED', id: category._id });

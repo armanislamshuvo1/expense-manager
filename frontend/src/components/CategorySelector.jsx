@@ -54,7 +54,7 @@ export const CategorySelector = ({ categories = [], selectedCategoryId, onSelect
       ) : (
         <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
           {sortedCategories.map((cat) => {
-            const isSelected = selectedCategoryId === cat._id;
+            const isSelected = selectedCategoryId === cat._id || selectedCategoryId === cat.clientCatId;
             const parentName = getParentName(cat.parentId);
             return (
               <button

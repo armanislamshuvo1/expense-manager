@@ -79,6 +79,31 @@ export default function FormModal({
   const descriptionInputRef = useRef(null);
   const matchedSuggestions = getNoteSuggestions ? getNoteSuggestions(note) : [];
 
+  const dragStartY = useRef(null);
+  const [sheetTranslateY, setSheetTranslateY] = React.useState(0);
+
+  const handleDragTouchStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+
+  const handleDragTouchMove = (e) => {
+    if (dragStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - dragStartY.current;
+    if (deltaY > 0) {
+      setSheetTranslateY(deltaY);
+    }
+  };
+
+  const handleDragTouchEnd = () => {
+    if (sheetTranslateY > 60) {
+      const modal = document.getElementById('add_transaction_modal');
+      if (modal) modal.close();
+    }
+    dragStartY.current = null;
+    setSheetTranslateY(0);
+  };
+
   return (
     <>
       <dialog
@@ -90,11 +115,20 @@ export default function FormModal({
           }
         }}
       >
-        <div className={`modal-box w-full max-w-none max-h-[92dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-3xl sm:rounded-2xl bg-base-300 border-t border-base-content/15 sm:border sm:border-base-content/10 p-0 relative overflow-hidden text-base-content shadow-2xl transition-all duration-300 flex flex-col justify-between ${
+        <div 
+          style={{ transform: sheetTranslateY > 0 ? `translateY(${sheetTranslateY}px)` : undefined }}
+          className={`modal-box w-full max-w-none max-h-[92dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg rounded-t-3xl sm:rounded-2xl bg-base-300 border-t border-base-content/15 sm:border sm:border-base-content/10 p-0 relative overflow-hidden text-base-content shadow-2xl transition-all duration-150 flex flex-col justify-between ${
           showKeypad || showAccountSheet || showCategorySheet ? 'min-h-[480px] sm:min-h-[540px]' : 'min-h-[350px]'
         }`}>
-          {/* Mobile Bottom Sheet Pill Indicator */}
-          <div className="w-10 h-1 bg-base-content/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0 sm:hidden" />
+          {/* Mobile Bottom Sheet Pill Indicator & Swipe Down Area */}
+          <div 
+            onTouchStart={handleDragTouchStart}
+            onTouchMove={handleDragTouchMove}
+            onTouchEnd={handleDragTouchEnd}
+            className="w-full pt-2.5 pb-2 cursor-grab active:cursor-grabbing flex justify-center items-center touch-none sm:hidden"
+          >
+            <div className="w-12 h-1.5 bg-base-content/30 rounded-full" />
+          </div>
 
           <form
             onSubmit={(e) => {
@@ -442,7 +476,7 @@ export default function FormModal({
                 categories={categories.filter(cat => type === 'INCOME' ? cat.type === 'INCOME' : (cat.type === 'EXPENSE' || !cat.type))}
                 selectedCategoryId={categoryId}
                 onSelect={(cat) => {
-                  setCategoryId(cat._id);
+                  setCategoryId(cat._id || cat.clientCatId);
                   setCategoryName(cat.name);
                   setShowCategorySheet(false);
                 }}

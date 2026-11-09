@@ -156,9 +156,38 @@ export const getCategoriesCache = (userId = getCurrentUserId()) => {
 };
 
 export const setCategoriesCache = (categories, userId = getCurrentUserId()) => {
-  if (Array.isArray(categories) && categories.length > 0) {
-    localStorage.setItem(`categories_cache_${userId}`, JSON.stringify(categories));
-    idbSet(`categories_cache_${userId}`, categories);
+  if (Array.isArray(categories)) {
+    // Preserve any locally pending/queued categories that haven't synced to server yet
+    const queue = getCategoryQueue(userId);
+    let mergedCategories = [...categories];
+
+    queue.forEach(op => {
+      if (op.type === 'CREATE') {
+        if (!mergedCategories.some(c => (c.clientCatId && c.clientCatId === op.clientCatId) || (c._id && c._id === op.clientCatId))) {
+          mergedCategories.push({
+            _id: op.clientCatId,
+            clientCatId: op.clientCatId,
+            ...op.data,
+            isPending: true
+          });
+        }
+      } else if (op.type === 'UPDATE') {
+        const idx = mergedCategories.findIndex(c => c._id === op.id || c.clientCatId === op.clientCatId);
+        if (idx !== -1) {
+          mergedCategories[idx] = { ...mergedCategories[idx], ...op.data, isPending: true };
+        }
+      } else if (op.type === 'DELETE') {
+        mergedCategories = mergedCategories.filter(c => c._id !== op.id && c.clientCatId !== op.clientCatId);
+      }
+    });
+
+    if (mergedCategories.length > 0) {
+      localStorage.setItem(`categories_cache_${userId}`, JSON.stringify(mergedCategories));
+      idbSet(`categories_cache_${userId}`, mergedCategories);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nexus_categories_updated', { detail: mergedCategories }));
+      }
+    }
   }
 };
 
@@ -434,6 +463,7 @@ export const queueCategoryOperation = (type, clientCatId, id, data, userId = get
   setCategoriesCache(currentMerged, userId);
 
   triggerSync();
+  notify();
   return actualClientCatId;
 };
 
@@ -464,6 +494,7 @@ export const queueAccountOperation = (type, clientAccId, id, data, userId = getC
   setAccountsCache(currentMerged, userId);
 
   triggerSync();
+  notify();
   return actualClientAccId;
 };
 

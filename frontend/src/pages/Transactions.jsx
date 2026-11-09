@@ -44,12 +44,15 @@ export default function Transactions() {
   const navigate = useNavigate();
 
   const [syncQueueLength, setSyncQueueLength] = useState(0);
+  const [catVersion, setCatVersion] = useState(0);
 
   useEffect(() => {
     const handleSyncDone = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
     };
+    const handleCatUpdate = () => setCatVersion(v => v + 1);
+    window.addEventListener('nexus_categories_updated', handleCatUpdate);
     window.addEventListener('nexus_sync_completed', handleSyncDone);
 
     const unsubscribe = subscribeToSync((status, qLength) => {
@@ -61,6 +64,7 @@ export default function Transactions() {
     });
 
     return () => {
+      window.removeEventListener('nexus_categories_updated', handleCatUpdate);
       window.removeEventListener('nexus_sync_completed', handleSyncDone);
       unsubscribe();
     };
@@ -131,7 +135,7 @@ export default function Transactions() {
     void rawCategories;
     void syncQueueLength;
     return getMergedCategories();
-  }, [rawCategories, syncQueueLength]);
+  }, [rawCategories, syncQueueLength, catVersion]);
 
   const formProps = useTransactionsForm(transactions);
   const {

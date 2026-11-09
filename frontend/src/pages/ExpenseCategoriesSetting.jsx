@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAxiosSecure } from '../hooks/useApi';
-import { ArrowLeft, Plus, Trash2, Edit2, ListFilter } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit2, ListFilter, GripVertical, CornerDownRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
@@ -12,65 +12,77 @@ export default function ExpenseCategoriesSetting() {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🍔');
   const [color, setColor] = useState('#ef4444');
+  const [parentId, setParentId] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
 
+  const loadFromLocal = () => {
+    const merged = getMergedCategories().filter((cat) => cat.type === 'EXPENSE');
+    setCategories(merged);
+  };
+
   const fetchCategories = async () => {
+    loadFromLocal();
     if (navigator.onLine) {
       try {
         const response = await axiosSecure.get('/api/categories');
         if (response.data.success) {
           setCategoriesCache(response.data.data);
+          loadFromLocal();
         }
-      } catch (err) {
+      } catch (_err) {
         console.warn('Using cached categories offline');
       }
     }
-    const merged = getMergedCategories().filter((cat) => cat.type === 'EXPENSE');
-    setCategories(merged);
   };
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  const topLevelCategories = useMemo(() => {
+    return categories.filter(c => !c.parentId && (c._id || c.clientCatId) !== editingId);
+  }, [categories, editingId]);
+
   const handleSaveCategory = async (e) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name.trim()) return;
     setLoading(true);
     setError('');
 
     try {
+      const payload = {
+        name: name.trim(),
+        emoji: emoji || '🍔',
+        color: color || '#ef4444',
+        parentId: parentId || null,
+        type: 'EXPENSE'
+      };
+
       if (editingId) {
-        queueCategoryOperation('UPDATE', null, editingId, {
-          name,
-          emoji,
-          color,
-          type: 'EXPENSE'
-        });
+        queueCategoryOperation('UPDATE', null, editingId, payload);
       } else {
         const clientCatId = generateUUID('cat');
-        queueCategoryOperation('CREATE', clientCatId, null, {
-          name,
-          emoji,
-          color,
-          type: 'EXPENSE'
-        });
+        queueCategoryOperation('CREATE', clientCatId, null, payload);
       }
+
+      // Instant local reflection
+      loadFromLocal();
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
 
       setEditingId(null);
       setName('');
       setEmoji('🍔');
       setColor('#ef4444');
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      fetchCategories();
+      setParentId('');
       const modal = document.getElementById('category_modal');
       if (modal) modal.close();
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to save category.');
     } finally {
       setLoading(false);
@@ -78,10 +90,13 @@ export default function ExpenseCategoriesSetting() {
   };
 
   const handleEditClick = (cat) => {
-    setEditingId(cat._id || cat.clientCatId);
+    const id = cat._id || cat.clientCatId;
+    setEditingId(id);
     setName(cat.name);
     setEmoji(cat.emoji || '🍔');
     setColor(cat.color || '#ef4444');
+    const pId = typeof cat.parentId === 'object' && cat.parentId ? cat.parentId._id : cat.parentId;
+    setParentId(pId || '');
     document.getElementById('category_modal').showModal();
   };
 
@@ -101,12 +116,58 @@ export default function ExpenseCategoriesSetting() {
     if (!result.isConfirmed) return;
     try {
       queueCategoryOperation('DELETE', null, id, null);
+      loadFromLocal();
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      fetchCategories();
     } catch (err) {
       console.error(err);
     }
   };
+
+  // Drag and drop reordering handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    const reordered = [...categories];
+    const draggedItem = reordered[draggedIndex];
+    reordered.splice(draggedIndex, 1);
+    reordered.splice(index, 0, draggedItem);
+    setDraggedIndex(index);
+    setCategories(reordered);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setCategoriesCache(categories);
+  };
+
+  // Group categories so subcategories nest under their parents
+  const structuredCategories = useMemo(() => {
+    const parents = categories.filter(c => !c.parentId);
+    const result = [];
+    parents.forEach(p => {
+      result.push({ ...p, isParent: true });
+      const pId = String(p._id || p.clientCatId);
+      const subs = categories.filter(c => {
+        if (!c.parentId) return false;
+        const subPid = typeof c.parentId === 'object' ? String(c.parentId._id || '') : String(c.parentId);
+        return subPid === pId;
+      });
+      subs.forEach(s => result.push({ ...s, isSub: true, parentName: p.name }));
+    });
+    // Add any remaining unparented or orphaned categories
+    categories.forEach(c => {
+      const cId = String(c._id || c.clientCatId);
+      if (!result.some(r => String(r._id || r.clientCatId) === cId)) {
+        result.push(c);
+      }
+    });
+    return result;
+  }, [categories]);
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content font-sans pb-10">
@@ -117,7 +178,7 @@ export default function ExpenseCategoriesSetting() {
         </button>
         <div>
           <h1 className="text-lg font-bold">Expenses Category Setting</h1>
-          <p className="text-xs text-base-content/50">Configure your expense categories</p>
+          <p className="text-xs text-base-content/50">Manage, nest subcategories & drag to reorder</p>
         </div>
       </div>
 
@@ -131,6 +192,7 @@ export default function ExpenseCategoriesSetting() {
               setName('');
               setEmoji('🍔');
               setColor('#ef4444');
+              setParentId('');
               document.getElementById('category_modal').showModal();
             }}
             className="btn btn-xs bg-error hover:bg-error/80 border-none text-white gap-1"
@@ -139,24 +201,48 @@ export default function ExpenseCategoriesSetting() {
           </button>
         </div>
 
-        {categories.length === 0 ? (
+        {structuredCategories.length === 0 ? (
           <div className="text-center py-12 text-base-content/50 text-sm">
             No expense categories defined.
           </div>
         ) : (
           <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
-            {categories.map((cat) => (
-              <div key={cat._id} className="flex justify-between items-center p-4 hover:bg-base-200 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl p-2 rounded-xl bg-base-200 border border-base-content/10" style={{ borderColor: cat.color }}>
+            {structuredCategories.map((cat, idx) => (
+              <div 
+                key={cat._id || cat.clientCatId} 
+                draggable
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+                className={`flex justify-between items-center p-3.5 transition-colors cursor-move select-none ${
+                  cat.isSub ? 'bg-base-200/50 pl-7 border-l-4 border-error/40' : 'hover:bg-base-200'
+                } ${draggedIndex === idx ? 'opacity-50 scale-[0.98]' : ''}`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="cursor-grab active:cursor-grabbing text-base-content/30 hover:text-base-content/70">
+                    <GripVertical className="w-4 h-4" />
+                  </div>
+                  {cat.isSub && <CornerDownRight className="w-3.5 h-3.5 text-base-content/40 -mr-1 shrink-0" />}
+                  <span className="text-xl p-1.5 rounded-xl bg-base-200 border border-base-content/10 shrink-0" style={{ borderColor: cat.color }}>
                     {cat.emoji || '🍔'}
                   </span>
-                  <div>
-                    <span className="font-semibold text-sm block">{cat.name}</span>
-                    <span className="text-[10px] text-base-content/50" style={{ color: cat.color }}>{cat.color}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-sm truncate">{cat.name}</span>
+                      {cat.isSub && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-base-100 text-base-content/60 border border-base-content/10">
+                          Subcategory
+                        </span>
+                      )}
+                    </div>
+                    {cat.parentName && (
+                      <span className="text-[10px] text-base-content/50 block truncate">
+                        Parent: {cat.parentName}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => navigate('/transactions', { state: { filterCategory: cat._id || cat.clientCatId || cat.name, filterType: 'EXPENSE' } })}
                     className="btn btn-ghost btn-xs text-xs gap-1 text-base-content/60 hover:text-error cursor-pointer"
@@ -173,7 +259,7 @@ export default function ExpenseCategoriesSetting() {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteCategory(cat._id)}
+                    onClick={() => handleDeleteCategory(cat._id || cat.clientCatId)}
                     className="btn btn-ghost btn-xs btn-circle text-base-content/60 hover:text-error"
                     title="Delete category"
                   >
@@ -213,9 +299,28 @@ export default function ExpenseCategoriesSetting() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="input input-bordered bg-base-200 border-base-content/20 text-base-content"
-                placeholder="e.g. Food, Transport"
+                placeholder="e.g. Groceries, Restaurants, Rent"
                 required
               />
+            </div>
+
+            {/* Parent Category Selection for Subcategories */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-base-content/60 font-semibold">Parent Category (Optional)</span>
+              </label>
+              <select
+                value={parentId}
+                onChange={(e) => setParentId(e.target.value)}
+                className="select select-bordered bg-base-200 border-base-content/20 text-base-content text-xs"
+              >
+                <option value="">None (Top-Level Category)</option>
+                {topLevelCategories.map((c) => (
+                  <option key={c._id || c.clientCatId} value={c._id || c.clientCatId}>
+                    {c.emoji || '🏷️'} {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -249,30 +354,28 @@ export default function ExpenseCategoriesSetting() {
                       style={{
                         backgroundColor: c,
                         borderColor: color === c ? '#ffffff' : 'transparent',
-                        boxShadow: color === c ? '0 0 8px rgba(255, 255, 255, 0.4)' : 'none',
+                        boxShadow: color === c ? '0 0 0 2px #ef4444' : 'none'
                       }}
-                    >
-                      {color === c && <span className="text-white text-xs font-bold">✓</span>}
-                    </button>
+                    />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="modal-action flex justify-end gap-2">
+            <div className="modal-action flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => document.getElementById('category_modal').close()}
-                className="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content"
+                className="btn btn-ghost btn-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="btn bg-error hover:bg-error/80 border-none btn-sm text-white"
+                className="btn btn-error btn-sm text-white"
               >
-                Save
+                {loading ? 'Saving...' : 'Save Category'}
               </button>
             </div>
           </form>

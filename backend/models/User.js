@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema({
     default: 'dark' 
   },
   settings: {
-    subcategoryEnabled: { type: Boolean, default: false },
+    subcategoryEnabled: { type: Boolean, default: true },
     budgetLimit: { type: Number, default: 0 },
     repeatDefault: { type: String, default: 'None' },
     subCurrency: { type: String, default: 'USD' },

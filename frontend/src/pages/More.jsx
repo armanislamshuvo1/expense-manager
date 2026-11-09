@@ -23,6 +23,7 @@ import Swal from 'sweetalert2';
 // Import modularized components
 import PreferencesModal from '../components/more/PreferencesModal';
 import PasscodeSettingsModal from '../components/more/PasscodeSettingsModal';
+import { scheduleDailyReminder } from '../utils/reminderManager';
 import QuickPreferenceForm from '../components/more/QuickPreferenceForm';
 import SettingsSection from '../components/more/SettingsSection';
 import FingerprintModal from '../components/auth/FingerprintModal';
@@ -231,6 +232,9 @@ export default function More() {
     let finalVal = modalValue;
     if (modalType === 'number') {
       finalVal = Number(modalValue) || 0;
+    }
+    if (modalKey === 'alarmTime' && settings.alarmEnabled) {
+      await scheduleDailyReminder(finalVal);
     }
     await updateSettingKey(modalKey, finalVal);
     setModalOpen(false);
