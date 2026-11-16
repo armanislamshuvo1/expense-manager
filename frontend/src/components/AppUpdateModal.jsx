@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sparkles, DownloadCloud, AlertCircle, X } from 'lucide-react';
 import { installUpdate } from '../utils/appUpdateManager';
 import { isNativeApp } from '../utils/pwaUtils';
@@ -11,6 +11,16 @@ export default function AppUpdateModal({
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+
+  const displayNotes = useMemo(() => {
+    if (!updateInfo?.latest?.releaseNotes) {
+      return 'Bug fixes, performance improvements, and security enhancements.';
+    }
+    return updateInfo.latest.releaseNotes
+      .replace(/Tap NexusWealth\.apk below to install directly\./gi, '')
+      .replace(/(\r\n|\r|\n){3,}/g, '\n\n')
+      .trim() || 'Bug fixes, performance improvements, and security enhancements.';
+  }, [updateInfo?.latest?.releaseNotes]);
 
   if (!isOpen || !updateInfo) return null;
 
@@ -81,7 +91,7 @@ export default function AppUpdateModal({
             What's New:
           </span>
           <p className="text-xs text-base-content/80 whitespace-pre-line leading-relaxed">
-            {latest.releaseNotes || 'Bug fixes, performance improvements, and security enhancements.'}
+            {displayNotes}
           </p>
         </div>
 

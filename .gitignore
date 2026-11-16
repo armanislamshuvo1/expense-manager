@@ -38,3 +38,6 @@ build/
 # Cloud/Hosting
 .vercel/
 .vercel
+
+# Agent / Scratch
+.agents/

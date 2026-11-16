@@ -142,7 +142,12 @@ export default function AccountTransactionsModal() {
         outflow += amount;
       } else if (tx.type === 'TRANSFER') {
         if (destId === accIdStr) {
-          inflow += amount;
+          const receivedAmt = (tx.toAmount !== undefined && tx.toAmount !== null && Number(tx.toAmount) > 0)
+            ? Number(tx.toAmount)
+            : (account?.currency && tx.currency !== account.currency
+                ? Number((amount * (Number(tx.exchangeRate) || 1.0)).toFixed(2))
+                : amount);
+          inflow += receivedAmt;
         } else if (srcId === accIdStr) {
           outflow += amount;
         }
@@ -460,7 +465,20 @@ export default function AccountTransactionsModal() {
                           <div className={`font-black text-sm md:text-base ${
                             isIncoming ? 'text-success' : 'text-error'
                           }`}>
-                            {isIncoming ? '+' : '-'}{tx.currency || baseCurrency} {Number(tx.amount).toFixed(2)}
+                            {isIncoming ? '+' : '-'}{
+                              isIncoming
+                                ? (tx.toCurrency || account?.currency || tx.currency || baseCurrency)
+                                : (tx.currency || baseCurrency)
+                            }{' '}
+                            {Number(
+                              isIncoming && tx.type === 'TRANSFER'
+                                ? (tx.toAmount !== undefined && tx.toAmount !== null
+                                    ? tx.toAmount
+                                    : (account?.currency && tx.currency !== account.currency
+                                        ? tx.amount * (Number(tx.exchangeRate) || 1.0)
+                                        : tx.amount))
+                                : tx.amount
+                            ).toFixed(2)}
                           </div>
                           {tx.note && (tx.type === 'INCOME' || tx.type === 'EXPENSE') && (
                             <div className="text-[10px] text-base-content/40 max-w-[140px] truncate">

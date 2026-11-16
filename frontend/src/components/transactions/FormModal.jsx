@@ -79,6 +79,55 @@ export default function FormModal({
   const descriptionInputRef = useRef(null);
   const matchedSuggestions = getNoteSuggestions ? getNoteSuggestions(note) : [];
 
+  const sourceAccount = accounts?.find(a => String(a._id || a.clientAccId) === String(accountId));
+  const toAccount = accounts?.find(a => String(a._id || a.clientAccId) === String(toAccountId));
+  const isCrossCurrency = Boolean(
+    type === 'TRANSFER' &&
+    sourceAccount &&
+    toAccount &&
+    sourceAccount.currency &&
+    toAccount.currency &&
+    sourceAccount.currency !== toAccount.currency
+  );
+
+  const [targetAmount, setTargetAmount] = React.useState('');
+
+  const handleRateChange = (newRate) => {
+    setExchangeRate(newRate);
+    const numRate = parseFloat(newRate);
+    const numAmt = parseFloat(amount);
+    if (!isNaN(numRate) && !isNaN(numAmt) && numAmt > 0) {
+      setTargetAmount((numAmt * numRate).toFixed(2));
+    } else {
+      setTargetAmount('');
+    }
+  };
+
+  const handleTargetAmountChange = (newTarget) => {
+    setTargetAmount(newTarget);
+    const numTarget = parseFloat(newTarget);
+    const numAmt = parseFloat(amount);
+    if (!isNaN(numTarget) && !isNaN(numAmt) && numAmt > 0) {
+      setExchangeRate((numTarget / numAmt).toFixed(4));
+    }
+  };
+
+  const handleAmountChange = (newAmount) => {
+    setAmount(newAmount);
+    const numAmt = parseFloat(newAmount);
+    const numRate = parseFloat(exchangeRate);
+    if (!isNaN(numAmt) && !isNaN(numRate) && numRate > 0) {
+      setTargetAmount((numAmt * numRate).toFixed(2));
+    }
+  };
+
+  React.useEffect(() => {
+    if (isCrossCurrency && Number(amount) > 0) {
+      const numRate = Number(exchangeRate) || 1.0;
+      setTargetAmount((Number(amount) * numRate).toFixed(2));
+    }
+  }, [isCrossCurrency, accountId, toAccountId]);
+
   const dragStartY = useRef(null);
   const [sheetTranslateY, setSheetTranslateY] = React.useState(0);
 
@@ -134,7 +183,21 @@ export default function FormModal({
             onSubmit={(e) => {
               e.preventDefault();
               hapticSuccess();
-              handleSaveTransaction(e);
+              const computedTargetAmount = targetAmount !== '' && !isNaN(Number(targetAmount))
+                ? Number(targetAmount)
+                : (Number(amount) > 0 && Number(exchangeRate) > 0 ? Number((Number(amount) * Number(exchangeRate)).toFixed(2)) : undefined);
+
+              handleSaveTransaction(e, isCrossCurrency ? {
+                toAmount: computedTargetAmount,
+                toCurrency: toAccount?.currency,
+                exchangeRate: Number(exchangeRate) || 1.0,
+                shouldConvert: true
+              } : (type === 'TRANSFER' && toAccount ? {
+                toAmount: Number(amount),
+                toCurrency: toAccount.currency,
+                exchangeRate: 1.0,
+                shouldConvert: true
+              } : undefined));
             }}
             className="flex flex-col h-full min-h-0 flex-1 justify-between overflow-hidden"
           >
@@ -215,7 +278,7 @@ export default function FormModal({
                             noteInputRef.current?.focus();
                           }
                         }}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={(e) => handleAmountChange(e.target.value)}
                         className="input input-bordered bg-base-200 border-base-content/20 hover:border-base-content/40 text-base-content font-bold text-lg h-12 w-full pr-12 rounded-xl transition-all"
                       />
                       <button
@@ -231,33 +294,101 @@ export default function FormModal({
                   </div>
                 </div>
 
-                {/* Conversion Details (if current currency is different from user main baseCurrency) */}
-                {currency !== user?.baseCurrency && (
-                  <div className="bg-base-200 p-3 rounded-xl space-y-3 border border-base-content/10">
-                    <div className="flex justify-between items-center text-xs text-base-content/80">
-                      <span>Target Base Conversion: {user?.baseCurrency}</span>
-                      <input
-                        type="checkbox"
-                        checked={shouldConvert}
-                        onChange={(e) => setShouldConvert(e.target.checked)}
-                        className="checkbox checkbox-xs checkbox-primary"
-                      />
+                {/* Cross-Currency Transfer Conversion Card */}
+                {isCrossCurrency ? (
+                  <div className="bg-base-200 p-3.5 rounded-2xl space-y-3 border border-primary/30 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-primary badge-sm font-bold">
+                          {sourceAccount.currency} ➔ {toAccount.currency}
+                        </span>
+                        <span className="text-xs font-bold text-base-content/80">Cross-Currency Transfer</span>
+                      </div>
+                      <span className="text-[11px] text-base-content/60 font-mono">
+                        1 {sourceAccount.currency} = {Number(exchangeRate || 1.0).toFixed(4)} {toAccount.currency}
+                      </span>
                     </div>
-                    {shouldConvert && (
+
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div className="form-control">
-                        <label className="label py-0">
-                          <span className="label-text-alt text-base-content/50">Manual Exchange Rate (1 {currency} = ? {user?.baseCurrency})</span>
+                        <label className="label py-0.5">
+                          <span className="label-text-alt text-[10px] text-base-content/60 font-semibold">
+                            Exchange Rate (1 {sourceAccount.currency} = ? {toAccount.currency})
+                          </span>
                         </label>
                         <input
                           type="number"
                           step="0.0001"
+                          min="0"
+                          placeholder="e.g. 0.22"
                           value={exchangeRate}
-                          onChange={(e) => setExchangeRate(e.target.value)}
-                          className="input input-xs input-bordered bg-base-300 border-base-content/20 text-base-content w-full mt-1"
+                          onChange={(e) => handleRateChange(e.target.value)}
+                          className="input input-xs input-bordered bg-base-300 border-base-content/20 font-bold text-xs rounded-lg h-9 w-full"
                         />
                       </div>
-                    )}
+
+                      <div className="form-control">
+                        <label className="label py-0.5">
+                          <span className="label-text-alt text-[10px] text-base-content/60 font-semibold">
+                            Target Receives ({toAccount.currency})
+                          </span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={targetAmount}
+                          onChange={(e) => handleTargetAmountChange(e.target.value)}
+                          className="input input-xs input-bordered bg-base-300 border-base-content/20 font-bold text-xs rounded-lg h-9 w-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Preview Card */}
+                    <div className="bg-base-300/60 p-2.5 rounded-xl border border-base-content/10 flex items-center justify-between text-xs">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-base-content/50 uppercase font-bold">Preview</span>
+                        <span className="font-bold text-base-content">
+                          -{sourceAccount.currency} {Number(amount || 0).toFixed(2)} ➔ +{toAccount.currency} {Number(targetAmount || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="badge badge-ghost badge-sm text-[10px] opacity-75 font-mono">
+                          Target receives: {Number(targetAmount || 0).toFixed(2)} {toAccount.currency}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  /* Case 2: Non-transfer foreign currency relative to user baseCurrency */
+                  type !== 'TRANSFER' && currency !== user?.baseCurrency && (
+                    <div className="bg-base-200 p-3 rounded-xl space-y-3 border border-base-content/10">
+                      <div className="flex justify-between items-center text-xs text-base-content/80">
+                        <span>Target Base Conversion: {user?.baseCurrency}</span>
+                        <input
+                          type="checkbox"
+                          checked={shouldConvert}
+                          onChange={(e) => setShouldConvert(e.target.checked)}
+                          className="checkbox checkbox-xs checkbox-primary"
+                        />
+                      </div>
+                      {shouldConvert && (
+                        <div className="form-control">
+                          <label className="label py-0">
+                            <span className="label-text-alt text-base-content/50">Manual Exchange Rate (1 {currency} = ? {user?.baseCurrency})</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={exchangeRate}
+                            onChange={(e) => setExchangeRate(e.target.value)}
+                            className="input input-xs input-bordered bg-base-300 border-base-content/20 text-base-content w-full mt-1"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
                 )}
 
                 {/* Account & Category Selection Fields */}
@@ -438,7 +569,7 @@ export default function FormModal({
             <div className="absolute bottom-0 left-0 right-0 z-50 animate-slideUp">
               <CustomKeypad
                 value={amount}
-                onChange={(val) => setAmount(val)}
+                onChange={(val) => handleAmountChange(val)}
                 onDone={() => setShowKeypad(false)}
                 preferredCurrencies={user?.preferredCurrencies}
                 activeCurrency={currency}
@@ -456,6 +587,9 @@ export default function FormModal({
                   if (selectingAccountType === 'source') {
                     setAccountId(acc._id);
                     setAccountName(acc.name);
+                    if (acc.currency) {
+                      setCurrency(acc.currency);
+                    }
                   } else {
                     setToAccountId(acc._id);
                     setToAccountName(acc.name);

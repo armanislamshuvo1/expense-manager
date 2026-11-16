@@ -87,9 +87,23 @@ export const syncTransactions = async (req, res, next) => {
         if (!account) throw new Error(`Source account not found for sync operation CREATE.`);
 
         let toAccount = null;
+        let targetToAmount = undefined;
+        let effectiveRate = exchangeRate !== undefined && exchangeRate !== null && Number(exchangeRate) > 0 ? Number(exchangeRate) : 1.0;
+
         if (txType === 'TRANSFER') {
           toAccount = await resolveAccount(toAccountId, userId);
           if (!toAccount) throw new Error(`Destination account not found for sync operation CREATE.`);
+
+          if (data.toAmount !== undefined && data.toAmount !== null && Number(data.toAmount) > 0) {
+            targetToAmount = Number(data.toAmount);
+            if ((exchangeRate === undefined || exchangeRate === null || Number(exchangeRate) <= 0) && Number(amount) > 0) {
+              effectiveRate = Number((targetToAmount / Number(amount)).toFixed(6));
+            }
+          } else if (account.currency === toAccount.currency) {
+            targetToAmount = Number(amount);
+          } else {
+            targetToAmount = Number((Number(amount) * effectiveRate).toFixed(2));
+          }
         }
 
         let resolvedCategoryId = undefined;
@@ -104,21 +118,17 @@ export const syncTransactions = async (req, res, next) => {
           toAccountId: txType === 'TRANSFER' && toAccount ? toAccount._id : undefined,
           categoryId: txType !== 'TRANSFER' ? resolvedCategoryId : undefined,
           type: txType,
-          amount,
-          currency,
-          shouldConvert: shouldConvert !== undefined ? shouldConvert : true,
-          exchangeRate: exchangeRate !== undefined ? exchangeRate : 1.0,
+          amount: Number(amount),
+          currency: currency || account.currency,
+          toAmount: txType === 'TRANSFER' ? targetToAmount : undefined,
+          toCurrency: txType === 'TRANSFER' && toAccount ? toAccount.currency : undefined,
+          shouldConvert: true,
+          exchangeRate: effectiveRate,
           date,
           note,
           description,
           clientTxId
         });
-
-        if (transaction.shouldConvert) {
-          transaction.convertedAmount = Number((transaction.amount * transaction.exchangeRate).toFixed(2));
-        } else {
-          transaction.convertedAmount = transaction.amount;
-        }
 
         await transaction.save();
 
@@ -129,10 +139,8 @@ export const syncTransactions = async (req, res, next) => {
           const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
           await Account.updateOne({ _id: account._id }, { $inc: { balance: -effect } });
         } else if (txType === 'TRANSFER') {
-          const fromEffect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
-          const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, baseCurrency);
-          await Account.updateOne({ _id: account._id }, { $inc: { balance: -fromEffect } });
-          await Account.updateOne({ _id: toAccount._id }, { $inc: { balance: toEffect } });
+          await Account.updateOne({ _id: account._id }, { $inc: { balance: -Number(amount) } });
+          await Account.updateOne({ _id: toAccount._id }, { $inc: { balance: targetToAmount } });
         }
 
         idMap[clientTxId] = transaction._id;
@@ -161,17 +169,22 @@ export const syncTransactions = async (req, res, next) => {
 
         const oldSourceAccount = await Account.findOne({ _id: transaction.accountId, userId });
         if (oldSourceAccount) {
-          const oldFromEffect = getBalanceEffectForAccount(transaction, oldSourceAccount.currency, baseCurrency);
           if (transaction.type === 'INCOME') {
+            const oldFromEffect = getBalanceEffectForAccount(transaction, oldSourceAccount.currency, baseCurrency);
             await Account.updateOne({ _id: oldSourceAccount._id }, { $inc: { balance: -oldFromEffect } });
           } else if (transaction.type === 'EXPENSE') {
+            const oldFromEffect = getBalanceEffectForAccount(transaction, oldSourceAccount.currency, baseCurrency);
             await Account.updateOne({ _id: oldSourceAccount._id }, { $inc: { balance: oldFromEffect } });
           } else if (transaction.type === 'TRANSFER') {
-            await Account.updateOne({ _id: oldSourceAccount._id }, { $inc: { balance: oldFromEffect } });
+            await Account.updateOne({ _id: oldSourceAccount._id }, { $inc: { balance: Number(transaction.amount) } });
             const oldDestAccount = await Account.findOne({ _id: transaction.toAccountId, userId });
             if (oldDestAccount) {
-              const oldToEffect = getBalanceEffectForAccount(transaction, oldDestAccount.currency, baseCurrency);
-              await Account.updateOne({ _id: oldDestAccount._id }, { $inc: { balance: -oldToEffect } });
+              const oldToRevert = transaction.toAmount !== undefined && transaction.toAmount !== null
+                ? transaction.toAmount
+                : (transaction.currency !== oldDestAccount.currency
+                    ? Number((transaction.amount * (transaction.exchangeRate || 1.0)).toFixed(2))
+                    : transaction.amount);
+              await Account.updateOne({ _id: oldDestAccount._id }, { $inc: { balance: -oldToRevert } });
             }
           }
         }
@@ -179,14 +192,17 @@ export const syncTransactions = async (req, res, next) => {
         const newSourceAccount = await resolveAccount(accountId, userId);
         if (!newSourceAccount) throw new Error(`Source account not found for sync operation UPDATE.`);
 
+        let newDestAccount = null;
+        let targetToAmount = undefined;
+        let effectiveRate = exchangeRate !== undefined && exchangeRate !== null && Number(exchangeRate) > 0 ? Number(exchangeRate) : 1.0;
+
         const tempTx = {
           amount: Number(amount),
-          currency,
+          currency: currency || newSourceAccount.currency,
           shouldConvert: shouldConvert !== undefined ? shouldConvert : true,
-          exchangeRate: exchangeRate !== undefined ? Number(exchangeRate) : 1.0
+          exchangeRate: effectiveRate
         };
 
-        let newDestAccount = null;
         if (txType === 'INCOME') {
           const newEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
           await Account.updateOne({ _id: newSourceAccount._id }, { $inc: { balance: newEffect } });
@@ -197,11 +213,19 @@ export const syncTransactions = async (req, res, next) => {
           newDestAccount = await resolveAccount(toAccountId, userId);
           if (!newDestAccount) throw new Error(`Destination account not found for sync operation UPDATE.`);
           
-          const newFromEffect = getBalanceEffectForAccount(tempTx, newSourceAccount.currency, baseCurrency);
-          const newToEffect = getBalanceEffectForAccount(tempTx, newDestAccount.currency, baseCurrency);
-          
-          await Account.updateOne({ _id: newSourceAccount._id }, { $inc: { balance: -newFromEffect } });
-          await Account.updateOne({ _id: newDestAccount._id }, { $inc: { balance: newToEffect } });
+          if (data.toAmount !== undefined && data.toAmount !== null && Number(data.toAmount) > 0) {
+            targetToAmount = Number(data.toAmount);
+            if ((exchangeRate === undefined || exchangeRate === null || Number(exchangeRate) <= 0) && Number(amount) > 0) {
+              effectiveRate = Number((targetToAmount / Number(amount)).toFixed(6));
+            }
+          } else if (newSourceAccount.currency === newDestAccount.currency) {
+            targetToAmount = Number(amount);
+          } else {
+            targetToAmount = Number((Number(amount) * effectiveRate).toFixed(2));
+          }
+
+          await Account.updateOne({ _id: newSourceAccount._id }, { $inc: { balance: -Number(amount) } });
+          await Account.updateOne({ _id: newDestAccount._id }, { $inc: { balance: targetToAmount } });
         }
 
         let resolvedUpdateCatId = undefined;
@@ -215,18 +239,21 @@ export const syncTransactions = async (req, res, next) => {
         transaction.categoryId = txType !== 'TRANSFER' ? resolvedUpdateCatId : undefined;
         transaction.type = txType;
         transaction.amount = Number(amount);
-        transaction.currency = currency;
-        transaction.shouldConvert = shouldConvert !== undefined ? shouldConvert : true;
-        transaction.exchangeRate = exchangeRate !== undefined ? Number(exchangeRate) : 1.0;
+        transaction.currency = currency || newSourceAccount.currency;
+        if (txType === 'TRANSFER') {
+          transaction.toAmount = targetToAmount;
+          transaction.toCurrency = newDestAccount.currency;
+          transaction.shouldConvert = true;
+          transaction.exchangeRate = effectiveRate;
+        } else {
+          transaction.toAmount = undefined;
+          transaction.toCurrency = undefined;
+          transaction.shouldConvert = shouldConvert !== undefined ? shouldConvert : true;
+          transaction.exchangeRate = effectiveRate;
+        }
         if (date) transaction.date = date;
         transaction.note = note;
         transaction.description = description;
-
-        if (transaction.shouldConvert) {
-          transaction.convertedAmount = Number((transaction.amount * transaction.exchangeRate).toFixed(2));
-        } else {
-          transaction.convertedAmount = transaction.amount;
-        }
 
         await transaction.save();
         processedOps.push({ clientTxId, status: 'UPDATED', id: transaction._id });
@@ -247,12 +274,15 @@ export const syncTransactions = async (req, res, next) => {
             const effect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
             await Account.updateOne({ _id: account._id }, { $inc: { balance: effect } });
           } else if (transaction.type === 'TRANSFER') {
-            const fromEffect = getBalanceEffectForAccount(transaction, account.currency, baseCurrency);
-            await Account.updateOne({ _id: account._id }, { $inc: { balance: fromEffect } });
+            await Account.updateOne({ _id: account._id }, { $inc: { balance: Number(transaction.amount) } });
 
             const toAccount = await Account.findOne({ _id: transaction.toAccountId, userId });
             if (toAccount) {
-              const toEffect = getBalanceEffectForAccount(transaction, toAccount.currency, baseCurrency);
+              const toEffect = transaction.toAmount !== undefined && transaction.toAmount !== null
+                ? transaction.toAmount
+                : (transaction.currency !== toAccount.currency
+                    ? Number((transaction.amount * (transaction.exchangeRate || 1.0)).toFixed(2))
+                    : transaction.amount);
               await Account.updateOne({ _id: toAccount._id }, { $inc: { balance: -toEffect } });
             }
           }

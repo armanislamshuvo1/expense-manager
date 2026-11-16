@@ -574,6 +574,7 @@ export const commitImportData = async (req, res, next) => {
         const existingId = existingTxByClientTxId.get(tx.clientTxId);
         if (existingId) {
           const convertedAmt = tx.convertedAmount !== undefined ? tx.convertedAmount : (tx.shouldConvert === false ? tx.amount : Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)));
+          const toAmt = tx.toAmount !== undefined ? tx.toAmount : (tx.type === 'TRANSFER' ? Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)) : undefined);
           bulkUpdates.push({
             updateOne: {
               filter: { _id: existingId },
@@ -583,6 +584,8 @@ export const commitImportData = async (req, res, next) => {
                   currency: tx.currency || 'MYR',
                   exchangeRate: tx.exchangeRate || 1.0,
                   convertedAmount: convertedAmt,
+                  toAmount: toAmt,
+                  toCurrency: tx.toCurrency,
                   type: tx.type,
                   date: tx.date,
                   description: tx.description || tx.note
@@ -597,6 +600,7 @@ export const commitImportData = async (req, res, next) => {
 
       // New or DUPLICATE insert
       const convertedAmt = tx.convertedAmount !== undefined ? tx.convertedAmount : (tx.shouldConvert === false ? tx.amount : Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)));
+      const toAmt = tx.toAmount !== undefined ? tx.toAmount : (tx.type === 'TRANSFER' ? Number((tx.amount * (tx.exchangeRate || 1.0)).toFixed(2)) : undefined);
 
       bulkInserts.push({
         userId,
@@ -608,6 +612,8 @@ export const commitImportData = async (req, res, next) => {
         currency: tx.currency || 'MYR',
         exchangeRate: tx.exchangeRate || 1.0,
         convertedAmount: convertedAmt,
+        toAmount: toAmt,
+        toCurrency: tx.toCurrency,
         date: tx.date || new Date(),
         description: tx.description || tx.note,
         clientTxId: userChoice === 'DUPLICATE' ? `${tx.clientTxId}_dup_${Date.now()}` : (tx.clientTxId || `import_${Date.now()}_${Math.random().toString(36).substring(7)}`)
@@ -643,7 +649,17 @@ export const commitImportData = async (req, res, next) => {
           },
           totalExpense: {
             $sum: {
-              $cond: [{ $in: ['$type', ['EXPENSE', 'TRANSFER']] }, { $ifNull: ['$convertedAmount', '$amount'] }, 0]
+              $cond: [
+                { $eq: ['$type', 'TRANSFER'] },
+                '$amount',
+                {
+                  $cond: [
+                    { $eq: ['$type', 'EXPENSE'] },
+                    { $ifNull: ['$convertedAmount', '$amount'] },
+                    0
+                  ]
+                }
+              ]
             }
           }
         }
@@ -655,7 +671,7 @@ export const commitImportData = async (req, res, next) => {
       {
         $group: {
           _id: '$toAccountId',
-          totalTransferIn: { $sum: { $ifNull: ['$convertedAmount', '$amount'] } }
+          totalTransferIn: { $sum: { $ifNull: ['$toAmount', '$convertedAmount', '$amount'] } }
         }
       }
     ]).session(session);

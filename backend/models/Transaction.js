@@ -19,6 +19,13 @@ const transactionSchema = new mongoose.Schema({
     required: function() { return this.type === 'TRANSFER'; },
     index: true 
   },
+  toAmount: {
+    type: Number,
+    min: 0
+  },
+  toCurrency: {
+    type: String
+  },
   categoryId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Category', 
@@ -83,12 +90,30 @@ const transactionSchema = new mongoose.Schema({
 transactionSchema.index({ userId: 1, date: -1 });
 transactionSchema.index({ userId: 1, type: 1, date: -1 });
 
-// Pre-save middleware to verify convertedAmount mapping
+// Pre-save middleware to verify convertedAmount and toAmount mapping
 transactionSchema.pre('save', function () {
-  if (this.shouldConvert) {
-    this.convertedAmount = Number((this.amount * this.exchangeRate).toFixed(2));
+  if (this.type === 'TRANSFER') {
+    if (this.toCurrency && this.currency === this.toCurrency) {
+      this.toAmount = this.amount;
+      this.exchangeRate = 1.0;
+    }
+    if (this.toAmount === undefined || this.toAmount === null) {
+      const rate = this.exchangeRate !== undefined && this.exchangeRate !== null ? this.exchangeRate : 1.0;
+      this.toAmount = Number(((this.amount || 0) * rate).toFixed(2));
+    }
+    if (this.toAmount !== undefined && this.toAmount !== null) {
+      this.convertedAmount = this.toAmount;
+    } else if (this.shouldConvert) {
+      this.convertedAmount = Number(((this.amount || 0) * (this.exchangeRate || 1.0)).toFixed(2));
+    } else {
+      this.convertedAmount = this.amount;
+    }
   } else {
-    this.convertedAmount = this.amount;
+    if (this.shouldConvert) {
+      this.convertedAmount = Number(((this.amount || 0) * (this.exchangeRate || 1.0)).toFixed(2));
+    } else {
+      this.convertedAmount = this.amount;
+    }
   }
 });
 

@@ -23,6 +23,8 @@ export function useTransactionsForm(transactions = []) {
   const [description, setDescription] = useState('');
   const [shouldConvert, setShouldConvert] = useState(true);
   const [exchangeRate, setExchangeRate] = useState('1.0');
+  const [toAmount, setToAmount] = useState('');
+  const [toCurrency, setToCurrency] = useState('');
   const [date, setDate] = useState(new Date());
 
   const [loading, setLoading] = useState(false);
@@ -114,6 +116,8 @@ export function useTransactionsForm(transactions = []) {
     setDescription('');
     setShouldConvert(true);
     setExchangeRate('1.0');
+    setToAmount('');
+    setToCurrency('');
     setDate(prefilledDate instanceof Date ? prefilledDate : new Date());
     setError('');
     const modal = document.getElementById('add_transaction_modal');
@@ -150,13 +154,15 @@ export function useTransactionsForm(transactions = []) {
     setDescription(tx.description || '');
     setShouldConvert(tx.shouldConvert !== undefined ? tx.shouldConvert : true);
     setExchangeRate(tx.exchangeRate?.toString() || '1.0');
+    setToAmount(tx.toAmount !== undefined && tx.toAmount !== null ? tx.toAmount.toString() : '');
+    setToCurrency(tx.toCurrency || '');
     setDate(tx.date ? new Date(tx.date) : new Date());
     setError('');
     const modal = document.getElementById('add_transaction_modal');
     if (modal) modal.showModal();
   }, []);
 
-  const handleSaveTransaction = useCallback(async (e) => {
+  const handleSaveTransaction = useCallback(async (e, extraData = {}) => {
     if (e) e.preventDefault();
     if (type === 'TRANSFER') {
       if (!amount || !accountId || !toAccountId) {
@@ -177,6 +183,19 @@ export function useTransactionsForm(transactions = []) {
     setError('');
 
     try {
+      const effectiveRate = (extraData && extraData.exchangeRate !== undefined)
+        ? Number(extraData.exchangeRate)
+        : (Number(exchangeRate) || 1.0);
+      const effectiveToAmount = (extraData && extraData.toAmount !== undefined)
+        ? (extraData.toAmount !== '' && extraData.toAmount !== null ? Number(extraData.toAmount) : undefined)
+        : (toAmount !== '' && toAmount !== null ? Number(toAmount) : undefined);
+      const effectiveToCurrency = (extraData && extraData.toCurrency !== undefined)
+        ? extraData.toCurrency
+        : (toCurrency || undefined);
+      const effectiveShouldConvert = (extraData && extraData.shouldConvert !== undefined)
+        ? extraData.shouldConvert
+        : (shouldConvert !== undefined ? shouldConvert : true);
+
       const txData = {
         accountId,
         toAccountId: type === 'TRANSFER' ? toAccountId : undefined,
@@ -184,8 +203,10 @@ export function useTransactionsForm(transactions = []) {
         type,
         amount: Number(amount),
         currency,
-        shouldConvert,
-        exchangeRate: Number(exchangeRate) || 1.0,
+        toAmount: type === 'TRANSFER' ? effectiveToAmount : undefined,
+        toCurrency: type === 'TRANSFER' ? effectiveToCurrency : undefined,
+        shouldConvert: effectiveShouldConvert,
+        exchangeRate: effectiveRate,
         note,
         description,
         date: date,
@@ -209,6 +230,8 @@ export function useTransactionsForm(transactions = []) {
       setCategoryName('Select Category');
       setNote('');
       setDescription('');
+      setToAmount('');
+      setToCurrency('');
       setEditMode(false);
       setEditingId('');
       const modal = document.getElementById('add_transaction_modal');
@@ -220,8 +243,8 @@ export function useTransactionsForm(transactions = []) {
     }
   }, [
     type, amount, accountId, toAccountId, categoryId, currency, shouldConvert, exchangeRate, 
-    note, description, date, accountName, toAccountName, categoryName, editMode, editingId, 
-    updateMutation, createMutation
+    toAmount, toCurrency, note, description, date, accountName, toAccountName, categoryName, 
+    editMode, editingId, updateMutation, createMutation
   ]);
 
   const handleCreateCategory = useCallback(async (catName, emoji, parentId = null) => {
@@ -370,6 +393,10 @@ export function useTransactionsForm(transactions = []) {
     setShouldConvert,
     exchangeRate,
     setExchangeRate,
+    toAmount,
+    setToAmount,
+    toCurrency,
+    setToCurrency,
     date,
     setDate,
     loading,

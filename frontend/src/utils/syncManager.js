@@ -316,20 +316,36 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
     };
 
     // Helper to calculate effect matching backend currency conversion logic
-    const calcEffect = (txObj, accCurrency) => {
+    const calcEffect = (txObj, acc) => {
       if (!txObj) return { sourceId: '', destId: '', effect: 0, txType: '' };
       const amt = Number(txObj.amount) || 0;
+      const accId = String(acc?._id || acc?.clientAccId || '');
+      const sourceId = getAccIdStr(txObj.accountId);
+      const destId = getAccIdStr(txObj.toAccountId);
+      const accCurrency = acc?.currency;
+
       let effect = amt;
-      if (accCurrency && txObj.currency && accCurrency !== txObj.currency) {
-        const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
-        effect = amt * rate;
-      } else if (!accCurrency) {
-        const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
-        effect = amt * rate;
+      if (txObj.type === 'TRANSFER') {
+        if (accId === destId) {
+          effect = (txObj.toAmount !== undefined && txObj.toAmount !== null && Number(txObj.toAmount) > 0)
+            ? Number(txObj.toAmount)
+            : (accCurrency && txObj.currency === accCurrency ? amt : amt * (Number(txObj.exchangeRate) || 1.0));
+        } else {
+          effect = amt;
+        }
+      } else {
+        if (accCurrency && txObj.currency && accCurrency !== txObj.currency) {
+          const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
+          effect = amt * rate;
+        } else if (!accCurrency) {
+          const rate = txObj.shouldConvert !== false ? (Number(txObj.exchangeRate) || 1.0) : 1.0;
+          effect = amt * rate;
+        }
       }
+
       return {
-        sourceId: getAccIdStr(txObj.accountId),
-        destId: getAccIdStr(txObj.toAccountId),
+        sourceId,
+        destId,
         effect,
         txType: txObj.type
       };
@@ -339,7 +355,7 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
     if ((opType === 'UPDATE' || opType === 'DELETE') && oldData) {
       updatedAccs = updatedAccs.map(acc => {
         const accId = String(acc._id || acc.clientAccId || '');
-        const { sourceId, destId, effect, txType } = calcEffect(oldData, acc.currency);
+        const { sourceId, destId, effect, txType } = calcEffect(oldData, acc);
         let bal = Number(acc.balance) || 0;
         if (txType === 'INCOME' && accId === sourceId) bal -= effect;
         else if (txType === 'EXPENSE' && accId === sourceId) bal += effect;
@@ -355,10 +371,10 @@ const updateAccountBalancesOptimistically = (opType, data, oldData, userId) => {
     if ((opType === 'CREATE' || opType === 'UPDATE') && data) {
       updatedAccs = updatedAccs.map(acc => {
         const accId = String(acc._id || acc.clientAccId || '');
-        const { sourceId, destId, effect, txType } = calcEffect(data, acc.currency);
+        const { sourceId, destId, effect, txType } = calcEffect(data, acc);
         let bal = Number(acc.balance) || 0;
         if (txType === 'INCOME' && accId === sourceId) bal += effect;
-        else if (txType === 'EXPENSE' && accId === sourceId) bal -= effect;
+        else if (txType === 'EXPENSE' && accId === sourceId) bal += effect;
         else if (txType === 'TRANSFER') {
           if (accId === sourceId) bal -= effect;
           if (accId === destId) bal += effect;

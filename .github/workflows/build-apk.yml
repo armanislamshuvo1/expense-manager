@@ -4,6 +4,11 @@ on:
   push:
     branches: [ master, main ]
   workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Custom release notes for this build (optional)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -17,7 +22,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 10
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -57,10 +62,49 @@ jobs:
       - name: Rename APK for Direct Download
         run: cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/android/app/build/outputs/apk/debug/NexusWealth.apk
 
-      - name: Generate Changelog from Recent Commits
+      - name: Generate Changelog
         id: changelog
         run: |
-          CHANGES=$(git log -5 --oneline --no-merges --pretty=format:"• %s")
+          CHANGES=""
+
+          # 1. Manual release notes input via workflow_dispatch
+          CUSTOM_INPUT="${{ github.event.inputs.release_notes }}"
+          if [ -n "$CUSTOM_INPUT" ]; then
+            CHANGES="$CUSTOM_INPUT"
+          fi
+
+          # 2. Curated notes from RELEASE_NOTES.md (first section)
+          if [ -z "$CHANGES" ] && [ -f "RELEASE_NOTES.md" ]; then
+            EXTRACTED=$(awk '/^## /{if (found) exit; found=1; next} found{if (/^## / || /^---/) exit; print}' RELEASE_NOTES.md | sed -e '/^[[:space:]]*$/d')
+            if [ -n "$EXTRACTED" ]; then
+              CHANGES="$EXTRACTED"
+            fi
+          fi
+
+          # 3. Automated diff strictly since the previous release tag (never repeat older commits)
+          if [ -z "$CHANGES" ]; then
+            git fetch --tags --force 2>/dev/null || true
+            PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]' | head -n 1)
+
+            if [ -n "$PREV_TAG" ]; then
+              RAW_COMMITS=$(git log "${PREV_TAG}..HEAD" --no-merges --pretty=format:"%s" 2>/dev/null || echo "")
+            else
+              RAW_COMMITS=$(git log -10 --no-merges --pretty=format:"%s" 2>/dev/null || echo "")
+            fi
+
+            if [ -n "$RAW_COMMITS" ]; then
+              FORMATTED=$(echo "$RAW_COMMITS" | grep -v -E '^(chore|ci|test|merge|refactor\(internal\)):' | sed 's/^/• /' || echo "")
+              if [ -n "$FORMATTED" ]; then
+                CHANGES="$FORMATTED"
+              fi
+            fi
+          fi
+
+          # 4. Fallback if no specific changes found
+          if [ -z "$CHANGES" ]; then
+            CHANGES="• Bug fixes, performance improvements, and stability enhancements."
+          fi
+
           echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
           echo "$CHANGES" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
