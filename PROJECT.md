@@ -67,3 +67,9 @@ Every feature from the Survey phase must appear here with its assigned milestone
   - Source Account (`MYR`): `balance -= amount` (`-50.00 MYR`)
   - Destination Account (`USD`): `balance += toAmount` (`+11.20 USD`)
   - If same currency (`MYR` to `MYR`): `toAmount === amount`, `exchangeRate === 1.0`
+
+## Agent Protocol: Mandatory App Updates & Release Notes
+All AI agents working on this project must strictly adhere to the following rule:
+- **Update `RELEASE_NOTES.md` for every release or app update**: Every time a change is introduced that will be included in an app update, the agent must update `RELEASE_NOTES.md` with clear, non-technical, user-facing bullet points under the target version section (`## [vX.Y.Z]`).
+- **No Raw Commits to Users**: Never expose internal commit hashes, git chore messages, or debug text to end users.
+- Refer to `AGENTS.md` for complete agent rules.
