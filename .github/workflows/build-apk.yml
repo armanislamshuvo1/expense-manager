@@ -50,11 +50,18 @@ jobs:
         working-directory: frontend
         run: npx cap sync android
 
+      - name: Extract App Version
+        id: app_version
+        run: |
+          VERSION=$(node -p "require('./frontend/package.json').version")
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Building NexusWealth version: $VERSION"
+
       - name: Build Debug APK with Gradle
         working-directory: frontend/android
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
-          APP_VERSION: 3.0.6
+          APP_VERSION: ${{ env.APP_VERSION }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
@@ -114,8 +121,8 @@ jobs:
       - name: Publish Direct APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.6-build-${{ github.run_number }}
-          name: "NexusWealth Android APK v3.0.6 (Build ${{ github.run_number }})"
+          tag_name: v${{ env.APP_VERSION }}-build-${{ github.run_number }}
+          name: "NexusWealth Android APK v${{ env.APP_VERSION }} (Build ${{ github.run_number }})"
           body: ${{ env.RELEASE_BODY }}
           files: frontend/android/app/build/outputs/apk/debug/NexusWealth.apk
           make_latest: true
