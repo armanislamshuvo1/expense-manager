@@ -109,6 +109,14 @@ describe('Recurring Transactions & User-Scoped Cron Suite', () => {
       const nextNull = calculateNextRunDate(start, null);
       expect(nextNull.getTime()).toBe(start.getTime() + 86400000);
     });
+
+    it('applies explicit executionTime when supplied to calculateNextRunDate', () => {
+      const start = new Date('2026-03-15T08:15:00.000Z');
+      const next = calculateNextRunDate(start, 'DAILY', '16:45');
+      expect(next.getHours()).toBe(16);
+      expect(next.getMinutes()).toBe(45);
+      expect(next.getSeconds()).toBe(0);
+    });
   });
 
   // =========================================================================
@@ -494,6 +502,57 @@ describe('Recurring Transactions & User-Scoped Cron Suite', () => {
       expect(res.jsonBody.data.amount).toBe(50.00);
       expect(res.jsonBody.data.frequency).toBe('WEEKLY');
       expect(syncSpy).toHaveBeenCalledWith(userId);
+    });
+
+    it('stores user-chosen executionTime or defaults to creation time in createRecurringTransaction', async () => {
+      const userId = new mongoose.Types.ObjectId().toString();
+      const accountId = new mongoose.Types.ObjectId().toString();
+      const categoryId = new mongoose.Types.ObjectId().toString();
+
+      let savedData = null;
+      vi.spyOn(RecurringTransaction, 'findOne').mockResolvedValue(null);
+      vi.spyOn(Account, 'findOne').mockResolvedValue({ _id: accountId, currency: 'MYR', userId });
+      vi.spyOn(Category, 'findOne').mockResolvedValue({ _id: categoryId, name: 'Food', userId });
+      vi.spyOn(RecurringTransaction.prototype, 'save').mockImplementation(function () {
+        savedData = this;
+        return Promise.resolve(this);
+      });
+      vi.spyOn(userCronManager, 'syncUserCron').mockResolvedValue();
+
+      // Case 1: user specified executionTime
+      const { req: req1, res: res1, next: next1 } = createMockReqRes(
+        { id: userId },
+        {
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: 15.00,
+          currency: 'MYR',
+          frequency: 'DAILY',
+          executionTime: '14:30'
+        }
+      );
+      await createRecurringTransaction(req1, res1, next1);
+      expect(res1.statusCode).toBe(201);
+      expect(savedData.executionTime).toBe('14:30');
+      expect(savedData.nextRunDate.getHours()).toBe(14);
+      expect(savedData.nextRunDate.getMinutes()).toBe(30);
+
+      // Case 2: executionTime omitted -> defaults to creation time (HH:mm)
+      const { req: req2, res: res2, next: next2 } = createMockReqRes(
+        { id: userId },
+        {
+          accountId,
+          categoryId,
+          type: 'EXPENSE',
+          amount: 20.00,
+          currency: 'MYR',
+          frequency: 'DAILY'
+        }
+      );
+      await createRecurringTransaction(req2, res2, next2);
+      expect(res2.statusCode).toBe(201);
+      expect(savedData.executionTime).toMatch(/^\d{2}:\d{2}$/);
     });
 
     it('rejects creation if required fields are missing or amount is <= 0', async () => {

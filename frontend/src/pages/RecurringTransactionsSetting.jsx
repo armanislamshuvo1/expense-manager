@@ -39,6 +39,7 @@ export default function RecurringTransactionsSetting() {
   const [toAccountId, setToAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [frequency, setFrequency] = useState('DAILY');
+  const [executionTime, setExecutionTime] = useState('');
   const [note, setNote] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
@@ -82,6 +83,7 @@ export default function RecurringTransactionsSetting() {
     setToAccountId(accounts[1]?._id || '');
     setCategoryId(categories[0]?._id || '');
     setFrequency('DAILY');
+    setExecutionTime(new Date().toTimeString().slice(0, 5));
     setNote('');
     setDescription('');
     setError('');
@@ -103,6 +105,10 @@ export default function RecurringTransactionsSetting() {
     setToAccountId(rule.toAccountId?._id || rule.toAccountId || '');
     setCategoryId(rule.categoryId?._id || rule.categoryId || '');
     setFrequency(rule.frequency || 'DAILY');
+    setExecutionTime(
+      rule.executionTime ||
+      (rule.nextRunDate ? new Date(rule.nextRunDate).toTimeString().slice(0, 5) : new Date().toTimeString().slice(0, 5))
+    );
     setNote(rule.note || '');
     setDescription(rule.description || '');
     setError('');
@@ -137,6 +143,7 @@ export default function RecurringTransactionsSetting() {
         toAccountId: type === 'TRANSFER' ? toAccountId : undefined,
         categoryId: type !== 'TRANSFER' ? categoryId : undefined,
         frequency,
+        executionTime: executionTime || undefined,
         note,
         description
       };
@@ -380,6 +387,12 @@ export default function RecurringTransactionsSetting() {
                         <span className="badge badge-xs bg-base-300 text-base-content/70 border-none font-semibold">
                           {rule.frequency}
                         </span>
+                        {rule.executionTime && (
+                          <span className="badge badge-xs bg-base-300 text-base-content/70 border-none font-semibold flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5 text-primary-app inline" />
+                            {rule.executionTime}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -557,6 +570,24 @@ export default function RecurringTransactionsSetting() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Execution Time */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] font-bold uppercase text-base-content/50">
+                    Execution Time
+                  </label>
+                  <span className="text-[10px] text-base-content/40">
+                    Defaults to creation time
+                  </span>
+                </div>
+                <input
+                  type="time"
+                  value={executionTime}
+                  onChange={(e) => setExecutionTime(e.target.value)}
+                  className="input input-sm input-bordered bg-base-200 w-full rounded-xl font-bold"
+                />
               </div>
 
               {/* Account */}

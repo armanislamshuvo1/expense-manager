@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CreditCard, Tag, Calendar, Plus, Calculator, RefreshCw } from 'lucide-react';
+import { CreditCard, Tag, Calendar, Plus, Calculator, RefreshCw, Clock } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
 import { CategorySelector } from '../CategorySelector';
@@ -61,6 +61,7 @@ export default function FormModal({
     ? user.settings.repeatDefault
     : 'None';
   const [selectedRepeat, setSelectedRepeat] = React.useState(defaultRepeat);
+  const [repeatExecutionTime, setRepeatExecutionTime] = React.useState(() => new Date().toTimeString().slice(0, 5));
 
   React.useEffect(() => {
     if (user?.settings?.repeatDefault) {
@@ -215,7 +216,8 @@ export default function FormModal({
                 } : {})),
                 repeat: selectedRepeat,
                 isRepeat: selectedRepeat !== 'None',
-                repeatFrequency: selectedRepeat.toUpperCase()
+                repeatFrequency: selectedRepeat.toUpperCase(),
+                executionTime: selectedRepeat !== 'None' ? repeatExecutionTime : undefined
               };
 
               handleSaveTransaction(e, extraPayload);
@@ -503,6 +505,21 @@ export default function FormModal({
                         </button>
                       ))}
                     </div>
+                    {selectedRepeat !== 'None' && (
+                      <div className="flex items-center justify-between mt-2 pt-2 px-1 border-t border-base-content/10">
+                        <span className="text-[11px] text-base-content/70 flex items-center gap-1 font-medium">
+                          <Clock className="w-3.5 h-3.5 text-primary-app" /> Execution Time
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="time"
+                            value={repeatExecutionTime}
+                            onChange={(e) => setRepeatExecutionTime(e.target.value)}
+                            className="input input-xs bg-base-300 border border-base-content/20 rounded-lg text-xs font-bold px-2 py-0.5 text-base-content"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

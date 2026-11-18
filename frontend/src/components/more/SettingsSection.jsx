@@ -97,10 +97,10 @@ export default function SettingsSection({
 
   return (
     <>
-      {/* Category & Repeat Settings List */}
+      {/* Categories & Recurring Settings List */}
       <div>
         <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/60 mb-2 px-1 flex items-center gap-1.5">
-          <FolderKanban className="w-3.5 h-3.5 text-primary-app" /> Category & Repeat
+          <FolderKanban className="w-3.5 h-3.5 text-primary-app" /> Categories & Recurring
         </h2>
         <div className="bg-base-300 rounded-2xl divide-y divide-base-content/10 overflow-hidden shadow-lg border border-base-content/10">
 
@@ -142,23 +142,12 @@ export default function SettingsSection({
           </button>
 
           <button
-            onClick={() => openSelectModal('repeatDefault', 'Default Repeat Setting', ['None', 'Daily', 'Weekly', 'Monthly'], settings.repeatDefault || 'None')}
-            className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
-          >
-            <span className="text-sm font-medium text-base-content/80">Repeat Setting</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-semibold text-primary-app">{settings.repeatDefault || 'None'}</span>
-              <ChevronRight className="w-4 h-4 text-base-content/50" />
-            </div>
-          </button>
-
-          <button
             onClick={() => navigate('/settings/recurring')}
             className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
           >
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-base-content/80">Active Recurring Schedule</span>
-              <span className="text-[10px] text-base-content/50">Manage your automated recurring transaction</span>
+              <span className="text-sm font-medium text-base-content/80">Recurring Transactions</span>
+              <span className="text-[10px] text-base-content/50">Manage automated repeating transactions & schedules</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-xs font-semibold text-primary-app">Manage</span>

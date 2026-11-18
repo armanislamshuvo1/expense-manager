@@ -244,6 +244,7 @@ export function useTransactionsForm(transactions = []) {
               amount: Number(amount),
               currency,
               frequency: String(freqToUse).toUpperCase(),
+              executionTime: (extraData && extraData.executionTime) || undefined,
               note,
               description
             });

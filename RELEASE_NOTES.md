@@ -1,5 +1,12 @@
 # NexusWealth Release Notes
 
+## [v3.1.1]
+- **Custom Execution Time for Recurring Transactions**: Choose the exact time of day your recurring transactions execute, or let it default automatically to creation time.
+- **Streamlined Settings Navigation**: Consolidated recurring and repeat settings into a single, clean Recurring Transactions management screen.
+- **Execution Time Indicators**: View and edit scheduled execution times directly on your recurring schedule cards and in transaction forms.
+
+---
+
 ## [v3.1.0]
 - **Automated Recurring Transactions**: Schedule repeated daily, weekly, or monthly expenses, incomes, or transfers automatically with dedicated per-user automated cron scheduling.
 - **Single-Job Protection & Control**: Manage your active recurring schedule directly from Settings with pause, resume, instant execution, and automatic balance updates.

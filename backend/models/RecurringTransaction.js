@@ -64,6 +64,11 @@ const recurringTransactionSchema = new mongoose.Schema({
     required: true,
     default: 'DAILY'
   },
+  executionTime: {
+    type: String,
+    trim: true,
+    default: null
+  },
   status: {
     type: String,
     enum: ['ACTIVE', 'PAUSED', 'COMPLETED'],

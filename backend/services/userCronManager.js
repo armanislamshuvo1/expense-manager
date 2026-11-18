@@ -4,32 +4,33 @@ import RecurringTransaction from '../models/RecurringTransaction.js';
 import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
 
-export const calculateNextRunDate = (fromDate, frequency) => {
+export const calculateNextRunDate = (fromDate, frequency, executionTime = null) => {
   const base = new Date(fromDate);
   const result = new Date(base.getTime());
   const normFreq = String(frequency || '').trim().toUpperCase();
 
   if (normFreq === 'DAILY') {
     result.setDate(result.getDate() + 1);
-    return result;
-  }
-
-  if (normFreq === 'WEEKLY') {
+  } else if (normFreq === 'WEEKLY') {
     result.setDate(result.getDate() + 7);
-    return result;
-  }
-
-  if (normFreq === 'MONTHLY') {
+  } else if (normFreq === 'MONTHLY') {
     const dayOfMonth = base.getDate();
     result.setDate(1);
     result.setMonth(result.getMonth() + 1);
     const maxDaysInNewMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
     result.setDate(Math.min(dayOfMonth, maxDaysInNewMonth));
-    return result;
+  } else {
+    // Guard against infinite while loops on non-canonical / invalid frequencies
+    result.setTime(result.getTime() + 86400000);
   }
 
-  // Guard against infinite while loops on non-canonical / invalid frequencies
-  result.setTime(result.getTime() + 86400000);
+  if (executionTime && typeof executionTime === 'string' && executionTime.includes(':')) {
+    const [hours, minutes] = executionTime.split(':').map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      result.setHours(hours, minutes, 0, 0);
+    }
+  }
+
   return result;
 };
 
@@ -165,11 +166,11 @@ export class UserCronManager {
 
     for (const rule of overdueRules) {
       const frequency = String(rule.frequency || '').toUpperCase();
-      const nextRun = calculateNextRunDate(rule.nextRunDate, frequency);
+      const nextRun = calculateNextRunDate(rule.nextRunDate, frequency, rule.executionTime);
       let finalNextRun = nextRun;
       while (finalNextRun <= now) {
         const currentNextRun = finalNextRun;
-        finalNextRun = calculateNextRunDate(finalNextRun, frequency);
+        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime);
         if (finalNextRun <= currentNextRun) {
           break;
         }
@@ -225,11 +226,11 @@ export class UserCronManager {
       if (!rule) return null;
 
       const frequency = String(rule.frequency || '').toUpperCase();
-      const nextRun = calculateNextRunDate(rule.nextRunDate || now, frequency);
+      const nextRun = calculateNextRunDate(rule.nextRunDate || now, frequency, rule.executionTime);
       let finalNextRun = nextRun;
       while (finalNextRun <= now) {
         const currentNextRun = finalNextRun;
-        finalNextRun = calculateNextRunDate(finalNextRun, frequency);
+        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime);
         if (finalNextRun <= currentNextRun) {
           break;
         }

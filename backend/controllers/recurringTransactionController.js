@@ -65,6 +65,7 @@ export const createRecurringTransaction = async (req, res, next) => {
       currency,
       frequency = 'DAILY',
       startDate,
+      executionTime,
       note,
       description,
       exchangeRate
@@ -137,16 +138,27 @@ export const createRecurringTransaction = async (req, res, next) => {
       }
     }
 
-    const start = startDate ? new Date(startDate) : new Date();
     const now = new Date();
+    // Use user-provided executionTime or default to creation time (HH:mm)
+    let execTime = executionTime;
+    if (!execTime || typeof execTime !== 'string' || !execTime.includes(':')) {
+      execTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+    const [execHours, execMinutes] = execTime.split(':').map(Number);
+
+    const start = startDate ? new Date(startDate) : new Date(now.getTime());
+    if (!isNaN(execHours) && !isNaN(execMinutes)) {
+      start.setHours(execHours, execMinutes, 0, 0);
+    }
+
     let nextRun;
     if (start > now) {
       nextRun = start;
     } else {
-      nextRun = calculateNextRunDate(start, normFreq);
+      nextRun = calculateNextRunDate(start, normFreq, execTime);
       while (nextRun <= now) {
         const currentNextRun = nextRun;
-        nextRun = calculateNextRunDate(nextRun, normFreq);
+        nextRun = calculateNextRunDate(nextRun, normFreq, execTime);
         if (nextRun <= currentNextRun) {
           break;
         }
@@ -163,6 +175,7 @@ export const createRecurringTransaction = async (req, res, next) => {
       currency: currency || account.currency,
       exchangeRate: exchangeRate !== undefined && Number(exchangeRate) > 0 ? Number(exchangeRate) : 1.0,
       frequency: normFreq,
+      executionTime: execTime,
       status: 'ACTIVE',
       startDate: start,
       nextRunDate: nextRun,
@@ -213,6 +226,7 @@ export const updateRecurringTransaction = async (req, res, next) => {
       amount,
       currency,
       frequency,
+      executionTime,
       startDate,
       status,
       note,
@@ -283,6 +297,10 @@ export const updateRecurringTransaction = async (req, res, next) => {
     if (description !== undefined) item.description = description;
 
     let recalculateSchedule = false;
+    if (executionTime !== undefined && executionTime !== item.executionTime) {
+      item.executionTime = executionTime;
+      recalculateSchedule = true;
+    }
     if (frequency && String(frequency).toUpperCase() !== item.frequency) {
       item.frequency = String(frequency).toUpperCase();
       recalculateSchedule = true;
@@ -295,12 +313,24 @@ export const updateRecurringTransaction = async (req, res, next) => {
     if (recalculateSchedule) {
       const now = new Date();
       const normFreq = String(item.frequency || '').toUpperCase();
-      let nextRun = calculateNextRunDate(item.startDate || now, normFreq);
-      while (nextRun <= now) {
-        const currentNextRun = nextRun;
-        nextRun = calculateNextRunDate(nextRun, normFreq);
-        if (nextRun <= currentNextRun) {
-          break;
+      const baseDate = new Date(item.startDate || now);
+      if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
+        const [h, m] = item.executionTime.split(':').map(Number);
+        if (!isNaN(h) && !isNaN(m)) {
+          baseDate.setHours(h, m, 0, 0);
+        }
+      }
+      let nextRun;
+      if (baseDate > now) {
+        nextRun = baseDate;
+      } else {
+        nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+        while (nextRun <= now) {
+          const currentNextRun = nextRun;
+          nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+          if (nextRun <= currentNextRun) {
+            break;
+          }
         }
       }
       item.nextRunDate = nextRun;
@@ -321,13 +351,26 @@ export const updateRecurringTransaction = async (req, res, next) => {
           });
         }
         if (item.nextRunDate <= new Date()) {
+          const now = new Date();
           const normFreq = String(item.frequency || '').toUpperCase();
-          let nextRun = calculateNextRunDate(new Date(), normFreq);
-          while (nextRun <= new Date()) {
-            const currentNextRun = nextRun;
-            nextRun = calculateNextRunDate(nextRun, normFreq);
-            if (nextRun <= currentNextRun) {
-              break;
+          const baseDate = new Date(now.getTime());
+          if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
+            const [h, m] = item.executionTime.split(':').map(Number);
+            if (!isNaN(h) && !isNaN(m)) {
+              baseDate.setHours(h, m, 0, 0);
+            }
+          }
+          let nextRun;
+          if (baseDate > now) {
+            nextRun = baseDate;
+          } else {
+            nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+            while (nextRun <= now) {
+              const currentNextRun = nextRun;
+              nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+              if (nextRun <= currentNextRun) {
+                break;
+              }
             }
           }
           item.nextRunDate = nextRun;
@@ -385,13 +428,26 @@ export const toggleRecurringTransactionStatus = async (req, res, next) => {
       }
       item.status = 'ACTIVE';
       if (item.nextRunDate <= new Date()) {
+        const now = new Date();
         const normFreq = String(item.frequency || '').toUpperCase();
-        let nextRun = calculateNextRunDate(new Date(), normFreq);
-        while (nextRun <= new Date()) {
-          const currentNextRun = nextRun;
-          nextRun = calculateNextRunDate(nextRun, normFreq);
-          if (nextRun <= currentNextRun) {
-            break;
+        const baseDate = new Date(now.getTime());
+        if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
+          const [h, m] = item.executionTime.split(':').map(Number);
+          if (!isNaN(h) && !isNaN(m)) {
+            baseDate.setHours(h, m, 0, 0);
+          }
+        }
+        let nextRun;
+        if (baseDate > now) {
+          nextRun = baseDate;
+        } else {
+          nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+          while (nextRun <= now) {
+            const currentNextRun = nextRun;
+            nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+            if (nextRun <= currentNextRun) {
+              break;
+            }
           }
         }
         item.nextRunDate = nextRun;
