@@ -1,5 +1,12 @@
 # NexusWealth Release Notes
 
+## [v3.1.2]
+- **Timezone-Aware Recurring Execution**: Recurring transactions now execute precisely according to your local timezone (e.g. Malaysia Time / Asia/Kuala_Lumpur) instead of remote server time.
+- **Accurate Local Time Scheduling**: Execution times and creation defaults automatically match the user's local clock across daily, weekly, and monthly recurrence.
+- **Timezone Labeling**: View your active schedule timezone directly within recurring settings and transaction forms.
+
+---
+
 ## [v3.1.1]
 - **Custom Execution Time for Recurring Transactions**: Choose the exact time of day your recurring transactions execute, or let it default automatically to creation time.
 - **Streamlined Settings Navigation**: Consolidated recurring and repeat settings into a single, clean Recurring Transactions management screen.

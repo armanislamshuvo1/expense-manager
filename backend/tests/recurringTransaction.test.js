@@ -4,7 +4,7 @@ import RecurringTransaction from '../models/RecurringTransaction.js';
 import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
 import Category from '../models/Category.js';
-import userCronManager, { UserCronManager, calculateNextRunDate } from '../services/userCronManager.js';
+import userCronManager, { UserCronManager, calculateNextRunDate, getPartsInTimezone } from '../services/userCronManager.js';
 import {
   getRecurringTransactions,
   getRecurringTransactionById,
@@ -112,10 +112,17 @@ describe('Recurring Transactions & User-Scoped Cron Suite', () => {
 
     it('applies explicit executionTime when supplied to calculateNextRunDate', () => {
       const start = new Date('2026-03-15T08:15:00.000Z');
-      const next = calculateNextRunDate(start, 'DAILY', '16:45');
-      expect(next.getHours()).toBe(16);
-      expect(next.getMinutes()).toBe(45);
-      expect(next.getSeconds()).toBe(0);
+      const next = calculateNextRunDate(start, 'DAILY', '16:45', 'UTC');
+      expect(next.getUTCHours()).toBe(16);
+      expect(next.getUTCMinutes()).toBe(45);
+      expect(next.getUTCSeconds()).toBe(0);
+    });
+
+    it('applies user timezone when calculating next run date (e.g. Asia/Kuala_Lumpur)', () => {
+      const base = new Date('2026-11-18T01:00:00.000Z'); // 09:00 AM in Malaysia (UTC+8)
+      const next = calculateNextRunDate(base, 'DAILY', '09:00', 'Asia/Kuala_Lumpur');
+      // 09:00 AM in Malaysia on Nov 19 is 01:00:00.000Z UTC
+      expect(next.toISOString()).toBe('2026-11-19T01:00:00.000Z');
     });
   });
 
@@ -535,8 +542,10 @@ describe('Recurring Transactions & User-Scoped Cron Suite', () => {
       await createRecurringTransaction(req1, res1, next1);
       expect(res1.statusCode).toBe(201);
       expect(savedData.executionTime).toBe('14:30');
-      expect(savedData.nextRunDate.getHours()).toBe(14);
-      expect(savedData.nextRunDate.getMinutes()).toBe(30);
+      const tzParts = getPartsInTimezone(savedData.nextRunDate, 'Asia/Kuala_Lumpur');
+      expect(tzParts.hour).toBe(14);
+      expect(tzParts.minute).toBe(30);
+      expect(savedData.timezone).toBe('Asia/Kuala_Lumpur');
 
       // Case 2: executionTime omitted -> defaults to creation time (HH:mm)
       const { req: req2, res: res2, next: next2 } = createMockReqRes(

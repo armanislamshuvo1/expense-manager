@@ -144,6 +144,7 @@ export default function RecurringTransactionsSetting() {
         categoryId: type !== 'TRANSFER' ? categoryId : undefined,
         frequency,
         executionTime: executionTime || undefined,
+        timezone: Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur',
         note,
         description
       };
@@ -390,7 +391,7 @@ export default function RecurringTransactionsSetting() {
                         {rule.executionTime && (
                           <span className="badge badge-xs bg-base-300 text-base-content/70 border-none font-semibold flex items-center gap-0.5">
                             <Clock className="w-2.5 h-2.5 text-primary-app inline" />
-                            {rule.executionTime}
+                            {rule.executionTime} ({rule.timezone?.split('/')?.pop()?.replace('_', ' ') || 'Local'})
                           </span>
                         )}
                       </div>
@@ -576,10 +577,10 @@ export default function RecurringTransactionsSetting() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[10px] font-bold uppercase text-base-content/50">
-                    Execution Time
+                    Execution Time ({Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur'})
                   </label>
                   <span className="text-[10px] text-base-content/40">
-                    Defaults to creation time
+                    Your local time
                   </span>
                 </div>
                 <input

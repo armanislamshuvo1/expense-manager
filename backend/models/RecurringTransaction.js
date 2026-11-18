@@ -69,6 +69,11 @@ const recurringTransactionSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
+  timezone: {
+    type: String,
+    trim: true,
+    default: 'Asia/Kuala_Lumpur'
+  },
   status: {
     type: String,
     enum: ['ACTIVE', 'PAUSED', 'COMPLETED'],

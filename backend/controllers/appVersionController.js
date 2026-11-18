@@ -92,11 +92,11 @@ export const getLatestAppVersion = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        versionName: '3.1.1',
+        versionName: '3.1.2',
         buildNumber: 1,
-        tag: 'v3.1.1',
+        tag: 'v3.1.2',
         downloadUrl: 'https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk',
-        releaseNotes: 'Custom execution time for recurring transactions and cleaned settings navigation.',
+        releaseNotes: 'Timezone-aware execution for recurring transactions matching user local time.',
         publishedAt: new Date().toISOString()
       },
       source: 'fallback'

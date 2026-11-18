@@ -1,7 +1,7 @@
 import RecurringTransaction from '../models/RecurringTransaction.js';
 import Account from '../models/Account.js';
 import Category from '../models/Category.js';
-import userCronManager, { calculateNextRunDate } from '../services/userCronManager.js';
+import userCronManager, { calculateNextRunDate, getPartsInTimezone, getTimeInTimezone } from '../services/userCronManager.js';
 
 /**
  * List all recurring transactions for the authenticated user.
@@ -66,6 +66,7 @@ export const createRecurringTransaction = async (req, res, next) => {
       frequency = 'DAILY',
       startDate,
       executionTime,
+      timezone,
       note,
       description,
       exchangeRate
@@ -138,27 +139,37 @@ export const createRecurringTransaction = async (req, res, next) => {
       }
     }
 
+    const userTimezone = timezone || req.user?.settings?.timezone || 'Asia/Kuala_Lumpur';
     const now = new Date();
-    // Use user-provided executionTime or default to creation time (HH:mm)
+    const nowPartsInTz = getPartsInTimezone(now, userTimezone);
+
+    // Use user-provided executionTime or default to creation time in user's timezone (HH:mm)
     let execTime = executionTime;
     if (!execTime || typeof execTime !== 'string' || !execTime.includes(':')) {
-      execTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      execTime = `${String(nowPartsInTz.hour).padStart(2, '0')}:${String(nowPartsInTz.minute).padStart(2, '0')}`;
     }
     const [execHours, execMinutes] = execTime.split(':').map(Number);
 
-    const start = startDate ? new Date(startDate) : new Date(now.getTime());
-    if (!isNaN(execHours) && !isNaN(execMinutes)) {
-      start.setHours(execHours, execMinutes, 0, 0);
+    let targetYear = nowPartsInTz.year;
+    let targetMonth = nowPartsInTz.month;
+    let targetDay = nowPartsInTz.day;
+    if (startDate) {
+      const startParts = getPartsInTimezone(new Date(startDate), userTimezone);
+      targetYear = startParts.year;
+      targetMonth = startParts.month;
+      targetDay = startParts.day;
     }
 
+    const firstRunInTz = getTimeInTimezone(targetYear, targetMonth, targetDay, execHours, execMinutes, userTimezone);
+
     let nextRun;
-    if (start > now) {
-      nextRun = start;
+    if (firstRunInTz > now) {
+      nextRun = firstRunInTz;
     } else {
-      nextRun = calculateNextRunDate(start, normFreq, execTime);
+      nextRun = calculateNextRunDate(firstRunInTz, normFreq, execTime, userTimezone);
       while (nextRun <= now) {
         const currentNextRun = nextRun;
-        nextRun = calculateNextRunDate(nextRun, normFreq, execTime);
+        nextRun = calculateNextRunDate(nextRun, normFreq, execTime, userTimezone);
         if (nextRun <= currentNextRun) {
           break;
         }
@@ -176,8 +187,9 @@ export const createRecurringTransaction = async (req, res, next) => {
       exchangeRate: exchangeRate !== undefined && Number(exchangeRate) > 0 ? Number(exchangeRate) : 1.0,
       frequency: normFreq,
       executionTime: execTime,
+      timezone: userTimezone,
       status: 'ACTIVE',
-      startDate: start,
+      startDate: firstRunInTz,
       nextRunDate: nextRun,
       note,
       description
@@ -227,6 +239,7 @@ export const updateRecurringTransaction = async (req, res, next) => {
       currency,
       frequency,
       executionTime,
+      timezone,
       startDate,
       status,
       note,
@@ -297,6 +310,10 @@ export const updateRecurringTransaction = async (req, res, next) => {
     if (description !== undefined) item.description = description;
 
     let recalculateSchedule = false;
+    if (timezone !== undefined && timezone !== item.timezone) {
+      item.timezone = timezone;
+      recalculateSchedule = true;
+    }
     if (executionTime !== undefined && executionTime !== item.executionTime) {
       item.executionTime = executionTime;
       recalculateSchedule = true;
@@ -311,23 +328,38 @@ export const updateRecurringTransaction = async (req, res, next) => {
     }
 
     if (recalculateSchedule) {
+      const timeZone = item.timezone || 'Asia/Kuala_Lumpur';
       const now = new Date();
       const normFreq = String(item.frequency || '').toUpperCase();
-      const baseDate = new Date(item.startDate || now);
+      const nowPartsInTz = getPartsInTimezone(now, timeZone);
+
+      let targetYear = nowPartsInTz.year;
+      let targetMonth = nowPartsInTz.month;
+      let targetDay = nowPartsInTz.day;
+      if (item.startDate) {
+        const startParts = getPartsInTimezone(new Date(item.startDate), timeZone);
+        targetYear = startParts.year;
+        targetMonth = startParts.month;
+        targetDay = startParts.day;
+      }
+      let targetHour = nowPartsInTz.hour;
+      let targetMinute = nowPartsInTz.minute;
       if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
         const [h, m] = item.executionTime.split(':').map(Number);
         if (!isNaN(h) && !isNaN(m)) {
-          baseDate.setHours(h, m, 0, 0);
+          targetHour = h;
+          targetMinute = m;
         }
       }
+      const baseDate = getTimeInTimezone(targetYear, targetMonth, targetDay, targetHour, targetMinute, timeZone);
       let nextRun;
       if (baseDate > now) {
         nextRun = baseDate;
       } else {
-        nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+        nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime, timeZone);
         while (nextRun <= now) {
           const currentNextRun = nextRun;
-          nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+          nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime, timeZone);
           if (nextRun <= currentNextRun) {
             break;
           }
@@ -351,23 +383,28 @@ export const updateRecurringTransaction = async (req, res, next) => {
           });
         }
         if (item.nextRunDate <= new Date()) {
+          const timeZone = item.timezone || 'Asia/Kuala_Lumpur';
           const now = new Date();
           const normFreq = String(item.frequency || '').toUpperCase();
-          const baseDate = new Date(now.getTime());
+          const nowPartsInTz = getPartsInTimezone(now, timeZone);
+          let targetHour = nowPartsInTz.hour;
+          let targetMinute = nowPartsInTz.minute;
           if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
             const [h, m] = item.executionTime.split(':').map(Number);
             if (!isNaN(h) && !isNaN(m)) {
-              baseDate.setHours(h, m, 0, 0);
+              targetHour = h;
+              targetMinute = m;
             }
           }
+          const baseDate = getTimeInTimezone(nowPartsInTz.year, nowPartsInTz.month, nowPartsInTz.day, targetHour, targetMinute, timeZone);
           let nextRun;
           if (baseDate > now) {
             nextRun = baseDate;
           } else {
-            nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+            nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime, timeZone);
             while (nextRun <= now) {
               const currentNextRun = nextRun;
-              nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+              nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime, timeZone);
               if (nextRun <= currentNextRun) {
                 break;
               }
@@ -428,23 +465,28 @@ export const toggleRecurringTransactionStatus = async (req, res, next) => {
       }
       item.status = 'ACTIVE';
       if (item.nextRunDate <= new Date()) {
+        const timeZone = item.timezone || 'Asia/Kuala_Lumpur';
         const now = new Date();
         const normFreq = String(item.frequency || '').toUpperCase();
-        const baseDate = new Date(now.getTime());
+        const nowPartsInTz = getPartsInTimezone(now, timeZone);
+        let targetHour = nowPartsInTz.hour;
+        let targetMinute = nowPartsInTz.minute;
         if (item.executionTime && typeof item.executionTime === 'string' && item.executionTime.includes(':')) {
           const [h, m] = item.executionTime.split(':').map(Number);
           if (!isNaN(h) && !isNaN(m)) {
-            baseDate.setHours(h, m, 0, 0);
+            targetHour = h;
+            targetMinute = m;
           }
         }
+        const baseDate = getTimeInTimezone(nowPartsInTz.year, nowPartsInTz.month, nowPartsInTz.day, targetHour, targetMinute, timeZone);
         let nextRun;
         if (baseDate > now) {
           nextRun = baseDate;
         } else {
-          nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime);
+          nextRun = calculateNextRunDate(baseDate, normFreq, item.executionTime, timeZone);
           while (nextRun <= now) {
             const currentNextRun = nextRun;
-            nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime);
+            nextRun = calculateNextRunDate(nextRun, normFreq, item.executionTime, timeZone);
             if (nextRun <= currentNextRun) {
               break;
             }

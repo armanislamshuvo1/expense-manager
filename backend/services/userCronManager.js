@@ -4,34 +4,123 @@ import RecurringTransaction from '../models/RecurringTransaction.js';
 import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
 
-export const calculateNextRunDate = (fromDate, frequency, executionTime = null) => {
-  const base = new Date(fromDate);
-  const result = new Date(base.getTime());
+export function getPartsInTimezone(date, tz = 'Asia/Kuala_Lumpur') {
+  const d = new Date(date);
+  const timeZone = tz || 'Asia/Kuala_Lumpur';
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    }).formatToParts(d);
+    const m = {};
+    for (const p of parts) {
+      m[p.type] = p.value;
+    }
+    const hour = m.hour === '24' ? 0 : Number(m.hour);
+    return {
+      year: Number(m.year),
+      month: Number(m.month),
+      day: Number(m.day),
+      hour: Number(hour),
+      minute: Number(m.minute),
+      second: Number(m.second)
+    };
+  } catch (err) {
+    return {
+      year: d.getUTCFullYear(),
+      month: d.getUTCMonth() + 1,
+      day: d.getUTCDate(),
+      hour: d.getUTCHours(),
+      minute: d.getUTCMinutes(),
+      second: d.getUTCSeconds()
+    };
+  }
+}
+
+export function getTimeInTimezone(year, month, day, hour, minute, tz = 'Asia/Kuala_Lumpur') {
+  const timeZone = tz || 'Asia/Kuala_Lumpur';
+  const asUtc = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  const getParts = (d) => {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      }).formatToParts(d);
+      const m = {};
+      for (const p of parts) {
+        m[p.type] = p.value;
+      }
+      const h = m.hour === '24' ? 0 : Number(m.hour);
+      return new Date(Date.UTC(m.year, m.month - 1, m.day, h, m.minute, m.second));
+    } catch (e) {
+      return d;
+    }
+  };
+
+  const offset = getParts(asUtc).getTime() - asUtc.getTime();
+  const candidate = new Date(asUtc.getTime() - offset);
+  const refinedOffset = getParts(candidate).getTime() - candidate.getTime();
+  return new Date(asUtc.getTime() - refinedOffset);
+}
+
+export const calculateNextRunDate = (fromDate, frequency, executionTime = null, tz = 'Asia/Kuala_Lumpur') => {
   const normFreq = String(frequency || '').trim().toUpperCase();
+  const timeZone = tz || 'Asia/Kuala_Lumpur';
+  const baseParts = getPartsInTimezone(new Date(fromDate), timeZone);
+
+  let targetYear = baseParts.year;
+  let targetMonth = baseParts.month;
+  let targetDay = baseParts.day;
 
   if (normFreq === 'DAILY') {
-    result.setDate(result.getDate() + 1);
+    const d = new Date(Date.UTC(targetYear, targetMonth - 1, targetDay + 1));
+    targetYear = d.getUTCFullYear();
+    targetMonth = d.getUTCMonth() + 1;
+    targetDay = d.getUTCDate();
   } else if (normFreq === 'WEEKLY') {
-    result.setDate(result.getDate() + 7);
+    const d = new Date(Date.UTC(targetYear, targetMonth - 1, targetDay + 7));
+    targetYear = d.getUTCFullYear();
+    targetMonth = d.getUTCMonth() + 1;
+    targetDay = d.getUTCDate();
   } else if (normFreq === 'MONTHLY') {
-    const dayOfMonth = base.getDate();
-    result.setDate(1);
-    result.setMonth(result.getMonth() + 1);
-    const maxDaysInNewMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-    result.setDate(Math.min(dayOfMonth, maxDaysInNewMonth));
+    let nextMonth = targetMonth + 1;
+    let nextYear = targetYear;
+    if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear += 1;
+    }
+    const maxDays = new Date(Date.UTC(nextYear, nextMonth, 0)).getUTCDate();
+    targetYear = nextYear;
+    targetMonth = nextMonth;
+    targetDay = Math.min(baseParts.day, maxDays);
   } else {
-    // Guard against infinite while loops on non-canonical / invalid frequencies
-    result.setTime(result.getTime() + 86400000);
+    // Non-canonical fallback
+    return new Date(new Date(fromDate).getTime() + 86400000);
   }
 
+  let targetHour = baseParts.hour;
+  let targetMinute = baseParts.minute;
   if (executionTime && typeof executionTime === 'string' && executionTime.includes(':')) {
-    const [hours, minutes] = executionTime.split(':').map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      result.setHours(hours, minutes, 0, 0);
+    const [h, m] = executionTime.split(':').map(Number);
+    if (!isNaN(h) && !isNaN(m)) {
+      targetHour = h;
+      targetMinute = m;
     }
   }
 
-  return result;
+  return getTimeInTimezone(targetYear, targetMonth, targetDay, targetHour, targetMinute, timeZone);
 };
 
 export class UserCronManager {
@@ -166,11 +255,12 @@ export class UserCronManager {
 
     for (const rule of overdueRules) {
       const frequency = String(rule.frequency || '').toUpperCase();
-      const nextRun = calculateNextRunDate(rule.nextRunDate, frequency, rule.executionTime);
+      const timeZone = rule.timezone || 'Asia/Kuala_Lumpur';
+      const nextRun = calculateNextRunDate(rule.nextRunDate, frequency, rule.executionTime, timeZone);
       let finalNextRun = nextRun;
       while (finalNextRun <= now) {
         const currentNextRun = finalNextRun;
-        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime);
+        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime, timeZone);
         if (finalNextRun <= currentNextRun) {
           break;
         }
@@ -226,11 +316,12 @@ export class UserCronManager {
       if (!rule) return null;
 
       const frequency = String(rule.frequency || '').toUpperCase();
-      const nextRun = calculateNextRunDate(rule.nextRunDate || now, frequency, rule.executionTime);
+      const timeZone = rule.timezone || 'Asia/Kuala_Lumpur';
+      const nextRun = calculateNextRunDate(rule.nextRunDate || now, frequency, rule.executionTime, timeZone);
       let finalNextRun = nextRun;
       while (finalNextRun <= now) {
         const currentNextRun = finalNextRun;
-        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime);
+        finalNextRun = calculateNextRunDate(finalNextRun, frequency, rule.executionTime, timeZone);
         if (finalNextRun <= currentNextRun) {
           break;
         }

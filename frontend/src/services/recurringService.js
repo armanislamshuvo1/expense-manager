@@ -21,7 +21,11 @@ export const recurringService = {
    * Create a new recurring transaction schedule.
    */
   async createRecurringTransaction(data) {
-    const response = await secureApi.post('/api/recurring', data);
+    const payload = {
+      timezone: Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur',
+      ...data
+    };
+    const response = await secureApi.post('/api/recurring', payload);
     return response.data;
   },
 
@@ -29,7 +33,11 @@ export const recurringService = {
    * Update an existing recurring transaction schedule.
    */
   async updateRecurringTransaction(id, data) {
-    const response = await secureApi.put(`/api/recurring/${id}`, data);
+    const payload = {
+      timezone: Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur',
+      ...data
+    };
+    const response = await secureApi.put(`/api/recurring/${id}`, payload);
     return response.data;
   },
 

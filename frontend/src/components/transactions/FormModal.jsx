@@ -217,7 +217,8 @@ export default function FormModal({
                 repeat: selectedRepeat,
                 isRepeat: selectedRepeat !== 'None',
                 repeatFrequency: selectedRepeat.toUpperCase(),
-                executionTime: selectedRepeat !== 'None' ? repeatExecutionTime : undefined
+                executionTime: selectedRepeat !== 'None' ? repeatExecutionTime : undefined,
+                timezone: Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur'
               };
 
               handleSaveTransaction(e, extraPayload);
