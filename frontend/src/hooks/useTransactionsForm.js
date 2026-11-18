@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { useAxiosSecure } from './useApi';
 import { useAuth } from '../context/AuthContext';
 import { queueOperation, queueCategoryOperation, queueAccountOperation, generateUUID, triggerSync } from '../utils/syncManager';
+import { recurringService } from '../services/recurringService';
 
 export function useTransactionsForm(transactions = []) {
   const axiosSecure = useAxiosSecure();
@@ -26,6 +27,12 @@ export function useTransactionsForm(transactions = []) {
   const [toAmount, setToAmount] = useState('');
   const [toCurrency, setToCurrency] = useState('');
   const [date, setDate] = useState(new Date());
+
+  const defaultRepeatSetting = user?.settings?.repeatDefault || 'None';
+  const [isRepeat, setIsRepeat] = useState(defaultRepeatSetting !== 'None');
+  const [repeatFrequency, setRepeatFrequency] = useState(
+    defaultRepeatSetting !== 'None' ? defaultRepeatSetting.toUpperCase() : 'DAILY'
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -119,15 +126,19 @@ export function useTransactionsForm(transactions = []) {
     setToAmount('');
     setToCurrency('');
     setDate(prefilledDate instanceof Date ? prefilledDate : new Date());
+    const defaultRepeat = user?.settings?.repeatDefault || 'None';
+    setIsRepeat(defaultRepeat !== 'None');
+    setRepeatFrequency(defaultRepeat !== 'None' ? defaultRepeat.toUpperCase() : 'DAILY');
     setError('');
     const modal = document.getElementById('add_transaction_modal');
     if (modal) modal.showModal();
-  }, [user?.baseCurrency]);
+  }, [user?.baseCurrency, user?.settings?.repeatDefault]);
 
   const handleOpenEditModal = useCallback((tx) => {
     if (!tx) return;
     setEditMode(true);
     setEditingId(tx._id);
+    setIsRepeat(false);
     setType(tx.type || 'EXPENSE');
     setAmount(tx.amount !== undefined ? tx.amount.toString() : '');
     setCurrency(tx.currency || 'MYR');
@@ -219,6 +230,29 @@ export function useTransactionsForm(transactions = []) {
         await updateMutation.mutateAsync({ id: editingId, txData });
       } else {
         await createMutation.mutateAsync(txData);
+
+        const shouldRepeat = (extraData && extraData.isRepeat !== undefined) ? extraData.isRepeat : isRepeat;
+        const freqToUse = (extraData && extraData.repeatFrequency !== undefined) ? extraData.repeatFrequency : repeatFrequency;
+
+        if (shouldRepeat && freqToUse && String(freqToUse).toUpperCase() !== 'NONE') {
+          try {
+            await recurringService.createRecurringTransaction({
+              accountId,
+              toAccountId: type === 'TRANSFER' ? toAccountId : undefined,
+              categoryId: type !== 'TRANSFER' ? categoryId : undefined,
+              type,
+              amount: Number(amount),
+              currency,
+              frequency: String(freqToUse).toUpperCase(),
+              note,
+              description
+            });
+            queryClient.invalidateQueries({ queryKey: ['recurring'] });
+            queryClient.invalidateQueries({ queryKey: ['recurring-transactions'] });
+          } catch (recErr) {
+            console.warn('Failed to register recurring transaction schedule:', recErr);
+          }
+        }
       }
 
       setAmount('');
@@ -232,6 +266,7 @@ export function useTransactionsForm(transactions = []) {
       setDescription('');
       setToAmount('');
       setToCurrency('');
+      setIsRepeat(false);
       setEditMode(false);
       setEditingId('');
       const modal = document.getElementById('add_transaction_modal');
@@ -244,7 +279,7 @@ export function useTransactionsForm(transactions = []) {
   }, [
     type, amount, accountId, toAccountId, categoryId, currency, shouldConvert, exchangeRate, 
     toAmount, toCurrency, note, description, date, accountName, toAccountName, categoryName, 
-    editMode, editingId, updateMutation, createMutation
+    editMode, editingId, isRepeat, repeatFrequency, queryClient, updateMutation, createMutation
   ]);
 
   const handleCreateCategory = useCallback(async (catName, emoji, parentId = null) => {
@@ -399,6 +434,10 @@ export function useTransactionsForm(transactions = []) {
     setToCurrency,
     date,
     setDate,
+    isRepeat,
+    setIsRepeat,
+    repeatFrequency,
+    setRepeatFrequency,
     loading,
     error,
     setError,

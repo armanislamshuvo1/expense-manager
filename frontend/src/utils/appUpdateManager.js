@@ -4,7 +4,7 @@ import { publicApi } from './apiConfig';
 
 const AppUpdate = registerPlugin('AppUpdate');
 
-export const CURRENT_APP_VERSION = '3.0.6';
+export const CURRENT_APP_VERSION = '3.1.0';
 
 /**
  * Parses semver string (e.g., "3.0.4" -> [3, 0, 4])

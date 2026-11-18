@@ -151,6 +151,20 @@ export default function SettingsSection({
               <ChevronRight className="w-4 h-4 text-base-content/50" />
             </div>
           </button>
+
+          <button
+            onClick={() => navigate('/settings/recurring')}
+            className="flex justify-between items-center w-full p-4 hover:bg-base-200 transition-colors text-left"
+          >
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-base-content/80">Active Recurring Schedule</span>
+              <span className="text-[10px] text-base-content/50">Manage your automated recurring transaction</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-primary-app">Manage</span>
+              <ChevronRight className="w-4 h-4 text-base-content/50" />
+            </div>
+          </button>
         </div>
       </div>
 

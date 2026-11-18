@@ -44,6 +44,7 @@ const AdminDashboard = lazyWithRetry(() => import('./pages/admin/AdminDashboard'
 const IncomeCategoriesSetting = lazyWithRetry(() => import('./pages/IncomeCategoriesSetting'));
 const ExpenseCategoriesSetting = lazyWithRetry(() => import('./pages/ExpenseCategoriesSetting'));
 const AccountsSetting = lazyWithRetry(() => import('./pages/AccountsSetting'));
+const RecurringTransactionsSetting = lazyWithRetry(() => import('./pages/RecurringTransactionsSetting'));
 const SharedDashboard = lazyWithRetry(() => import('./pages/SharedDashboard'));
 const WealthBuddy = lazyWithRetry(() => import('./pages/WealthBuddy'));
 
@@ -186,6 +187,12 @@ function App() {
             <Route path="/settings/accounts" element={
               <ProtectedRoute>
                 <AccountsSetting />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/settings/recurring" element={
+              <ProtectedRoute>
+                <RecurringTransactionsSetting />
               </ProtectedRoute>
             } />
 

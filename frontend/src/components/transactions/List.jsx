@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RefreshCw, Repeat } from 'lucide-react';
 import { useAccountModal } from '../../context/AccountModalContext';
 
 const TransactionRow = React.memo(({
@@ -14,6 +14,11 @@ const TransactionRow = React.memo(({
   const catName = tx.type === 'TRANSFER' ? 'Transfer' : (tx.categoryId?.name || 'General');
   const isIncome = tx.type === 'INCOME';
   const isExpense = tx.type === 'EXPENSE';
+  const isRecurring = Boolean(
+    tx.isRecurringInstance ||
+    tx.recurringTransactionId ||
+    (typeof tx.clientTxId === 'string' && tx.clientTxId.startsWith('recurring_'))
+  );
 
   return (
     <div 
@@ -31,9 +36,17 @@ const TransactionRow = React.memo(({
           {isIncome ? 'IN' : isExpense ? 'OUT' : '⇄'}
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="font-bold text-xs text-base-content truncate">
-            {tx.note || catName}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-bold text-xs text-base-content truncate">
+              {tx.note || catName}
+            </span>
+            {isRecurring && (
+              <span className="badge badge-xs bg-primary-app/20 text-primary-app border border-primary-app/30 text-[9px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5 shrink-0" title="Recurring Transaction">
+                <Repeat className="w-2.5 h-2.5 text-primary-app" />
+                <span>Repeat</span>
+              </span>
+            )}
+          </div>
           <span className="text-[10px] text-base-content/60 flex items-center gap-1 truncate">
             <span className="font-semibold truncate">{catName}</span>
             <span>•</span>

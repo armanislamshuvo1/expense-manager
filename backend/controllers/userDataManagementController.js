@@ -4,6 +4,8 @@ import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
 import Category from '../models/Category.js';
 import User from '../models/User.js';
+import RecurringTransaction from '../models/RecurringTransaction.js';
+import userCronManager from '../services/userCronManager.js';
 
 // --- WIPE ALL USER FINANCIAL DATA ---
 export const wipeUserData = async (req, res, next) => {
@@ -30,6 +32,9 @@ export const wipeUserData = async (req, res, next) => {
     await Transaction.deleteMany({ userId }).session(session);
     await Account.deleteMany({ userId }).session(session);
     await Category.deleteMany({ userId }).session(session);
+    await RecurringTransaction.deleteMany({ userId }).session(session);
+
+    userCronManager.unregisterUserCron(userId);
 
     try {
       await mongoose.model('InsightCache').deleteMany({ userId }).session(session);
@@ -96,6 +101,9 @@ export const deleteUserAccount = async (req, res, next) => {
     user.status = 'DELETED';
     user.deletedAt = new Date();
     await user.save();
+
+    await RecurringTransaction.deleteMany({ userId });
+    userCronManager.unregisterUserCron(userId);
 
     res.status(200).json({
       success: true,

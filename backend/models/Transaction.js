@@ -83,6 +83,16 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     sparse: true,
     index: true
+  },
+  recurringTransactionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'RecurringTransaction',
+    default: null,
+    index: true
+  },
+  isRecurringInstance: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

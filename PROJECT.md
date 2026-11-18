@@ -1,75 +1,72 @@
-# Project: Multi-Currency Account Transfer & Conversion Engine
+# Project: Expense Manager (NexusWealth) - User-Level Recurring Transactions (Cron)
 
 ## Architecture
-The application is a full-stack expense and wealth management platform:
-- **Backend**: Node.js (ES modules), Express 5.2.1, MongoDB with Mongoose 9.7.3, Vitest 5.0.2.
-- **Frontend**: React 19, Vite 8, Tailwind CSS v4, DaisyUI v5, TanStack React Query v5, IndexedDB offline sync engine.
-
-### Data Flow for Multi-Currency Transfers
-1. **Initiation**: User opens transfer form in `FormModal.jsx`, selects source account (e.g. `MYR`) and destination account (e.g. `USD`).
-2. **Detection & Preview**: UI detects `fromAccount.currency !== toAccount.currency`. It dynamically displays the Cross-Currency Conversion Card showing conversion direction (`MYR ➔ USD`), two-way editable exchange rate (`1 MYR = X USD`), and converted target amount (`Y USD`).
-3. **Payload**: Form submits payload with `amount` (source currency), `currency` (source currency), `toAmount` (converted destination currency amount), `toCurrency` (destination currency), and `exchangeRate`.
-4. **Backend Processing**: `transactionController.js` and `syncController.js`:
-   - Deducts `amount` from source account.
-   - Credits `toAmount` (or `amount * exchangeRate`) to destination account.
-   - Handles reversal accurately upon transaction update or delete.
-5. **Recalculation & Aggregation**: `syncExportImportController.js` aggregates `amount` for source debit and `$ifNull: ['$toAmount', '$convertedAmount', '$amount']` for destination credit.
-6. **Display & History**: `AccountTransactionsModal.jsx` displays `+toCurrency toAmount` when viewing incoming transfers on destination accounts.
-
-## Code Layout
-- Backend Models: `backend/models/Transaction.js`, `backend/models/Account.js`
-- Backend Controllers: `backend/controllers/transactionController.js`, `backend/controllers/syncController.js`, `backend/controllers/syncExportImportController.js`
-- Backend Tests: `backend/tests/crossCurrencyTransfer.test.js`
-- Frontend Components: `frontend/src/components/transactions/FormModal.jsx`, `frontend/src/components/AccountTransactionsModal.jsx`
-- Frontend Hooks & Utilities: `frontend/src/hooks/useTransactionsForm.js`, `frontend/src/utils/syncManager.js`
+- **Backend**: Express 5 (ESM) + Mongoose 9. Singleton `UserCronManager` service (`node-cron`) maintains strictly at most 1 cron runner per active user (`Map<userId, cronTask>`). MongoDB collection `RecurringTransaction` stores recurrence schedules.
+- **Data Flow**:
+  1. User configures repeated transaction in UI (`FormModal.jsx` or `/settings/recurring`).
+  2. Backend validates payload, verifies ownership of accounts/category, and stores `RecurringTransaction`.
+  3. `UserCronManager.syncUserCron(userId)` ensures strictly at most 1 cron runner exists in memory for this user if active rules > 0 (or stops/removes if 0).
+  4. When the user cron triggers (or via "Run Now"), `processUserRecurringTransactions(userId)` atomically advances `nextRunDate`, creates `Transaction` records with `isRecurringInstance: true`, updates `Account.balance` via `$inc`, and clears `InsightCache`.
+  5. UI displays recurring transaction badges in `List.jsx` and provides schedule management in `/settings/recurring`.
+- **Version Synchronization**: 4 files bumped from `3.0.6` to `3.1.0` in tandem per `AGENTS.md`.
 
 ## Feature Inventory
-Every feature from the Survey phase must appear here with its assigned milestone. No feature may be left unassigned.
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | Multi-Currency Transfer Schema Support | Add `toAmount`, `toCurrency` fields to `Transaction` schema to explicitly track destination currency and amount | M1 | Survey |
-| 2 | Backend Directional Balance Effect | Update transfer logic in `transactionController.js` and `syncController.js` to debit source account by `amount` and credit destination account by `toAmount` | M1 | Survey |
-| 3 | Backend Transfer Update & Delete Reversal | Correctly adjust source and destination account balances during transfer update and deletion | M1 | Survey |
-| 4 | Data Recalculation Aggregation Integrity | Ensure `syncExportImportController.js` aggregation sums `amount` for source expenses and `toAmount` for destination transfers in | M1 | Survey |
-| 5 | Currency Sync on Account Selection | Automatically synchronize transfer currency with selected source account in `FormModal.jsx` and `useTransactionsForm.js` | M1 | Survey |
-| 6 | Cross-Currency Transfer UI Detection & Preview | Display dedicated conversion preview card whenever `sourceAccount.currency !== toAccount.currency`, regardless of user base currency | M1 | Survey |
-| 7 | Two-Way Linked Rate & Target Amount Inputs | Allow entering either exchange rate or target amount, automatically recalculating the other | M1 | Survey |
-| 8 | Offline Balance Cache Sync for Transfers | Update `syncManager.js` offline balance effect calculation to use `toAmount` for destination accounts | M1 | Survey |
-| 9 | Account Transaction Modal Inflow Display | Display correct converted currency and amount (`+USD 11.20` instead of `+MYR 50.00`) in `AccountTransactionsModal.jsx` | M1 | Survey |
-| 10 | Multi-Tier E2E & Backend Test Suite | Comprehensive Vitest suite covering Tiers 1-4 for cross-currency transfers, rates, balance updates, and edge cases | M1 | Survey |
-| 11 | Adversarial Hardening & Verification | Hardening with boundary conditions, floating point rounding, and integrity audit | M1 | Survey |
+| 1 | RecurringTransaction Model | Mongoose schema for recurring rules (frequency: DAILY, WEEKLY, MONTHLY, status, nextRunDate, amount, account, category, type) | M1 | survey |
+| 2 | UserCronManager Singleton | Background scheduler ensuring strictly 1 cron runner in memory per user (`Map<userId, cronTask>`) | M1 | survey |
+| 3 | Recurring API Endpoints | REST endpoints (`POST /api/recurring`, `GET /api/recurring`, `PUT /api/recurring/:id`, `PATCH /api/recurring/:id/toggle`, `DELETE /api/recurring/:id`, `POST /api/recurring/run-now`) | M1 | survey |
+| 4 | Data Wipe & Cleanup Hook | Ensure user data wipe (`userDataManagementController.js`) removes recurring transactions and stops user cron | M1 | survey |
+| 5 | Recurring Transaction UI in FormModal | Recurrence toggle and frequency picker in `FormModal.jsx`, pre-populated from `user.settings.repeatDefault` | M1 | survey |
+| 6 | Recurring Management Screen | Screen at `/settings/recurring` (`RecurringTransactionsSetting.jsx`) to view, pause/resume, edit, delete, and manually trigger rules | M1 | survey |
+| 7 | Recurring Badge in Transaction List | Visual indicator badge (`<Repeat />`) on recurring instances in `List.jsx` | M1 | survey |
+| 8 | Vitest Backend Test Suite | Comprehensive unit/integration tests in `backend/tests/recurringTransaction.test.js` (40 tests) validating 1-cron-per-user invariant, idempotency, and auth isolation | M1 | survey |
+| 9 | Version Bump Synchronization | Bump version to `3.1.0` across `frontend/package.json`, `frontend/src/utils/appUpdateManager.js`, `backend/controllers/appVersionController.js`, and `RELEASE_NOTES.md` | M1 | survey |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | Full-Stack Multi-Currency Transfer & Test Suite | Backend models, controllers, recalculation, frontend form conversion card, account transaction modal, and Vitest test suite | none | DONE |
+| 1 | Recurring Transactions & User Cron System | Complete backend and frontend implementation, tests, and version bump synchronization | none | DONE |
 
 ## Interface Contracts
-### Frontend ➔ Backend Transfer Payload
-- Endpoint: `POST /api/transactions` and `PUT /api/transactions/:id`
-- Payload structure for Transfers:
-  ```json
-  {
-    "accountId": "source_account_id",
-    "toAccountId": "destination_account_id",
-    "type": "TRANSFER",
-    "amount": 50,
-    "currency": "MYR",
-    "toAmount": 11.20,
-    "toCurrency": "USD",
-    "exchangeRate": 0.224,
-    "shouldConvert": true,
-    "date": "2026-11-15T...",
-    "notes": "..."
-  }
-  ```
-- Balance Effects:
-  - Source Account (`MYR`): `balance -= amount` (`-50.00 MYR`)
-  - Destination Account (`USD`): `balance += toAmount` (`+11.20 USD`)
-  - If same currency (`MYR` to `MYR`): `toAmount === amount`, `exchangeRate === 1.0`
+### Client ↔ Server REST API (`/api/recurring`)
+- `POST /api/recurring`: Body: `{ type: 'INCOME'|'EXPENSE'|'TRANSFER', amount: Number, currency: String, accountId: ObjectId, toAccountId?: ObjectId, categoryId?: ObjectId, frequency: 'DAILY'|'WEEKLY'|'MONTHLY', startDate?: Date, note?: String, description?: String }`. Response: `{ success: true, data: RecurringTransaction }`
+- `GET /api/recurring`: Query: `{ status?: 'ACTIVE'|'PAUSED' }`. Response: `{ success: true, data: [RecurringTransaction] }`
+- `GET /api/recurring/:id`: Response: `{ success: true, data: RecurringTransaction }`
+- `PUT /api/recurring/:id`: Body: Partial updates. Response: `{ success: true, data: RecurringTransaction }`
+- `PATCH /api/recurring/:id/toggle`: Response: `{ success: true, data: { _id, status } }`
+- `DELETE /api/recurring/:id`: Response: `{ success: true, message: 'Recurring transaction deleted' }`
+- `POST /api/recurring/run-now`: Manually trigger overdue/pending runs for the user. Response: `{ success: true, executedCount: Number, transactions: [Transaction] }`
 
-## Agent Protocol: Mandatory App Updates & Release Notes
-All AI agents working on this project must strictly adhere to the following rule:
-- **Update `RELEASE_NOTES.md` for every release or app update**: Every time a change is introduced that will be included in an app update, the agent must update `RELEASE_NOTES.md` with clear, non-technical, user-facing bullet points under the target version section (`## [vX.Y.Z]`).
-- **No Raw Commits to Users**: Never expose internal commit hashes, git chore messages, or debug text to end users.
-- Refer to `AGENTS.md` for complete agent rules.
+### UserCronManager Interface
+- `syncUserCron(userId)`: Ensures `userCrons.has(userId)` if active rules > 0, else stops and deletes task.
+- `hasUserCron(userId)`: Returns boolean indicating if user has a cron task in RAM.
+- `getUserCronCount(userId)`: Returns number of active crons for user (strictly 0 or 1).
+- `processUserRecurringTransactions(userId)`: Atomic execution of overdue rules.
+- `initAllActiveUserCrons()`: Re-hydrates 1 cron per active user on server boot.
+
+## Code Layout
+### Backend
+- `backend/models/RecurringTransaction.js`: Mongoose schema and indexes
+- `backend/models/Transaction.js`: Add `recurringTransactionId`, `isRecurringInstance`
+- `backend/services/userCronManager.js`: Singleton cron manager enforcing 1-cron-per-user
+- `backend/controllers/recurringTransactionController.js`: CRUD and run-now handlers
+- `backend/routes/recurringRoutes.js`: Express routes with `protectRoute`
+- `backend/routes/index.js`: Mount `/recurring` and `/recurring-transactions`
+- `backend/index.js`: Initialize user crons on startup
+- `backend/controllers/userDataManagementController.js`: Clean up recurring rules and stop cron
+- `backend/controllers/appVersionController.js`: Bump version to 3.1.0
+- `backend/package.json`: Add `node-cron` dependency
+- `backend/tests/recurringTransaction.test.js`: Vitest test suite (40 tests)
+
+### Frontend
+- `frontend/src/services/recurringService.js`: API methods for recurring endpoints
+- `frontend/src/components/transactions/FormModal.jsx`: Recurrence toggle and frequency selector
+- `frontend/src/hooks/useTransactionsForm.js`: Recurring state handling
+- `frontend/src/pages/RecurringTransactionsSetting.jsx`: Management page
+- `frontend/src/components/more/SettingsSection.jsx`: Link to recurring transactions page
+- `frontend/src/components/transactions/List.jsx`: Recurring badge indicator
+- `frontend/src/App.jsx`: Route for `/settings/recurring`
+- `frontend/package.json`: Bump version to 3.1.0
+- `frontend/src/utils/appUpdateManager.js`: Update `CURRENT_APP_VERSION` to 3.1.0
+- `RELEASE_NOTES.md`: Add `## [v3.1.0]` release notes

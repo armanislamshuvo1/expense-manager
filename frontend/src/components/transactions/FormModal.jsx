@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CreditCard, Tag, Calendar, Plus, Calculator } from 'lucide-react';
+import { CreditCard, Tag, Calendar, Plus, Calculator, RefreshCw } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
 import { CategorySelector } from '../CategorySelector';
@@ -51,8 +51,22 @@ export default function FormModal({
   handleSaveCustomAccount,
   handleDeleteTransaction,
   getNoteSuggestions,
-  applyNoteAutocomplete
+  applyNoteAutocomplete,
+  isRepeat,
+  setIsRepeat,
+  repeatFrequency,
+  setRepeatFrequency
 }) {
+  const defaultRepeat = user?.settings?.repeatDefault && user.settings.repeatDefault !== 'None'
+    ? user.settings.repeatDefault
+    : 'None';
+  const [selectedRepeat, setSelectedRepeat] = React.useState(defaultRepeat);
+
+  React.useEffect(() => {
+    if (user?.settings?.repeatDefault) {
+      setSelectedRepeat(user.settings.repeatDefault);
+    }
+  }, [user?.settings?.repeatDefault]);
   const {
     showKeypad,
     setShowKeypad,
@@ -187,17 +201,24 @@ export default function FormModal({
                 ? Number(targetAmount)
                 : (Number(amount) > 0 && Number(exchangeRate) > 0 ? Number((Number(amount) * Number(exchangeRate)).toFixed(2)) : undefined);
 
-              handleSaveTransaction(e, isCrossCurrency ? {
-                toAmount: computedTargetAmount,
-                toCurrency: toAccount?.currency,
-                exchangeRate: Number(exchangeRate) || 1.0,
-                shouldConvert: true
-              } : (type === 'TRANSFER' && toAccount ? {
-                toAmount: Number(amount),
-                toCurrency: toAccount.currency,
-                exchangeRate: 1.0,
-                shouldConvert: true
-              } : undefined));
+              const extraPayload = {
+                ...(isCrossCurrency ? {
+                  toAmount: computedTargetAmount,
+                  toCurrency: toAccount?.currency,
+                  exchangeRate: Number(exchangeRate) || 1.0,
+                  shouldConvert: true
+                } : (type === 'TRANSFER' && toAccount ? {
+                  toAmount: Number(amount),
+                  toCurrency: toAccount.currency,
+                  exchangeRate: 1.0,
+                  shouldConvert: true
+                } : {})),
+                repeat: selectedRepeat,
+                isRepeat: selectedRepeat !== 'None',
+                repeatFrequency: selectedRepeat.toUpperCase()
+              };
+
+              handleSaveTransaction(e, extraPayload);
             }}
             className="flex flex-col h-full min-h-0 flex-1 justify-between overflow-hidden"
           >
@@ -450,6 +471,40 @@ export default function FormModal({
                     })()}</span>
                   </button>
                 </div>
+
+                {/* Recurrence Control ('None', 'Daily', 'Weekly', 'Monthly') */}
+                {!editMode && (
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-xs text-base-content/60 flex items-center gap-1">
+                        <RefreshCw className="w-3.5 h-3.5" /> Repeat Setting
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5 bg-base-200 p-1 rounded-xl border border-base-content/20">
+                      {['None', 'Daily', 'Weekly', 'Monthly'].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            hapticSelection();
+                            setSelectedRepeat(opt);
+                            if (setIsRepeat) setIsRepeat(opt !== 'None');
+                            if (setRepeatFrequency && opt !== 'None') {
+                              setRepeatFrequency(opt.toUpperCase());
+                            }
+                          }}
+                          className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                            selectedRepeat === opt
+                              ? 'bg-primary-app text-slate-950 font-bold shadow'
+                              : 'text-base-content/70 hover:text-base-content hover:bg-base-100'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Optional Note */}
                 <div className="form-control relative">

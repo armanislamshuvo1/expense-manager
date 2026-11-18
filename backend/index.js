@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import apiRouter from './routes/index.js';
 import ErrorLog from './models/ErrorLog.js';
+import userCronManager from './services/userCronManager.js';
 
 // Startup environment security checks
 if (!process.env.JWT_SECRET) {
@@ -17,7 +18,13 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Connect to Database
-connectDB();
+connectDB().then(() => {
+  if (userCronManager?.initAllActiveUserCrons) {
+    userCronManager.initAllActiveUserCrons();
+  }
+}).catch((err) => {
+  console.error('[Database Connect Error]:', err);
+});
 
 const app = express();
 

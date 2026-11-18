@@ -35,11 +35,11 @@ export const getLatestAppVersion = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: {
-          versionName: '3.0.6',
+          versionName: '3.1.0',
           buildNumber: 1,
-          tag: 'v3.0.6',
+          tag: 'v3.1.0',
           downloadUrl: 'https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk',
-          releaseNotes: 'Performance improvements and bug fixes.',
+          releaseNotes: 'Recurring automated transactions and performance improvements.',
           publishedAt: new Date().toISOString()
         },
         source: 'fallback'
@@ -92,11 +92,11 @@ export const getLatestAppVersion = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        versionName: '3.0.4',
+        versionName: '3.1.0',
         buildNumber: 1,
-        tag: 'v3.0.4',
+        tag: 'v3.1.0',
         downloadUrl: 'https://github.com/armanislamshuvo1/expense-manager/releases/latest/download/NexusWealth.apk',
-        releaseNotes: 'Bug fixes and performance improvements.',
+        releaseNotes: 'Recurring automated transactions and performance improvements.',
         publishedAt: new Date().toISOString()
       },
       source: 'fallback'

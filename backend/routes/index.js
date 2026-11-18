@@ -10,6 +10,7 @@ import shareRoutes from './shareRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import syncRoutes from './syncRoutes.js';
 import supportRoutes from './supportRoutes.js';
+import recurringRoutes from './recurringRoutes.js';
 import { getLatestAppVersion } from '../controllers/appVersionController.js';
 
 const router = express.Router();
@@ -22,6 +23,8 @@ router.use('/auth', authRoutes);
 router.use('/accounts', accountRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/transactions', transactionRoutes);
+router.use('/recurring', recurringRoutes);
+router.use('/recurring-transactions', recurringRoutes);
 router.use('/admin', adminRoutes);
 router.use('/user', userRoutes);
 router.use('/share', shareRoutes);

@@ -172,6 +172,10 @@ export default function Transactions() {
     setError,
     editMode,
     editingId,
+    isRepeat,
+    setIsRepeat,
+    repeatFrequency,
+    setRepeatFrequency,
     handleOpenAddModal,
     handleOpenEditModal,
     handleSaveTransaction,
@@ -497,6 +501,10 @@ return (
         loading={loading}
         editMode={editMode}
         editingId={editingId}
+        isRepeat={isRepeat}
+        setIsRepeat={setIsRepeat}
+        repeatFrequency={repeatFrequency}
+        setRepeatFrequency={setRepeatFrequency}
         accounts={accounts}
         categories={categories}
         user={user}
