@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CreditCard, Tag, Calendar, Plus, Calculator, RefreshCw, Clock } from 'lucide-react';
+import { CreditCard, Tag, Calendar, Plus, Calculator } from 'lucide-react';
 import { CustomKeypad } from '../CustomKeypad';
 import { AccountSelector } from '../AccountSelector';
 import { CategorySelector } from '../CategorySelector';
@@ -51,23 +51,8 @@ export default function FormModal({
   handleSaveCustomAccount,
   handleDeleteTransaction,
   getNoteSuggestions,
-  applyNoteAutocomplete,
-  isRepeat,
-  setIsRepeat,
-  repeatFrequency,
-  setRepeatFrequency
+  applyNoteAutocomplete
 }) {
-  const defaultRepeat = user?.settings?.repeatDefault && user.settings.repeatDefault !== 'None'
-    ? user.settings.repeatDefault
-    : 'None';
-  const [selectedRepeat, setSelectedRepeat] = React.useState(defaultRepeat);
-  const [repeatExecutionTime, setRepeatExecutionTime] = React.useState(() => new Date().toTimeString().slice(0, 5));
-
-  React.useEffect(() => {
-    if (user?.settings?.repeatDefault) {
-      setSelectedRepeat(user.settings.repeatDefault);
-    }
-  }, [user?.settings?.repeatDefault]);
   const {
     showKeypad,
     setShowKeypad,
@@ -214,11 +199,7 @@ export default function FormModal({
                   exchangeRate: 1.0,
                   shouldConvert: true
                 } : {})),
-                repeat: selectedRepeat,
-                isRepeat: selectedRepeat !== 'None',
-                repeatFrequency: selectedRepeat.toUpperCase(),
-                executionTime: selectedRepeat !== 'None' ? repeatExecutionTime : undefined,
-                timezone: Intl?.DateTimeFormat?.().resolvedOptions()?.timeZone || 'Asia/Kuala_Lumpur'
+                isRepeat: false
               };
 
               handleSaveTransaction(e, extraPayload);
@@ -475,54 +456,6 @@ export default function FormModal({
                   </button>
                 </div>
 
-                {/* Recurrence Control ('None', 'Daily', 'Weekly', 'Monthly') */}
-                {!editMode && (
-                  <div className="form-control">
-                    <label className="label py-1">
-                      <span className="label-text text-xs text-base-content/60 flex items-center gap-1">
-                        <RefreshCw className="w-3.5 h-3.5" /> Repeat Setting
-                      </span>
-                    </label>
-                    <div className="grid grid-cols-4 gap-1.5 bg-base-200 p-1 rounded-xl border border-base-content/20">
-                      {['None', 'Daily', 'Weekly', 'Monthly'].map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => {
-                            hapticSelection();
-                            setSelectedRepeat(opt);
-                            if (setIsRepeat) setIsRepeat(opt !== 'None');
-                            if (setRepeatFrequency && opt !== 'None') {
-                              setRepeatFrequency(opt.toUpperCase());
-                            }
-                          }}
-                          className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                            selectedRepeat === opt
-                              ? 'bg-primary-app text-slate-950 font-bold shadow'
-                              : 'text-base-content/70 hover:text-base-content hover:bg-base-100'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                    {selectedRepeat !== 'None' && (
-                      <div className="flex items-center justify-between mt-2 pt-2 px-1 border-t border-base-content/10">
-                        <span className="text-[11px] text-base-content/70 flex items-center gap-1 font-medium">
-                          <Clock className="w-3.5 h-3.5 text-primary-app" /> Execution Time
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="time"
-                            value={repeatExecutionTime}
-                            onChange={(e) => setRepeatExecutionTime(e.target.value)}
-                            className="input input-xs bg-base-300 border border-base-content/20 rounded-lg text-xs font-bold px-2 py-0.5 text-base-content"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Optional Note */}
                 <div className="form-control relative">

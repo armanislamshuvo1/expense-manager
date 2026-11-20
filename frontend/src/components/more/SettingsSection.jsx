@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { isNativeApp, downloadApkDirect } from '../../utils/pwaUtils';
-import { ChevronRight, Sun, Moon, Share2, Link, Copy, ShieldAlert, Download, Trash2, UserX, Database, RefreshCw, FolderKanban, Wallet, Sliders, Shield, Smartphone } from 'lucide-react';
+import { ChevronRight, Sun, Moon, Share2, Link, Copy, Download, Trash2, UserX, Database, RefreshCw, FolderKanban, Wallet, Sliders, Shield, Smartphone } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { checkForUpdate, getInstalledAppInfo, CURRENT_APP_VERSION } from '../../utils/appUpdateManager';
 import { getPublicWebUrl } from '../../utils/apiConfig';
@@ -597,21 +597,6 @@ export default function SettingsSection({
           </button>
         </div>
       </div>
-
-      {/* Admin Controls */}
-      {user?.role === 'ADMIN' && (
-        <div className="bg-base-300 rounded-2xl p-4 shadow-lg border border-secondary-app/20 flex justify-between items-center">
-          <div>
-            <h3 className="font-bold text-sm text-error flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4" /> Admin Controls
-            </h3>
-            <p className="text-[10px] text-base-content/50">Manage locks & roles</p>
-          </div>
-          <button onClick={() => navigate('/admin')} className="btn btn-xs bg-secondary-app hover:bg-indigo-600 text-white border-none">
-            Portal
-          </button>
-        </div>
-      )}
     </>
   );
 }

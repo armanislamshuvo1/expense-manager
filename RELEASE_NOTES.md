@@ -1,5 +1,11 @@
 # NexusWealth Release Notes
 
+## [v3.1.3]
+- **Streamlined Transaction Entry**: Simplified the transaction creation modal by removing the repeat setting tab, keeping manual expense and income logging clean and clutter-free (recurring transactions continue to be managed seamlessly from Settings).
+- **Clean Settings & Security Layout**: Removed the duplicate admin button at the bottom of the Settings screen, providing a single consolidated Admin Portal card for administrators.
+
+---
+
 ## [v3.1.2]
 - **Timezone-Aware Recurring Execution**: Recurring transactions now execute precisely according to your local timezone (e.g. Malaysia Time / Asia/Kuala_Lumpur) instead of remote server time.
 - **Accurate Local Time Scheduling**: Execution times and creation defaults automatically match the user's local clock across daily, weekly, and monthly recurrence.
